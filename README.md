@@ -64,11 +64,32 @@ claude mcp add -s user touchdesigner -- npx -y touchdesigner-mcp-server@latest -
 
 ## About This Project
 
-This project explores the Salish Sea ecosystem through generative art:
-- **Plankton** - The foundation of the food web
-- **Herring** - Small schooling fish
-- **Salmon** - The iconic Pacific salmon
-- **Orcas** - The apex predators, Southern Resident Killer Whales
+> *"We are the Salish Sea, dreaming itself awake."*
+
+Salish Sea Dreaming is an evolving art + technology exploration, working toward an **Interactive AI Dreaming Mind** installation for the [Salt Spring Spring Art Show](https://saltspringarts.com/spring-art-show/) (April 2026).
+
+The project sits at the intersection of:
+- **Interactive art & immersive media** - TouchDesigner, projection mapping, presence detection
+- **Bioregional consciousness** - Technology as a "listening interface" to help humans tune into living systems
+- **Indigenous worldviews** - Informed by Indigenomics and relational economics
+- **Data poetics** - Translating ecological data into felt, responsive experiences
+
+### The Vision
+
+Not humans looking at nature through technology, but the Salish Sea using technology (and us) to perceive itself.
+
+### Collaborators
+
+- [Pravin Pillay / MOVE37XR](https://www.move37xr.org/) - Creative direction, immersive media
+- [Briony Penn](https://brionypenn.com/) - Naturalist illustration, ecological storytelling
+- [Carol Anne Hilton / Indigenomics](https://indigenomics.com/) - Indigenous economic worldviews
+- Darren Zal - Knowledge systems, data infrastructure
+- Shawn - Creative technology, AI systems
+
+### Related Resources
+
+- [Mind Map (Coggle)](https://coggle.it/diagram/aW01lIKXUtVgH4cW/t/wen%2Cn%C3%A1%2Cnec)
+- [Shared Drive](https://drive.google.com/drive/folders/1eWuiMKqALHh8SWBjMRRCMu5wrGoK8oEO)
 
 ## Credits
 
