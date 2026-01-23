@@ -1,0 +1,12 @@
+# TouchDesigner
+*.toe.autosave
+*.toe.crash
+Backup/
+
+# macOS
+.DS_Store
+*.swp
+
+# Python
+__pycache__/
+*.pyc
