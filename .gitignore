@@ -10,3 +10,8 @@ Backup/
 # Python
 __pycache__/
 *.pyc
+
+# Node.js / Web
+node_modules/
+web/dist/
+web/.vite/

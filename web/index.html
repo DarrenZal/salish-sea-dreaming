@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Salish Sea Dreaming</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      overflow: hidden;
+      background: #000;
+      font-family: system-ui, sans-serif;
+    }
+    canvas {
+      display: block;
+    }
+    #info {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 14px;
+      pointer-events: none;
+      transition: opacity 0.5s;
+    }
+    #info.hidden {
+      opacity: 0;
+    }
+    #stillness-indicator {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      color: rgba(255, 255, 255, 0.4);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+  </style>
+</head>
+<body>
+  <div id="info">
+    Move slowly. Be still.<br>
+    The sea reveals itself to those who wait.
+  </div>
+  <div id="stillness-indicator"></div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

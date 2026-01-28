@@ -4,9 +4,14 @@ AI-assisted visual art exploring the Salish Sea ecosystem through TouchDesigner.
 
 This project uses AI (Claude) to help create and control particle-based visualizations of marine life - from plankton to orcas.
 
+## Live Demo
+
+**[Try the Web Prototype](https://darrenzal.github.io/salish-sea-dreaming/)** - Move slowly. Be still. The sea reveals itself to those who wait.
+
 ## What's Inside
 
-- `examples/FishSchool.toe` - A point cloud fish school visualization
+- `web/` - Three.js web prototype (runs in browser, no install needed)
+- `examples/FishSchool.toe` - TouchDesigner point cloud fish school visualization
 
 ## Quick Start (For Artists)
 
@@ -52,6 +57,24 @@ With TouchDesigner running and the MCP component active:
    - "Show me what nodes exist in my project"
 
 Claude can see and modify your TouchDesigner project in real-time.
+
+## Web Prototype
+
+The `web/` directory contains a Three.js prototype for rapid iteration:
+
+```bash
+cd web
+npm install
+npm run dev
+```
+
+This runs at `http://localhost:3000`. Changes appear instantly (hot reload).
+
+**Why both web and TouchDesigner?**
+- **Web (Three.js)**: Fast prototyping, easy sharing via URL, great for AI-assisted development
+- **TouchDesigner**: Production installation, projection mapping, Kinect, audio integration
+
+We prototype ideas in the browser, then port the good ones to TouchDesigner for the gallery.
 
 ## For Developers / Advanced Users
 
