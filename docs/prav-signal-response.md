@@ -12,7 +12,7 @@ Prav — yes, I'm in on this. Before I start setting things up, want to make sur
 
 Are you referring to **Autolume** from SFU's MetaCreation Lab? (https://github.com/Metacreation-Lab/autolume — the StyleGAN2-ada-based generative visual system with OSC/MIDI support.) Or something else?
 
-Also: what OS are you on, and do you have an NVIDIA GPU on your machine? Autolume is Windows/Linux only — no macOS — so I want to confirm the setup before diving in.
+Also: what OS are you on, and do you have an NVIDIA GPU? Autolume is Windows/Linux only — no macOS — so I want to confirm who hosts it (your machine, TELUS, or my Linux server) before diving in.
 
 If it is the MetaCreation Lab tool, I've got the integration architecture worked out and can walk you through the TD/OSC/MIDI setup.
 
@@ -28,7 +28,7 @@ Prav — yes, let's do this. I've done a deep dive on Autolume and I think the i
 StyleGAN2-ada generative visual system from SFU's MetaCreation Lab. Designed for live performance — real-time latent space navigation, audio-reactive, OSC + MIDI controllable, NDI video output. The marine imagery from iNaturalist (128 species already downloaded) is potential training data.
 
 **The constraint:**
-Autolume is Windows/Linux only — no macOS. So this needs to run on your Windows machine or on the TELUS cluster (Linux). My MacBook can't host it.
+Autolume is Windows/Linux only — no macOS, so it can't run directly on my MacBook. I do have access to a Linux server though, so I can host it on my end if needed. Or we run it on your machine, or on TELUS.
 
 **The TELUS GPU role:**
 Most valuable for **training** — a StyleGAN2-ada run that takes 1–3 days on a desktop RTX takes a few hours on an H200. The workflow:

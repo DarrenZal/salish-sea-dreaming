@@ -24,9 +24,9 @@ This is exactly the tool for turning the marine life imagery into a live generat
 
 For our setup, this means:
 - **Darren's MacBook** cannot run Autolume directly
-- **Prav's machine** (likely Windows) is the natural host for Autolume
+- **Darren's Linux server** can host Autolume (NVIDIA GPU access needed)
+- **Prav's machine** (likely Windows) is the other natural host
 - **TELUS GPU cluster** (Linux) is ideal for training
-- Alternatively: run Autolume on a Linux VM or Docker container on any machine with NVIDIA GPU access
 
 This needs to be confirmed with Prav before any local install attempt.
 
