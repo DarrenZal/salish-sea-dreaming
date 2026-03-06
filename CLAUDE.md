@@ -153,3 +153,4 @@ curl http://localhost:8351/health  # check if KOI backend running
 | 2026-02-13 | Visual sprint | Animation research, prototype review |
 | 2026-03-02 | Docs + tools | One-pager for Raf finalized; iNaturalist scraper built (128 marine taxa); Proton Drive shared with Prav; coordination drafts written; Autolume/GAN + TELUS GPU plan outlined |
 | 2026-03-02 | Repo merge | Consolidated SalishSeaDreaming (Pascal) → salish-sea-dreaming (kebab); scripts/, VisualArt/ (git-lfs), docs migrated |
+| 2026-03-06 | Research + Octo | Deep research prompt + Report II ("The Living Salish Sea") to vault + Octo knowledge garden (salishsee.life); 27 entities ingested; fixed Octo chat widget (model config + timeout); salishsee.life now canonical URL |
