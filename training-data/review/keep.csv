@@ -1,0 +1,25 @@
+candidate_file,source_file,crop_recipe,crop_box,keep
+Central+Coast+Inshore+scene_BrionyPenn__horizontal-thirds__bottom.png,VisualArt/Brionny/Illustrations/Central-Coast-Inshore-Scene/Central+Coast+Inshore+scene_BrionyPenn.jpg,horizontal-thirds-bottom,"[0,2128,2500,3194]",yes
+Central+Coast+Inshore+scene_BrionyPenn__horizontal-thirds__middle.png,VisualArt/Brionny/Illustrations/Central-Coast-Inshore-Scene/Central+Coast+Inshore+scene_BrionyPenn.jpg,horizontal-thirds-middle,"[0,1064,2500,2128]",yes
+Central+Coast+Inshore+scene_BrionyPenn__horizontal-thirds__top.png,VisualArt/Brionny/Illustrations/Central-Coast-Inshore-Scene/Central+Coast+Inshore+scene_BrionyPenn.jpg,horizontal-thirds-top,"[0,0,2500,1064]",yes
+Central+Coast+Offshore+scene_BrionyPenn__horizontal-thirds__bottom.png,VisualArt/Brionny/Illustrations/Central-Coast-Offshore-Scene/Central+Coast+Offshore+scene_BrionyPenn.jpg,horizontal-thirds-bottom,"[0,2130,2500,3195]",yes
+Central+Coast+Offshore+scene_BrionyPenn__horizontal-thirds__middle.png,VisualArt/Brionny/Illustrations/Central-Coast-Offshore-Scene/Central+Coast+Offshore+scene_BrionyPenn.jpg,horizontal-thirds-middle,"[0,1065,2500,2130]",yes
+Central+Coast+Offshore+scene_BrionyPenn__horizontal-thirds__top.png,VisualArt/Brionny/Illustrations/Central-Coast-Offshore-Scene/Central+Coast+Offshore+scene_BrionyPenn.jpg,horizontal-thirds-top,"[0,0,2500,1065]",yes
+Central+coast+estuary+scene_BrionyPenn__horizontal-thirds__bottom.png,VisualArt/Brionny/Illustrations/Central-Coast-Estuary-Scene/Central+coast+estuary+scene_BrionyPenn.jpg,horizontal-thirds-bottom,"[0,2130,2500,3195]",yes
+Central+coast+estuary+scene_BrionyPenn__horizontal-thirds__middle.png,VisualArt/Brionny/Illustrations/Central-Coast-Estuary-Scene/Central+coast+estuary+scene_BrionyPenn.jpg,horizontal-thirds-middle,"[0,1065,2500,2130]",yes
+Central+coast+estuary+scene_BrionyPenn__horizontal-thirds__top.png,VisualArt/Brionny/Illustrations/Central-Coast-Estuary-Scene/Central+coast+estuary+scene_BrionyPenn.jpg,horizontal-thirds-top,"[0,0,2500,1065]",yes
+IMG_1473__panorama-zones__zone-0.png,VisualArt/Brionny/Paintings-cleaned/IMG_1473.png,panorama-zones-zone-0,"[0,0,846,846]",yes
+IMG_1473__panorama-zones__zone-1.png,VisualArt/Brionny/Paintings-cleaned/IMG_1473.png,panorama-zones-zone-1,"[634,0,1480,846]",yes
+IMG_1473__panorama-zones__zone-2.png,VisualArt/Brionny/Paintings-cleaned/IMG_1473.png,panorama-zones-zone-2,"[713,0,1559,846]",yes
+IMG_1474__center-crop__center-60pct.png,VisualArt/Brionny/Paintings/Giant-Pacific-Octopus/IMG_1474.jpg,center-crop-center-60pct,"[240,320,960,1280]",yes
+IMG_1475__horizontal-halves__bottom.png,VisualArt/Brionny/Paintings-cleaned/IMG_1475.png,horizontal-halves-bottom,"[0,504,1474,1008]",yes
+IMG_1475__horizontal-halves__top.png,VisualArt/Brionny/Paintings-cleaned/IMG_1475.png,horizontal-halves-top,"[0,0,1474,504]",yes
+IMG_1476__panorama-zones__zone-0.png,VisualArt/Brionny/Paintings-cleaned/IMG_1476.png,panorama-zones-zone-0,"[0,0,903,903]",yes
+IMG_1476__panorama-zones__zone-1.png,VisualArt/Brionny/Paintings-cleaned/IMG_1476.png,panorama-zones-zone-1,"[653,0,1556,903]",yes
+IMG_1477__horizontal-thirds__bottom.png,VisualArt/Brionny/Paintings/Kelp-Forest-Ecosystem/IMG_1477.jpg,horizontal-thirds-bottom,"[0,1066,1200,1600]",yes
+IMG_1477__horizontal-thirds__middle.png,VisualArt/Brionny/Paintings/Kelp-Forest-Ecosystem/IMG_1477.jpg,horizontal-thirds-middle,"[0,533,1200,1066]",yes
+IMG_1477__horizontal-thirds__top.png,VisualArt/Brionny/Paintings/Kelp-Forest-Ecosystem/IMG_1477.jpg,horizontal-thirds-top,"[0,0,1200,533]",yes
+IMG_1478__horizontal-thirds__bottom.png,VisualArt/Brionny/Paintings/Salmon-Forest-Cycle/IMG_1478.jpg,horizontal-thirds-bottom,"[0,1066,1200,1600]",yes
+IMG_1478__horizontal-thirds__middle.png,VisualArt/Brionny/Paintings/Salmon-Forest-Cycle/IMG_1478.jpg,horizontal-thirds-middle,"[0,533,1200,1066]",yes
+IMG_1478__horizontal-thirds__top.png,VisualArt/Brionny/Paintings/Salmon-Forest-Cycle/IMG_1478.jpg,horizontal-thirds-top,"[0,0,1200,533]",yes
+signal-2026-02-08-070332__center-crop__center-60pct.png,VisualArt/Brionny/Paintings/Basking shark/signal-2026-02-08-070332.jpeg,center-crop-center-60pct,"[409,307,1639,1229]",yes

@@ -1,3 +1,6 @@
 VisualArt/**/*.png filter=lfs diff=lfs merge=lfs -text
 VisualArt/**/*.jpg filter=lfs diff=lfs merge=lfs -text
 VisualArt/**/*.jpeg filter=lfs diff=lfs merge=lfs -text
+training-data/**/*.png filter=lfs diff=lfs merge=lfs -text
+training-data/**/*.jpg filter=lfs diff=lfs merge=lfs -text
+training-data/**/*.jpeg filter=lfs diff=lfs merge=lfs -text

@@ -1,0 +1,19 @@
+# Future corpora (not yet populated)
+marine-photo-base/*.jpg
+marine-photo-base/*.jpeg
+marine-photo-base/*.png
+briony-linework/*.jpg
+briony-linework/*.jpeg
+briony-linework/*.png
+
+# Review artifacts (scratch files, not needed by team)
+review/candidates/*.jpg
+review/candidates/*.jpeg
+review/candidates/*.png
+review/contact-sheets/*.png
+
+# Keep structure files
+!.gitkeep
+!README.md
+!provenance.csv
+!review/keep.csv
