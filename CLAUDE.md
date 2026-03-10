@@ -32,12 +32,18 @@ Technology not as extraction, but as perception. The bioregion already has consc
 salish-sea-dreaming/
 ├── CLAUDE.md
 ├── README.md
-├── scripts/              # Python generation scripts (see Scripts section)
+├── scripts/              # Training pipeline scripts (see Scripts section)
 ├── docs/                 # Project docs and briefing notes
 ├── examples/             # TouchDesigner .toe files
 ├── web/                  # Three.js prototype (Vite, WebGL, GLSL shaders)
-├── tools/                # Utility scripts (iNaturalist scraper, etc.)
-├── images/marine/        # 128 iNaturalist taxa (Guide 19640)
+├── tools/                # Utility scripts (iNat scraper, QC tools)
+├── images/marine/        # 128 iNaturalist taxa (Guide 19640, 500px)
+├── images/marine-base-raw/  # 740 raw 1024px iNat photos (gitignored)
+├── training-data/        # Training corpora + provenance tracking
+│   ├── briony-marine-colour/ # 36 Briony watercolors at 512x512
+│   ├── marine-photo-base/    # 539 QC'd marine photos at 512x512
+│   └── review/               # QC contact sheets + rejects.csv
+├── models/               # Trained checkpoints (gitignored, ~347 MB each)
 └── VisualArt/            # Briony Penn's full art archive (git-lfs)
 ```
 
@@ -45,6 +51,8 @@ salish-sea-dreaming/
 
 | Script | Purpose |
 |--------|---------|
+| `scripts/prep_training_data.py` | Resize + center-crop approved images to 512x512 training corpora |
+| `scripts/crop_candidates.py` | Generate candidate crops + contact sheets from Briony paintings |
 | `scripts/dream_briony.py` | img2img dream transformations (13 images, 5 directions) |
 | `scripts/generate_visuals.py` | Text-to-image generation (DALL-E 3) |
 | `scripts/proof_sheet.py` | Contact sheet generator for review |
@@ -54,6 +62,14 @@ salish-sea-dreaming/
 | `scripts/dream_video.py` | Dream video generation |
 | `scripts/dream_gemini.py` | Gemini-based dream generation |
 | `scripts/image_metadata.py` | Image metadata utilities |
+
+## Tools
+
+| Tool | Purpose |
+|------|---------|
+| `tools/scrape_inaturalist_guide.py` | Scrape iNaturalist guide taxa with provenance tracking |
+| `tools/qc_approve.py` | Batch approve/reject iNat images from QC review reject list |
+| `tools/salish-sea-species.tsv` | 37 curated Salish Sea species for iNat scraping |
 
 Scripts use TouchDesigner's Python API (`op()`, `noiseTOP`, `edgeTOP`, etc.). To test, paste into TouchDesigner's Textport or run via the TouchDesigner MCP.
 
@@ -136,9 +152,18 @@ Use MCP vault tools (`vault_read_note`, `vault_search_notes`) to access these.
 # Web prototype
 cd web && npm install && npm run dev  # http://localhost:3000
 
-# iNaturalist scraper
-python tools/scrape_inaturalist_guide.py --dry-run
-python tools/scrape_inaturalist_guide.py --size medium --output ./images/marine
+# iNaturalist scraper (species list + provenance tracking)
+python tools/scrape_inaturalist_guide.py \
+  --species-list tools/salish-sea-species.tsv \
+  --per-taxon 20 --size large \
+  --output ./images/marine-base-raw --provenance --dry-run
+
+# QC review + approve
+python tools/qc_approve.py --dry-run   # preview
+python tools/qc_approve.py --apply     # writes .bak backup, then updates provenance.csv
+
+# Build training corpora from approved images
+python scripts/prep_training_data.py --resolution 512
 
 # Knowledge graph
 curl http://localhost:8351/health  # check if KOI backend running
@@ -154,3 +179,4 @@ curl http://localhost:8351/health  # check if KOI backend running
 | 2026-03-02 | Docs + tools | One-pager for Raf finalized; iNaturalist scraper built (128 marine taxa); Proton Drive shared with Prav; coordination drafts written; Autolume/GAN + TELUS GPU plan outlined |
 | 2026-03-02 | Repo merge | Consolidated SalishSeaDreaming (Pascal) → salish-sea-dreaming (kebab); scripts/, VisualArt/ (git-lfs), docs migrated |
 | 2026-03-06 | Research + Octo | Deep research prompt + Report II ("The Living Salish Sea") to vault + Octo knowledge garden (salishsee.life); 27 entities ingested; fixed Octo chat widget (model config + timeout); salishsee.life now canonical URL |
+| 2026-03-09 | Training data | Briony crop pipeline + 36-image corpus; iNat scrape (740 images, 37 species); QC review (539 approved, 201 rejected); marine-photo-base built (539 at 512x512); TELUS H200 smoke test (25 kimg, FID 388→341); all artifacts downloaded to models/briony-test-run/ |

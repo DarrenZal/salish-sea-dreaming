@@ -1,0 +1,1 @@
+/Users/darrenzal/projects/IndigenomicsAI/docs/telus/telus-notebook-issues.md

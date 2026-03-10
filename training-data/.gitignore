@@ -5,6 +5,9 @@ marine-photo-base/*.png
 briony-linework/*.jpg
 briony-linework/*.jpeg
 briony-linework/*.png
+david-denning/*.jpg
+david-denning/*.jpeg
+david-denning/*.png
 
 # Review artifacts (scratch files, not needed by team)
 review/candidates/*.jpg

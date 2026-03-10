@@ -14,8 +14,13 @@ Usage:
     # Use a curated species list instead of (or in addition to) a guide
     python scrape_inaturalist_guide.py --species-list species.tsv --per-taxon 20
 
-    # Dry run
-    python scrape_inaturalist_guide.py --dry-run
+    # Species list only (no guide), with provenance tracking
+    python scrape_inaturalist_guide.py --guide 0 --species-list tools/salish-sea-species.tsv \
+        --per-taxon 15 --size large --output ./images/marine-base-raw --provenance
+
+    # Dry run with provenance preview
+    python scrape_inaturalist_guide.py --guide 0 --species-list tools/salish-sea-species.tsv \
+        --per-taxon 15 --size large --output ./images/marine-base-raw --provenance --dry-run
 
 Guide: https://www.inaturalist.org/guides/19640
        Pacific Northwest Marine Life (128 taxa)
@@ -27,6 +32,7 @@ import argparse
 import csv
 import html as html_module
 import json
+import os
 import re
 import time
 from pathlib import Path
@@ -292,6 +298,89 @@ def load_species_list(path: Path) -> list[dict]:
 # Main scrape logic
 # ---------------------------------------------------------------------------
 
+PROVENANCE_COLUMNS = [
+    "filename",
+    "source_file",
+    "source",
+    "url",
+    "license",
+    "photographer_artist",
+    "parent_source_file",
+    "crop_box",
+    "crop_recipe",
+    "approved_for_training",
+]
+
+
+def upsert_provenance(manifest: list[dict], output_dir: Path, dry_run: bool = False):
+    """Upsert iNaturalist scrape results into training-data/provenance.csv.
+
+    Idempotency: upsert by filename. If a row with the same filename already
+    exists, skip it (preserving any existing approved_for_training value).
+    New filenames are appended with approved_for_training=pending.
+    """
+    repo_root = Path(__file__).resolve().parent.parent
+    provenance_path = repo_root / "training-data" / "provenance.csv"
+
+    # Load existing provenance rows keyed by filename
+    existing = {}
+    if provenance_path.exists():
+        with open(provenance_path, newline="", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                existing[row["filename"]] = row
+
+    new_rows = []
+    skipped = 0
+    for m in manifest:
+        obs_id = m.get("observation_id", "")
+        filename = f"marine-photo-base/{m['file']}"
+        source_file = f"images/marine-base-raw/{m['file']}"
+
+        if filename in existing:
+            skipped += 1
+            continue
+
+        url = f"https://www.inaturalist.org/observations/{obs_id}" if obs_id else ""
+
+        row = {
+            "filename": filename,
+            "source_file": source_file,
+            "source": "iNaturalist",
+            "url": url,
+            "license": m.get("license", ""),
+            "photographer_artist": m.get("observer", ""),
+            "parent_source_file": "",
+            "crop_box": "",
+            "crop_recipe": "",
+            "approved_for_training": "pending",
+        }
+        new_rows.append(row)
+
+    if dry_run:
+        print(f"\n--- Provenance dry-run: {len(new_rows)} new rows, {skipped} existing (skipped) ---")
+        for row in new_rows:
+            print(f"  {row['filename']}\t{row['photographer_artist']}\t{row['license']}\t{row['url']}")
+        return
+
+    if not new_rows:
+        print(f"\n  Provenance: no new rows to add ({skipped} already exist)")
+        return
+
+    # Append new rows
+    write_header = not provenance_path.exists()
+    provenance_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(provenance_path, "a", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=PROVENANCE_COLUMNS)
+        if write_header:
+            writer.writeheader()
+        for row in new_rows:
+            writer.writerow(row)
+
+    print(f"\n  Provenance: appended {len(new_rows)} new rows, {skipped} existing (skipped)")
+    print(f"  File: {provenance_path}")
+
+
 def scrape(
     guide_id: int,
     size: str,
@@ -299,11 +388,13 @@ def scrape(
     dry_run: bool = False,
     per_taxon: int = 0,
     species_list_path: Path | None = None,
+    provenance: bool = False,
 ):
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # Collect species from guide and/or species list
-    all_species = []  # list of (common, scientific, img_url_or_None)
+    # Each entry: (common, scientific, img_url_or_None, taxon_id_or_None)
+    all_species = []
 
     if guide_id:
         # Page 1 — also learn total page count
@@ -316,9 +407,10 @@ def scrape(
             time.sleep(0.5)  # be polite
             all_html.append(fetch_guide_page(guide_id, page))
 
-        # Parse all pages
+        # Parse all pages — guide entries have no pre-known taxon_id
         for html in all_html:
-            all_species.extend(parse_species(html))
+            for common, scientific, img_url in parse_species(html):
+                all_species.append((common, scientific, img_url, None))
         print(f"\nFound {len(all_species)} species from guide\n")
 
     # Merge species list if provided
@@ -326,7 +418,7 @@ def scrape(
         extra = load_species_list(species_list_path)
         print(f"  Loaded {len(extra)} species from {species_list_path}")
         for sp in extra:
-            all_species.append((sp["common"], sp["scientific"], None))
+            all_species.append((sp["common"], sp["scientific"], None, sp["taxon_id"]))
 
     if not all_species:
         print("No species found. Check guide ID or species list.")
@@ -336,7 +428,7 @@ def scrape(
     manifest = []
     if not per_taxon:
         # Original behavior: download the single guide image per species
-        for i, (common, scientific, img_url) in enumerate(all_species, 1):
+        for i, (common, scientific, img_url, _tid) in enumerate(all_species, 1):
             if not img_url:
                 print(f"  [{i:3d}/{len(all_species)}] {common or scientific:<35} skip (no guide image)")
                 continue
@@ -367,16 +459,17 @@ def scrape(
         print(f"\n--- Per-taxon mode: up to {per_taxon} photos per species ---\n")
         shortfalls = []
 
-        for i, (common, scientific, _) in enumerate(all_species, 1):
+        for i, (common, scientific, _, known_tid) in enumerate(all_species, 1):
             name = common or scientific
             print(f"  [{i:3d}/{len(all_species)}] {name}")
 
-            # Look up taxon ID
-            lookup_name = scientific or common
-            taxon_id = lookup_taxon_id(lookup_name)
-            if not taxon_id and common and scientific:
-                # Try the other name
-                taxon_id = lookup_taxon_id(common)
+            # Use pre-known taxon ID from species list, or look up via API
+            taxon_id = known_tid
+            if not taxon_id:
+                lookup_name = scientific or common
+                taxon_id = lookup_taxon_id(lookup_name)
+                if not taxon_id and common and scientific:
+                    taxon_id = lookup_taxon_id(common)
 
             if not taxon_id:
                 print(f"    Could not find taxon ID for '{lookup_name}' — skipping")
@@ -409,6 +502,7 @@ def scrape(
                     "file": filename,
                     "observer": photo.get("user_login", ""),
                     "license": photo.get("license", ""),
+                    "observation_id": photo.get("observation_id", ""),
                 })
 
                 if not dry_run and not dest.exists():
@@ -428,17 +522,31 @@ def scrape(
     # Write manifest
     manifest_path = output_dir / "manifest.txt"
     with open(manifest_path, "w") as f:
-        f.write(f"# iNaturalist Guide {guide_id} — {len(manifest)} entries\n")
-        f.write(f"# Image size: {size}\n")
         if per_taxon:
+            f.write(f"# iNaturalist Per-Taxon — {len(manifest)} entries\n")
+            f.write(f"# Image size: {size}\n")
             f.write(f"# Per-taxon: {per_taxon}\n")
-        f.write("\n")
-        for m in manifest:
-            f.write(f"{m['file']}\t{m['common']}\t{m['scientific']}\t{m['url']}\n")
+            f.write(f"# Columns: file, common, scientific, url, observer, license, observation_id\n")
+            f.write("\n")
+            for m in manifest:
+                obs_id = m.get("observation_id", "")
+                observer = m.get("observer", "")
+                lic = m.get("license", "")
+                f.write(f"{m['file']}\t{m['common']}\t{m['scientific']}\t{m['url']}\t{observer}\t{lic}\t{obs_id}\n")
+        else:
+            f.write(f"# iNaturalist Guide {guide_id} — {len(manifest)} entries\n")
+            f.write(f"# Image size: {size}\n")
+            f.write("\n")
+            for m in manifest:
+                f.write(f"{m['file']}\t{m['common']}\t{m['scientific']}\t{m['url']}\n")
 
     print(f"\nManifest written: {manifest_path}")
     print(f"Total entries:    {len(manifest)}")
     print(f"Images saved to:  {output_dir}/")
+
+    # Upsert provenance if requested (only meaningful for per-taxon mode)
+    if provenance and per_taxon:
+        upsert_provenance(manifest, output_dir, dry_run=dry_run)
 
 
 def main():
@@ -453,8 +561,13 @@ Examples:
   # Download 10 research-grade photos per species (large size for training)
   python scrape_inaturalist_guide.py --per-taxon 10 --size large
 
-  # Use a curated species list
-  python scrape_inaturalist_guide.py --species-list salish-sea-species.tsv --per-taxon 20
+  # Use a curated species list with provenance tracking
+  python scrape_inaturalist_guide.py --guide 0 --species-list tools/salish-sea-species.tsv \\
+      --per-taxon 15 --size large --output ./images/marine-base-raw --provenance
+
+  # Dry run with provenance preview (prints rows, doesn't write provenance.csv)
+  python scrape_inaturalist_guide.py --guide 0 --species-list tools/salish-sea-species.tsv \\
+      --per-taxon 15 --size large --output ./images/marine-base-raw --provenance --dry-run
         """,
     )
     parser.add_argument("--guide", type=int, default=19640,
@@ -470,6 +583,8 @@ Examples:
                         help="Download N research-grade photos per species via observations API")
     parser.add_argument("--species-list", type=str, default=None, metavar="FILE",
                         help="Path to curated species list (TSV/CSV with taxon_id, common_name, scientific_name)")
+    parser.add_argument("--provenance", action="store_true",
+                        help="Upsert download metadata into training-data/provenance.csv (per-taxon mode only)")
     args = parser.parse_args()
 
     print(f"iNaturalist Guide Scraper")
@@ -481,6 +596,8 @@ Examples:
         print(f"  Per-taxon: {args.per_taxon}")
     if args.species_list:
         print(f"  Species list: {args.species_list}")
+    if args.provenance:
+        print(f"  Provenance: enabled")
     print()
 
     scrape(
@@ -490,6 +607,7 @@ Examples:
         dry_run=args.dry_run,
         per_taxon=args.per_taxon,
         species_list_path=Path(args.species_list) if args.species_list else None,
+        provenance=args.provenance,
     )
 
 

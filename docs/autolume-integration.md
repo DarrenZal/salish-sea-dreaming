@@ -125,54 +125,142 @@ TD becomes the hub: MIDI controls both TD visuals and Autolume parameters simult
 
 ## Training Dataset Strategy
 
+### Core Insight: One Strong Image Grammar
+
+StyleGAN2-ada doesn't need all-one-species or all-one-composition, but it **does** need visual coherence. At ~500 images, optimize for a shared visual world, not semantic completeness.
+
+Ecological data doesn't tell one GAN what to draw. Instead, data drives:
+- Which model/checkpoint is active (underwater vs. painterly)
+- Where you navigate in latent space (sparse → abundant)
+- How outputs blend in TouchDesigner (layer opacity, compositing)
+
+Multiple models = multiple visual voices. Ecological data = the conductor.
+
+### v1 Strategy: Base + Fine-tune
+
+**For April: one base + one Briony fine-tune is the minimum viable path.**
+
+| Model | Dataset | Size | Training Time (H200) |
+|-------|---------|------|---------------------|
+| `base-underwater-v1.pkl` | `marine-photo-base/` (500+ underwater/nearshore photos) | 512x512 | ~2-4 hrs |
+| `briony-v1.pkl` | Fine-tune on `briony-marine-colour/` (36 images) | 512x512 | ~30-60 min |
+| `david-v1.pkl` | Fine-tune on `david-denning/` (if archive arrives) | 512x512 | ~30-60 min |
+
+Save multiple fine-tune checkpoints at `--snap=10` to get a gradient from photographic → painterly.
+
 ### Current Assets
 
+- `training-data/briony-marine-colour/` — 36 images at 512x512 (committed, ready)
 - `images/marine/` — 128 species × 500px JPEGs from iNaturalist Guide 19640
-- Ecologically relevant species already present: Herring, Chinook Salmon, Pink Salmon, Sockeye Salmon, Orca (check manifest)
+- Curated species list: `tools/salish-sea-species.tsv` (~38 underwater/nearshore taxa)
 
-### StyleGAN2-ada and Small Datasets
+### v1 Base Model Scope: Underwater/Nearshore
 
-StyleGAN2-ada was specifically designed for limited training data. Results are viable with as few as a few hundred images, though 1,000+ images produce better generalization. The "ada" (Adaptive Discriminator Augmentation) makes small-data training tractable.
+Fish (single and schools), kelp, eelgrass, octopus, invertebrates, close underwater scenes — these share lighting, color palette, and spatial grammar.
 
-### Recommended Approach: Five Threads Models
+**NOT in v1 base:** Boats, seabirds on open water, horizon-heavy ocean scenes, aerial coastlines, harbor infrastructure. These are visually different domains → separate models in v2.
 
-Train separate models per ecological thread — each model becomes a distinct visual "voice" in the installation:
-
-| Thread | Species to include | Semantic feel |
-|--------|-------------------|---------------|
-| **Herring** | Herring, Anchovy, Sardine, small schooling fish | Silver schools, density, the foundation |
-| **Salmon** | Chinook, Sockeye, Pink, Coho | Orange-red, river-bound, return |
-| **Orca** | Orca, Dall's Porpoise, Pacific White-sided Dolphin | Black and white, apex, grief |
-| **Kelp forest** | Sea stars, anemones, rockfish, urchin | Green-gold, vertical, stillness |
-| **Deep / open water** | Cephalopods, deep sea fish, bioluminescent | Darkness, light-point, alien |
-
-Latent interpolation between models = ecological cascade (herring → salmon → orca).
-
-### Expanding the Dataset
-
-The iNaturalist scraper can pull more images. Run at `large` size (1024px) for StyleGAN training:
+### Building the Base Dataset
 
 ```bash
-python tools/scrape_inaturalist_guide.py --size large --output ./images/marine-1024
+# Scrape ~570 research-grade photos with provenance tracking
+python tools/scrape_inaturalist_guide.py \
+  --species-list tools/salish-sea-species.tsv \
+  --per-taxon 15 --size large \
+  --output ./images/marine-base-raw \
+  --provenance
+
+# After QC review, process approved images
+python scripts/prep_training_data.py --resolution 512
 ```
 
-For salmon specifically, DFO and NOAA have image databases. iNaturalist has Pacific salmon guides with hundreds of observations.
+Target: ~38 taxa × 15 = ~570 raw. After QC → 400-500 usable. If below 500, increase `--per-taxon` to 20.
 
-**Target per thread:** 200–500 images at 512px for initial training. 1024px if using H200 for training.
+### Future Models (v2+)
+
+| Visual Domain | Description |
+|--------------|-------------|
+| `surface-horizon` | Whales breaching, seabirds on water, ocean surface |
+| `boats-vessels` | Fishing boats, ferries, canoes (Prav's request) |
+| `aerial-coastal` | Coastline, estuaries, spawn events from above |
+| `forage-school` | Dedicated herring/anchovy schooling model (artistically powerful) |
 
 ---
 
 ## TELUS GPU Deployment
 
-### Training (most valuable TELUS use)
+### TELUS H200 Notebook Bootstrap
 
-Autolume training is a standard Python process. To run on TELUS:
-1. Package as a Docker/Singularity container (TELUS supports both)
-2. Submit training job through Carol Anne's TELUS Sovereign AI Factory access
-3. StyleGAN2-ada training at 512px resolution: ~2–4 hours on H200 (vs. ~1–3 days on RTX 4090)
-4. Output: `.pkl` checkpoint file → bring back locally for inference
+Console: `https://console.ai.telus.com` → Developer Hub → Notebooks → "Jupyter Notebook - 1 H200 GPU"
+Account: `zaldarren@gmail.com` (Org Admin). Deploy takes ~90 sec.
 
-### Inference (probably keep local for live performance)
+```bash
+# 1. Install dependencies
+pip install torch==2.5.1 torchvision --index-url https://download.pytorch.org/whl/cu124
+pip install ninja imageio-ffmpeg==0.4.9 psutil scipy click requests tqdm pyspng
+
+# 2. Clone StyleGAN3 codebase (trains both SG2 and SG3 configs)
+git clone https://github.com/NVlabs/stylegan3.git
+cd stylegan3
+
+# 3. Upload training data zip via JupyterLab file browser
+#    Local: zip -j briony-marine-colour.zip training-data/briony-marine-colour/*.png
+unzip briony-marine-colour.zip -d ./data/briony/
+
+# 4. Prepare dataset (creates ZIP with metadata for StyleGAN)
+python dataset_tool.py --source=./data/briony/ --dest=./data/briony512.zip --resolution=512x512
+
+# 5. Verify
+python dataset_tool.py --source=./data/briony512.zip
+
+# 6. Train (smoke test: 200 kimg, ~36 images — will be bad but proves pipeline)
+python train.py --outdir=./results \
+  --cfg=stylegan2 \
+  --data=./data/briony512.zip \
+  --gpus=1 --batch=16 --gamma=6.6 \
+  --kimg=200 --snap=25
+
+# 7. Full base training (500+ images)
+python train.py --outdir=./results \
+  --cfg=stylegan2 \
+  --data=./data/marine-base512.zip \
+  --gpus=1 --batch=32 --gamma=6.6 \
+  --kimg=2000 --snap=50
+
+# 8. Fine-tune Briony on top of base
+python train.py --outdir=./results \
+  --cfg=stylegan2 \
+  --data=./data/briony512.zip \
+  --gpus=1 --batch=16 --gamma=6.6 \
+  --kimg=200 --snap=10 \
+  --resume=./results/BASE_CHECKPOINT.pkl
+```
+
+**TELUS-specific notes:**
+- Storage is **ephemeral** — download `.pkl` checkpoints immediately. A K8s restart wipes everything.
+- Keep notebook session open during training (no background jobs on POC).
+- One GPU workload at a time.
+- GPU: H200, 141 GB HBM3e, CUDA 13.0, Python 3.11.6, ~7.8 TB disk.
+- Full reference: `IndigenomicsAI/docs/telus/gpu-access.md`
+
+**Fallback:** If TELUS has CUDA version issues, use RunPod A100 ($2/hr) or Arshia's Compute Canada 4x H100.
+
+### Completed Training Runs
+
+**Briony test run (2026-03-09):** 25 kimg on 36 Briony watercolor crops, StyleGAN2 config, 1× H200 GPU.
+- Checkpoints saved locally in `models/briony-test-run/` (not committed — PKLs are ~347 MB each)
+- Snapshots: `network-snapshot-000000.pkl`, `000020.pkl`, `000025.pkl`
+- FID50k: 388.05 → 340.77 (improving but needs more kimg or base+fine-tune approach)
+- Fakes grids and training logs included
+- **To share:** Send PKLs via file transfer (Google Drive, rsync, etc.)
+
+### Training workflow
+
+1. **Base model:** Train on `marine-photo-base/` (539 approved) → `base-underwater-v1.pkl` (2-4 hrs on H200)
+2. **Fine-tune Briony:** Resume from base, train on `briony-marine-colour/` (36 images) → `briony-v1.pkl` (30-60 min, save multiple checkpoints for photographic→painterly gradient)
+3. **Fine-tune David:** If his archive arrives → `david-v1.pkl`
+
+### Inference (keep local for live performance)
 
 For real-time performance, **local inference is preferable**. Network round-trips to TELUS would introduce latency. The workflow:
 - Train on TELUS → export checkpoint

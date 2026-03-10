@@ -568,6 +568,16 @@ def main():
         help="Promote approved crops (keep=yes) from keep.csv to training dir + provenance.csv",
     )
     parser.add_argument(
+        "--contact-sheet-dir",
+        metavar="DIR",
+        help="Build contact sheets from all images in DIR (grouped by filename prefix)",
+    )
+    parser.add_argument(
+        "--group-by-prefix",
+        action="store_true",
+        help="With --contact-sheet-dir, group images by species prefix (text before last _)",
+    )
+    parser.add_argument(
         "--columns",
         type=int,
         default=3,
@@ -586,11 +596,54 @@ def main():
         promote()
         return
 
-    # Mode: contact-sheet
+    # Mode: contact-sheet (from candidates/keep.csv)
     if args.contact_sheet is not None:
         output_dir = args.contact_sheet if args.contact_sheet != CONTACT_DIR else None
         sheets = build_contact_sheets_from_candidates(output_dir=output_dir)
         print(f"\n  Generated {len(sheets)} contact sheet(s)")
+        return
+
+    # Mode: contact-sheet-dir (from arbitrary image directory)
+    if args.contact_sheet_dir is not None:
+        src_dir = args.contact_sheet_dir
+        if not os.path.isdir(src_dir):
+            print(f"  ERROR: directory not found: {src_dir}")
+            sys.exit(1)
+
+        # Collect all images
+        image_exts = {".jpg", ".jpeg", ".png", ".webp", ".tiff", ".bmp"}
+        all_images = sorted(
+            f for f in os.listdir(src_dir)
+            if os.path.splitext(f)[1].lower() in image_exts
+        )
+        if not all_images:
+            print(f"  No images found in {src_dir}")
+            return
+
+        # Group by prefix if requested
+        if args.group_by_prefix:
+            groups = {}
+            for fname in all_images:
+                # Split on the LAST underscore so "Pacific_Herring_123.jpg"
+                # groups under "Pacific_Herring", not "Pacific"
+                base = os.path.splitext(fname)[0]
+                prefix = base.rsplit("_", 1)[0] if "_" in base else "all"
+                groups.setdefault(prefix, []).append(fname)
+        else:
+            groups = {"all": all_images}
+
+        sheets = []
+        for group_name, files in sorted(groups.items()):
+            title = f"{os.path.basename(src_dir)} — {group_name} ({len(files)})"
+            entries = [
+                (fname, os.path.join(src_dir, fname))
+                for fname in files
+            ]
+            path = render_contact_sheet(title, entries, output_dir=CONTACT_DIR, columns=args.columns)
+            if path:
+                sheets.append(path)
+
+        print(f"\n  Generated {len(sheets)} contact sheet(s) from {len(all_images)} images")
         return
 
     # Mode: generate crops
