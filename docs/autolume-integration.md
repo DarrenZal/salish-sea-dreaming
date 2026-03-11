@@ -143,14 +143,14 @@ Multiple models = multiple visual voices. Ecological data = the conductor.
 | Model | Dataset | Size | Training Time (H200) |
 |-------|---------|------|---------------------|
 | `base-underwater-v1.pkl` | `marine-photo-base/` (500+ underwater/nearshore photos) | 512x512 | ~2-4 hrs |
-| `briony-v1.pkl` | Fine-tune on `briony-marine-colour/` (36 images) | 512x512 | ~30-60 min |
+| `briony-v1.pkl` | Fine-tune on `briony-marine-colour/` (59 images) | 512x512 | ~30-60 min |
 | `david-v1.pkl` | Fine-tune on `david-denning/` (if archive arrives) | 512x512 | ~30-60 min |
 
 Save multiple fine-tune checkpoints at `--snap=10` to get a gradient from photographic → painterly.
 
 ### Current Assets
 
-- `training-data/briony-marine-colour/` — 36 images at 512x512 (committed, ready)
+- `training-data/briony-marine-colour/` — 59 images at 512x512 (committed, ready)
 - `images/marine/` — 128 species × 500px JPEGs from iNaturalist Guide 19640
 - Curated species list: `tools/salish-sea-species.tsv` (~38 underwater/nearshore taxa)
 
@@ -247,17 +247,17 @@ python train.py --outdir=./results \
 
 ### Completed Training Runs
 
-**Briony test run (2026-03-09):** 25 kimg on 36 Briony watercolor crops, StyleGAN2 config, 1× H200 GPU.
+**Briony test run (2026-03-09):** 25 kimg on 36 Briony watercolor crops (since expanded to 59), StyleGAN2 config, 1× H200 GPU.
 - Checkpoints saved locally in `models/briony-test-run/` (not committed — PKLs are ~347 MB each)
 - Snapshots: `network-snapshot-000000.pkl`, `000020.pkl`, `000025.pkl`
-- FID50k: 388.05 → 340.77 (improving but needs more kimg or base+fine-tune approach)
+- FID50k: 474.64 → 556.03 → 502.85 (worsened then partial recovery — expected with 36 images, needs base+fine-tune; ran in pure-Python fallback due to missing C/C++ compiler on TELUS)
 - Fakes grids and training logs included
 - **To share:** Send PKLs via file transfer (Google Drive, rsync, etc.)
 
 ### Training workflow
 
 1. **Base model:** Train on `marine-photo-base/` (539 approved) → `base-underwater-v1.pkl` (2-4 hrs on H200)
-2. **Fine-tune Briony:** Resume from base, train on `briony-marine-colour/` (36 images) → `briony-v1.pkl` (30-60 min, save multiple checkpoints for photographic→painterly gradient)
+2. **Fine-tune Briony:** Resume from base, train on `briony-marine-colour/` (59 images) → `briony-v1.pkl` (30-60 min, save multiple checkpoints for photographic→painterly gradient)
 3. **Fine-tune David:** If his archive arrives → `david-v1.pkl`
 
 ### Inference (keep local for live performance)

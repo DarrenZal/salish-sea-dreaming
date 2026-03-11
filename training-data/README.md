@@ -26,9 +26,9 @@ Training datasets for The Salish Sea Dreaming installation's generative visual s
 **QC tools:** `tools/qc_approve.py` (batch approve/reject from reject list), reject list at `review/rejects.csv`, contact sheets at `review/contact-sheets/marine-base/`.
 
 ### `briony-marine-colour/`
-36 marine watercolor images at 512x512, curated from Briony Penn's archive. This is what the available source material supports — Arshia (MetaCreation Lab) confirmed 36 is sufficient for fine-tuning.
+59 ecological watercolor images at 512x512, curated from Briony Penn's archive. Expanded from the initial 36-image marine-only corpus to include all ecological watercolors (salmon-forest cycles, camas meadows, landscapes). Pipeline fix: crop_box coordinates are now correctly applied during prep.
 
-**Includes:** Marine paintings (panoramas, ecosystem cross-sections, octopus, basking shark, kelp forest), Central Coast illustrations (estuary, inshore, offshore scenes), compositional crops (horizontal thirds, panorama zones, center crops).
+**Includes:** Marine paintings (panoramas, ecosystem cross-sections, octopus, basking shark, kelp forest), Central Coast illustrations (estuary, inshore, offshore scenes), terrestrial ecological scenes (salmon-forest, camas, landscapes), compositional crops (horizontal thirds, panorama zones, center crops).
 
 **Excludes:** Pen-and-ink (separate corpus), illustrated maps (text-heavy), signage/murals, text-heavy mandalas, images dominated by labels.
 
@@ -69,7 +69,7 @@ Reserved for future pen-and-ink corpus. Not mixed into the colour model.
 - StyleGAN2 configuration required for AutoLoom compatibility
 - Train with StyleGAN3 codebase, StyleGAN2 config
 - Minimum 500 distinct images for base training — we have 539
-- Fine-tuning on 36 Briony images (demonstrated with 50 clown faces, 36 should work)
+- Fine-tuning on 59 Briony images (demonstrated with 50 clown faces, 59 is well above minimum)
 - Save multiple fine-tune checkpoints (`--snap=10`) → gradient from photographic to painterly
 - TELUS H200 GPUs for training; local RTX for inference
 
@@ -79,18 +79,19 @@ Validated full pipeline on 36 Briony images: `dataset_tool.py` → `train.py` �
 
 ```
 Config: stylegan2, 512x512, 1× H200, batch=16, gamma=6.6, 25 kimg
-FID50k: 388.05 (0 kimg) → 340.77 (25 kimg)
-Time: ~18 min total
+FID50k: 474.64 (0 kimg) → 556.03 (20 kimg) → 502.85 (25 kimg)
+Time: ~3h 09m total (pure-Python fallback — no C/C++ compiler on TELUS notebook,
+      so custom CUDA extensions couldn't compile; 10-20x slower than expected)
 ```
 
-As expected, FID is high with only 36 images — the model needs the base+fine-tune approach. But the pipeline works: checkpoints load, fakes grids show recognizable marine forms. PKL checkpoints saved locally in `models/briony-test-run/` (not committed — ~347 MB each, available on request).
+FID worsened then partially recovered — expected with only 36 images and no base model foundation. The pipeline works: checkpoints load, fakes grids show recognizable marine forms. The base+fine-tune approach should yield much better FID. PKL checkpoints saved locally in `models/briony-test-run/` (not committed — ~347 MB each, available on request).
 
 ## Verification Checklist
 
 - [x] Parser fix validated: spot-check 10 species common/scientific alignment
 - [x] Visual QC: all 37 species contact sheets reviewed, 201 rejects documented with reasons
 - [x] No single Briony source contributes >6 crops
-- [x] `briony-marine-colour/`: 36 clean images, all marine/ecological
+- [x] `briony-marine-colour/`: 59 clean images, all ecological watercolors
 - [x] `marine-photo-base/`: 539 images, QC-reviewed from 740 candidates
 - [x] `provenance.csv` complete for every training image (776 rows total)
 - [x] Pilot 512px training validates quality (TELUS smoke test)

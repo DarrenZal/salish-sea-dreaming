@@ -23,6 +23,7 @@ Usage:
 
 import argparse
 import csv
+import json
 import os
 import sys
 from pathlib import Path
@@ -81,6 +82,24 @@ def apply_exif_orientation(img):
     return img
 
 
+def apply_crop_box(img, crop_box_str):
+    """Apply a crop box from provenance before center-crop-resize.
+
+    crop_box_str is a JSON array string like "[0,0,2500,1064]"
+    representing [left, top, right, bottom] in PIL coordinates.
+    Returns the cropped image, or the original if no valid crop_box.
+    """
+    if not crop_box_str or not crop_box_str.strip():
+        return img
+    try:
+        box = json.loads(crop_box_str)
+        if len(box) == 4:
+            return img.crop(tuple(box))
+    except (json.JSONDecodeError, TypeError, ValueError):
+        pass
+    return img
+
+
 def center_crop_resize(img, target_size):
     """Resize with aspect-preserving center-crop to a square.
 
@@ -112,7 +131,11 @@ def validate_provenance(approved_rows):
     if not os.path.isdir(TRAINING_DIR):
         return orphans
 
-    for dirpath, _dirnames, filenames in os.walk(TRAINING_DIR):
+    # Directories to skip during orphan check (QC artifacts, not training data)
+    skip_dirs = {"review"}
+
+    for dirpath, dirnames, filenames in os.walk(TRAINING_DIR):
+        dirnames[:] = [d for d in dirnames if d not in skip_dirs]
         for fname in filenames:
             full = os.path.join(dirpath, fname)
             rel = os.path.relpath(full, TRAINING_DIR)
@@ -163,6 +186,8 @@ def process(args):
             img = Image.open(src_path)
             img = apply_exif_orientation(img)
             img = img.convert("RGB")
+            crop_box = row.get("crop_box", "").strip()
+            img = apply_crop_box(img, crop_box)
             img = center_crop_resize(img, args.resolution)
             img.save(dst_path, quality=95)
             processed += 1

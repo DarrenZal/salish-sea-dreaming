@@ -1,4 +1,9 @@
 candidate_file,source_file,crop_recipe,crop_box,keep
+Apple+wheel+copy__center-crop__center-60pct.png,VisualArt/Brionny/Watercolour-Mandalas/Salt-Spring-Orchard-Mandala/Apple+wheel+copy.png,center-crop-center-60pct,"[402,400,1612,1600]",yes
+Apple+wheel+copy__quadrants__NE.png,VisualArt/Brionny/Watercolour-Mandalas/Salt-Spring-Orchard-Mandala/Apple+wheel+copy.png,quadrants-NE,"[1007,0,2014,1000]",yes
+Apple+wheel+copy__quadrants__NW.png,VisualArt/Brionny/Watercolour-Mandalas/Salt-Spring-Orchard-Mandala/Apple+wheel+copy.png,quadrants-NW,"[0,0,1007,1000]",yes
+Apple+wheel+copy__quadrants__SE.png,VisualArt/Brionny/Watercolour-Mandalas/Salt-Spring-Orchard-Mandala/Apple+wheel+copy.png,quadrants-SE,"[1007,1000,2014,2000]",yes
+Apple+wheel+copy__quadrants__SW.png,VisualArt/Brionny/Watercolour-Mandalas/Salt-Spring-Orchard-Mandala/Apple+wheel+copy.png,quadrants-SW,"[0,1000,1007,2000]",yes
 Central+Coast+Inshore+scene_BrionyPenn__horizontal-thirds__bottom.png,VisualArt/Brionny/Illustrations/Central-Coast-Inshore-Scene/Central+Coast+Inshore+scene_BrionyPenn.jpg,horizontal-thirds-bottom,"[0,2128,2500,3194]",yes
 Central+Coast+Inshore+scene_BrionyPenn__horizontal-thirds__middle.png,VisualArt/Brionny/Illustrations/Central-Coast-Inshore-Scene/Central+Coast+Inshore+scene_BrionyPenn.jpg,horizontal-thirds-middle,"[0,1064,2500,2128]",yes
 Central+Coast+Inshore+scene_BrionyPenn__horizontal-thirds__top.png,VisualArt/Brionny/Illustrations/Central-Coast-Inshore-Scene/Central+Coast+Inshore+scene_BrionyPenn.jpg,horizontal-thirds-top,"[0,0,2500,1064]",yes
@@ -22,4 +27,22 @@ IMG_1477__horizontal-thirds__top.png,VisualArt/Brionny/Paintings/Kelp-Forest-Eco
 IMG_1478__horizontal-thirds__bottom.png,VisualArt/Brionny/Paintings/Salmon-Forest-Cycle/IMG_1478.jpg,horizontal-thirds-bottom,"[0,1066,1200,1600]",yes
 IMG_1478__horizontal-thirds__middle.png,VisualArt/Brionny/Paintings/Salmon-Forest-Cycle/IMG_1478.jpg,horizontal-thirds-middle,"[0,533,1200,1066]",yes
 IMG_1478__horizontal-thirds__top.png,VisualArt/Brionny/Paintings/Salmon-Forest-Cycle/IMG_1478.jpg,horizontal-thirds-top,"[0,0,1200,533]",yes
+IMG_1479__vertical-halves__left.png,VisualArt/Brionny/Paintings/Tree-Root-Systems/IMG_1479.jpg,vertical-halves-left,"[0,0,600,1600]",yes
+IMG_1479__vertical-halves__right.png,VisualArt/Brionny/Paintings/Tree-Root-Systems/IMG_1479.jpg,vertical-halves-right,"[600,0,1200,1600]",yes
+Image+2__horizontal-halves__bottom.png,VisualArt/Brionny/Field-Journals/Field-Journal-Page-2/Image+2.png,horizontal-halves-bottom,"[0,500,1982,1001]",yes
+Image+2__horizontal-halves__top.png,VisualArt/Brionny/Field-Journals/Field-Journal-Page-2/Image+2.png,horizontal-halves-top,"[0,0,1982,500]",yes
+Tsawoutwheelsmall+copy__center-crop__center-60pct.png,VisualArt/Brionny/Watercolour-Mandalas/Tsawout-13-Moon-Mandala/Tsawoutwheelsmall+copy.png,center-crop-center-60pct,"[333,333,1335,1334]",yes
+Tsawoutwheelsmall+copy__quadrants__NE.png,VisualArt/Brionny/Watercolour-Mandalas/Tsawout-13-Moon-Mandala/Tsawoutwheelsmall+copy.png,quadrants-NE,"[834,0,1668,833]",yes
+Tsawoutwheelsmall+copy__quadrants__NW.png,VisualArt/Brionny/Watercolour-Mandalas/Tsawout-13-Moon-Mandala/Tsawoutwheelsmall+copy.png,quadrants-NW,"[0,0,834,833]",yes
+Tsawoutwheelsmall+copy__quadrants__SE.png,VisualArt/Brionny/Watercolour-Mandalas/Tsawout-13-Moon-Mandala/Tsawoutwheelsmall+copy.png,quadrants-SE,"[834,833,1668,1667]",yes
+Tsawoutwheelsmall+copy__quadrants__SW.png,VisualArt/Brionny/Watercolour-Mandalas/Tsawout-13-Moon-Mandala/Tsawoutwheelsmall+copy.png,quadrants-SW,"[0,833,834,1667]",yes
+Uplands+Wheel+smalljpeg+copy__center-crop__center-60pct.png,VisualArt/Brionny/Watercolour-Mandalas/Garry-Oak-Mandala/Uplands+Wheel+smalljpeg+copy.png,center-crop-center-60pct,"[400,400,1600,1601]",yes
+Uplands+Wheel+smalljpeg+copy__quadrants__NE.png,VisualArt/Brionny/Watercolour-Mandalas/Garry-Oak-Mandala/Uplands+Wheel+smalljpeg+copy.png,quadrants-NE,"[1000,0,2000,1000]",yes
+Uplands+Wheel+smalljpeg+copy__quadrants__NW.png,VisualArt/Brionny/Watercolour-Mandalas/Garry-Oak-Mandala/Uplands+Wheel+smalljpeg+copy.png,quadrants-NW,"[0,0,1000,1000]",yes
+Uplands+Wheel+smalljpeg+copy__quadrants__SE.png,VisualArt/Brionny/Watercolour-Mandalas/Garry-Oak-Mandala/Uplands+Wheel+smalljpeg+copy.png,quadrants-SE,"[1000,1000,2000,2001]",yes
+Uplands+Wheel+smalljpeg+copy__quadrants__SW.png,VisualArt/Brionny/Watercolour-Mandalas/Garry-Oak-Mandala/Uplands+Wheel+smalljpeg+copy.png,quadrants-SW,"[0,1000,1000,2001]",yes
+image-asset__center-crop__center-60pct.png,VisualArt/Brionny/Field-Journals/Field-Journal-Spread/image-asset.png,center-crop-center-60pct,"[285,200,1141,801]",yes
 signal-2026-02-08-070332__center-crop__center-60pct.png,VisualArt/Brionny/Paintings/Basking shark/signal-2026-02-08-070332.jpeg,center-crop-center-60pct,"[409,307,1639,1229]",yes
+surfbird+copy+3__center-crop__center-60pct.png,VisualArt/Brionny/Field-Journals/Surfbird/surfbird+copy+3.png,center-crop-center-60pct,"[203,200,814,800]",yes
+varied+thrush+and+berries+copy__center-crop__center-60pct.png,VisualArt/Brionny/Field-Journals/Varied-Thrush-and-Berries/varied+thrush+and+berries+copy.png,center-crop-center-60pct,"[219,200,880,800]",yes
+wintermedicinewheelwebversion+copy__center-crop__center-60pct.png,VisualArt/Brionny/Watercolour-Mandalas/Winter-Season-Mandala/wintermedicinewheelwebversion+copy.png,center-crop-center-60pct,"[208,200,833,801]",yes
