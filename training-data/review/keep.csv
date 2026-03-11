@@ -1,9 +1,9 @@
 candidate_file,source_file,crop_recipe,crop_box,keep
-Apple+wheel+copy__center-crop__center-60pct.png,VisualArt/Brionny/Watercolour-Mandalas/Salt-Spring-Orchard-Mandala/Apple+wheel+copy.png,center-crop-center-60pct,"[402,400,1612,1600]",yes
-Apple+wheel+copy__quadrants__NE.png,VisualArt/Brionny/Watercolour-Mandalas/Salt-Spring-Orchard-Mandala/Apple+wheel+copy.png,quadrants-NE,"[1007,0,2014,1000]",yes
-Apple+wheel+copy__quadrants__NW.png,VisualArt/Brionny/Watercolour-Mandalas/Salt-Spring-Orchard-Mandala/Apple+wheel+copy.png,quadrants-NW,"[0,0,1007,1000]",yes
-Apple+wheel+copy__quadrants__SE.png,VisualArt/Brionny/Watercolour-Mandalas/Salt-Spring-Orchard-Mandala/Apple+wheel+copy.png,quadrants-SE,"[1007,1000,2014,2000]",yes
-Apple+wheel+copy__quadrants__SW.png,VisualArt/Brionny/Watercolour-Mandalas/Salt-Spring-Orchard-Mandala/Apple+wheel+copy.png,quadrants-SW,"[0,1000,1007,2000]",yes
+Apple+wheel+copy__center-crop__center-60pct.png,VisualArt/Brionny/Watercolour-Mandalas/Salt-Spring-Orchard-Mandala/Apple+wheel+copy.png,center-crop-center-60pct,"[402,400,1612,1600]",no
+Apple+wheel+copy__quadrants__NE.png,VisualArt/Brionny/Watercolour-Mandalas/Salt-Spring-Orchard-Mandala/Apple+wheel+copy.png,quadrants-NE,"[1007,0,2014,1000]",no
+Apple+wheel+copy__quadrants__NW.png,VisualArt/Brionny/Watercolour-Mandalas/Salt-Spring-Orchard-Mandala/Apple+wheel+copy.png,quadrants-NW,"[0,0,1007,1000]",no
+Apple+wheel+copy__quadrants__SE.png,VisualArt/Brionny/Watercolour-Mandalas/Salt-Spring-Orchard-Mandala/Apple+wheel+copy.png,quadrants-SE,"[1007,1000,2014,2000]",no
+Apple+wheel+copy__quadrants__SW.png,VisualArt/Brionny/Watercolour-Mandalas/Salt-Spring-Orchard-Mandala/Apple+wheel+copy.png,quadrants-SW,"[0,1000,1007,2000]",no
 Central+Coast+Inshore+scene_BrionyPenn__horizontal-thirds__bottom.png,VisualArt/Brionny/Illustrations/Central-Coast-Inshore-Scene/Central+Coast+Inshore+scene_BrionyPenn.jpg,horizontal-thirds-bottom,"[0,2128,2500,3194]",yes
 Central+Coast+Inshore+scene_BrionyPenn__horizontal-thirds__middle.png,VisualArt/Brionny/Illustrations/Central-Coast-Inshore-Scene/Central+Coast+Inshore+scene_BrionyPenn.jpg,horizontal-thirds-middle,"[0,1064,2500,2128]",yes
 Central+Coast+Inshore+scene_BrionyPenn__horizontal-thirds__top.png,VisualArt/Brionny/Illustrations/Central-Coast-Inshore-Scene/Central+Coast+Inshore+scene_BrionyPenn.jpg,horizontal-thirds-top,"[0,0,2500,1064]",yes

@@ -26,7 +26,7 @@ Training datasets for The Salish Sea Dreaming installation's generative visual s
 **QC tools:** `tools/qc_approve.py` (batch approve/reject from reject list), reject list at `review/rejects.csv`, contact sheets at `review/contact-sheets/marine-base/`.
 
 ### `briony-marine-colour/`
-59 ecological watercolor images at 512x512, curated from Briony Penn's archive. Expanded from the initial 36-image marine-only corpus to include all ecological watercolors (salmon-forest cycles, camas meadows, landscapes). Pipeline fix: crop_box coordinates are now correctly applied during prep.
+54 ecological watercolor images at 512x512, curated from Briony Penn's archive. Expanded from the initial 36-image marine-only corpus to include all ecological watercolors (salmon-forest cycles, camas meadows, landscapes). Pipeline fix: crop_box coordinates are now correctly applied during prep.
 
 **Includes:** Marine paintings (panoramas, ecosystem cross-sections, octopus, basking shark, kelp forest), Central Coast illustrations (estuary, inshore, offshore scenes), terrestrial ecological scenes (salmon-forest, camas, landscapes), compositional crops (horizontal thirds, panorama zones, center crops).
 
@@ -69,7 +69,7 @@ Reserved for future pen-and-ink corpus. Not mixed into the colour model.
 - StyleGAN2 configuration required for AutoLoom compatibility
 - Train with StyleGAN3 codebase, StyleGAN2 config
 - Minimum 500 distinct images for base training — we have 539
-- Fine-tuning on 59 Briony images (demonstrated with 50 clown faces, 59 is well above minimum)
+- Fine-tuning on 54 Briony images (demonstrated with 50 clown faces, 54 is well above minimum)
 - Save multiple fine-tune checkpoints (`--snap=10`) → gradient from photographic to painterly
 - TELUS H200 GPUs for training; local RTX for inference
 
@@ -91,7 +91,7 @@ FID worsened then partially recovered — expected with only 36 images and no ba
 - [x] Parser fix validated: spot-check 10 species common/scientific alignment
 - [x] Visual QC: all 37 species contact sheets reviewed, 201 rejects documented with reasons
 - [x] No single Briony source contributes >6 crops
-- [x] `briony-marine-colour/`: 59 clean images, all ecological watercolors
+- [x] `briony-marine-colour/`: 54 clean images, all ecological watercolors
 - [x] `marine-photo-base/`: 539 images, QC-reviewed from 740 candidates
 - [x] `provenance.csv` complete for every training image (776 rows total)
 - [x] Pilot 512px training validates quality (TELUS smoke test)

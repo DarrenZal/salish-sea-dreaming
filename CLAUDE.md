@@ -12,7 +12,7 @@ Interactive AI art installation exploring the Salish Sea ecosystem. The vision: 
 **Status:** Both training corpora built. Ready for base model training on TELUS H200.
 
 **What's Done:**
-- Briony fine-tune corpus: 59 images at 512x512 (expanded from marine-only to all ecological watercolors), provenance tracked, committed
+- Briony fine-tune corpus: 54 images at 512x512 (expanded from marine-only to all ecological watercolors), provenance tracked, committed
 - Pipeline fix: crop_box now correctly applied in prep_training_data.py (was being ignored)
 - Marine photo base corpus: 539 images at 512x512 (scraped 740, QC'd down to 539)
 - TELUS H200 smoke test: pipeline validated (25 kimg on Briony, FID 474.6→502.8), PKLs in `models/briony-test-run/`
@@ -59,7 +59,7 @@ salish-sea-dreaming/
 ├── images/marine/        # 128 iNaturalist taxa (Guide 19640, 500px)
 ├── images/marine-base-raw/  # 740 raw 1024px iNat photos (gitignored)
 ├── training-data/        # Training corpora + provenance tracking
-│   ├── briony-marine-colour/ # 59 Briony watercolors at 512x512
+│   ├── briony-marine-colour/ # 54 Briony watercolors at 512x512
 │   ├── marine-photo-base/    # 539 QC'd marine photos at 512x512
 │   └── review/               # QC contact sheets + rejects.csv
 ├── models/               # Trained checkpoints (gitignored, ~347 MB each)
@@ -199,4 +199,4 @@ curl http://localhost:8351/health  # check if KOI backend running
 | 2026-03-02 | Repo merge | Consolidated SalishSeaDreaming (Pascal) → salish-sea-dreaming (kebab); scripts/, VisualArt/ (git-lfs), docs migrated |
 | 2026-03-06 | Research + Octo | Deep research prompt + Report II ("The Living Salish Sea") to vault + Octo knowledge garden (salishsee.life); 27 entities ingested; fixed Octo chat widget (model config + timeout); salishsee.life now canonical URL |
 | 2026-03-09 | Training data (`364134a6`) | Briony crop pipeline + 36-image corpus; iNat scrape (740, 37 species); QC review (539 approved, 201 rejected); marine-photo-base built (539 at 512x512); TELUS smoke test (FID 474.6→502.8 — expected with only 36 images, pure-Python fallback); artifacts downloaded; docs updated; committed `aef147c` |
-| 2026-03-11 | Briony corpus expansion | Expanded Briony corpus from 36 to 59 images — broadened scope from marine-only to all ecological watercolors (salmon-forest, camas, landscapes); fixed crop_box bug in prep_training_data.py (crop coordinates were being ignored) |
+| 2026-03-11 | Briony corpus expansion | Expanded Briony corpus from 36 to 54 images — broadened scope from marine-only to all ecological watercolors (salmon-forest, camas, landscapes); fixed crop_box bug in prep_training_data.py (crop coordinates were being ignored) |
