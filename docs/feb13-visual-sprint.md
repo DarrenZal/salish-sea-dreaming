@@ -40,7 +40,7 @@ Location: `/Users/darrenzal/signal-chats-salish-sea/M37SalishSeaDreaming/media/`
 ### Other Visual Assets
 - **Moonfish Media** (David Denning & Deidre): Underwater herring footage - https://www.moonfishmedia.ca/
 - **David Denning**: Marine photography, 17 years on Salt Spring
-- **Shared Google Drive**: https://drive.google.com/drive/folders/1eWuiMKqALHh8SWBjMRRCMu5wrGoK8oEO
+- **Shared Google Drive**: https://drive.google.com/drive/folders/1UvJ6G65FbSRngtCy0hMFpUwqhadfywFr
 - **Mind Map**: https://coggle.it/diagram/aW01lIKXUtVgH4cW/t/wen%2Cn%C3%A1%2Cnec
 
 ### Existing Code

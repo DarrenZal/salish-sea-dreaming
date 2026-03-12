@@ -8,4 +8,5 @@
 | ID | Time | T | Title | Read |
 |----|------|---|-------|------|
 | #14155 | 11:59 AM | 🔵 | Source artwork inventory shows mixed dimensions and orientations | ~417 |
+| #14153 | 11:57 AM | 🔵 | Training data preparation script processes approved crops to 512x512 corpus | ~432 |
 </claude-mem-context>

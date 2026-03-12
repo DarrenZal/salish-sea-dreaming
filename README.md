@@ -112,7 +112,7 @@ Not humans looking at nature through technology, but the Salish Sea using techno
 ### Related Resources
 
 - [Mind Map (Coggle)](https://coggle.it/diagram/aW01lIKXUtVgH4cW/t/wen%2Cn%C3%A1%2Cnec)
-- [Shared Drive](https://drive.google.com/drive/folders/1eWuiMKqALHh8SWBjMRRCMu5wrGoK8oEO)
+- [Shared Drive](https://drive.google.com/drive/folders/1UvJ6G65FbSRngtCy0hMFpUwqhadfywFr)
 
 ## Credits
 

@@ -162,7 +162,7 @@ Use MCP vault tools (`vault_read_note`, `vault_search_notes`) to access these.
 ## Shared Resources
 
 - **Mind Map:** https://coggle.it/diagram/aW01lIKXUtVgH4cW/t/wen%2Cn%C3%A1%2Cnec
-- **Shared Drive:** https://drive.google.com/drive/folders/1eWuiMKqALHh8SWBjMRRCMu5wrGoK8oEO
+- **Shared Drive:** https://drive.google.com/drive/folders/1UvJ6G65FbSRngtCy0hMFpUwqhadfywFr
 - **Art Show:** https://saltspringarts.com/spring-art-show/
 
 ## Quick Start
