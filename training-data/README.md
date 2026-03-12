@@ -70,6 +70,10 @@ Reserved for future pen-and-ink corpus. Not mixed into the colour model.
 - Train with StyleGAN3 codebase, StyleGAN2 config
 - Minimum 500 distinct images for base training — we have 539
 - Fine-tuning on 54 Briony images (demonstrated with 50 clown faces, 54 is well above minimum)
+- **Arshia recommends kimg=1000+** for base training — evaluate visually at each snapshot, stop when good or when collapse begins. kimg=200 is too low for production quality.
+- **54 Briony images is low for non-regularized fine-tuning** per Arshia — experimental, results depend on dataset coherence
+- **LoRA + img2img as alternative** — for Briony→photo style transfer (e.g. David Denning photos), LoRA fine-tune + img2img pipeline may produce better results than pure GAN fine-tune. Needs more visual examples and discussion (Friday 12:30 call with Arshia).
+- **Gamma tuning** — if training shows collapse or explosion, retrain with different gamma value
 - Save multiple fine-tune checkpoints (`--snap=10`) → gradient from photographic to painterly
 - TELUS H200 GPUs for training; local RTX for inference
 

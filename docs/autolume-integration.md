@@ -18,12 +18,12 @@ This is exactly the tool for turning the marine life imagery into a live generat
 
 ---
 
-## Critical Constraint: macOS Not Supported
+## Critical Constraint: macOS Not Supported (Yet)
 
-**Autolume runs on Windows 10/11 and Linux only. No macOS support.**
+**Autolume runs on Windows 10/11 and Linux only. Mac version is in development** (confirmed by Arshia, March 2026) but not yet available.
 
 For our setup, this means:
-- **Darren's MacBook** cannot run Autolume directly
+- **Darren's MacBook** cannot run Autolume directly (no macOS build yet)
 - **Darren's Linux server** can host Autolume (NVIDIA GPU access needed)
 - **Prav's machine** (likely Windows) is the other natural host
 - **TELUS GPU cluster** (Linux) is ideal for training
@@ -142,11 +142,24 @@ Multiple models = multiple visual voices. Ecological data = the conductor.
 
 | Model | Dataset | Size | Training Time (H200) |
 |-------|---------|------|---------------------|
-| `base-underwater-v1.pkl` | `marine-photo-base/` (500+ underwater/nearshore photos) | 512x512 | ~2-4 hrs |
+| `base-underwater-v1.pkl` | `marine-photo-base/` (500+ underwater/nearshore photos) | 512x512 | kimg=1000+ (Arshia rec.) |
 | `briony-v1.pkl` | Fine-tune on `briony-marine-colour/` (54 images) | 512x512 | ~30-60 min |
 | `david-v1.pkl` | Fine-tune on `david-denning/` (if archive arrives) | 512x512 | ~30-60 min |
 
+**Arshia's recommendation (March 2026):** Train base to kimg=1000+, evaluate visually at each snapshot, stop when good or when collapse begins. kimg=200 is a v1 checkpoint — resume from there to reach 1000+. If training shows collapse or explosion, retrain with different gamma.
+
 Save multiple fine-tune checkpoints at `--snap=10` to get a gradient from photographic → painterly.
+
+**Note on 54 Briony images:** This is low for non-regularized fine-tuning per Arshia — experimental, results depend on dataset coherence.
+
+### Alternative: LoRA + img2img for Style Transfer
+
+Arshia suggests that for applying Briony's style to photographic imagery (e.g. David Denning photos), a **LoRA fine-tune + img2img pipeline** may produce better results than pure GAN fine-tune. This approach:
+- Fine-tunes a lightweight LoRA adapter on Briony's watercolors
+- Uses img2img to transform photographic inputs through the learned style
+- More flexible for style transfer across different source imagery
+
+Needs more visual examples and discussion — on agenda for Friday 12:30 call with Arshia.
 
 ### Current Assets
 
@@ -220,12 +233,12 @@ python train.py --outdir=./results \
   --gpus=1 --batch=16 --gamma=6.6 \
   --kimg=200 --snap=25
 
-# 7. Full base training (500+ images)
+# 7. Full base training (500+ images) — Arshia recommends kimg=1000+
 python train.py --outdir=./results \
   --cfg=stylegan2 \
   --data=./data/marine-base512.zip \
-  --gpus=1 --batch=32 --gamma=6.6 \
-  --kimg=2000 --snap=50
+  --gpus=1 --batch=8 --gamma=20 \
+  --kimg=1000 --snap=10 --metrics=none
 
 # 8. Fine-tune Briony on top of base
 python train.py --outdir=./results \

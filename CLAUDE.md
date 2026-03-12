@@ -8,8 +8,8 @@ Interactive AI art installation exploring the Salish Sea ecosystem. The vision: 
 
 ## Current Status
 
-**Date:** 2026-03-11
-**Status:** Both training corpora built. Ready for base model training on TELUS H200.
+**Date:** 2026-03-12
+**Status:** Base model training running on TELUS H200. Arshia recommends extending to kimg=1000+.
 
 **What's Done:**
 - Briony fine-tune corpus: 54 images at 512x512 (expanded from marine-only to all ecological watercolors), provenance tracked, committed
@@ -20,10 +20,10 @@ Interactive AI art installation exploring the Salish Sea ecosystem. The vision: 
 - iNat scraper enhanced with `--species-list`, `--per-taxon`, `--provenance` flags
 
 **What's Left:**
-1. Upload `marine-photo-base/` to TELUS → train base model (kimg=200: ~25 hrs in pure-Python fallback, ~2-3 hrs if compilers installed)
-2. Fine-tune on Briony corpus from base checkpoint (`--resume`)
+1. Base model training running on TELUS H200 (kimg=1000 target per Arshia, current run at 200 kimg is v1 checkpoint — resume to 1000+ from there)
+2. Fine-tune on Briony corpus from base checkpoint (`--resume`) — note: 54 images is low for non-regularized case per Arshia, experimental
 3. Test checkpoint in AutoLume with Prav
-4. David Denning photos — if received, create `david-v1.pkl` fine-tune
+4. David Denning photos — LoRA + img2img may be better than GAN fine-tune for style transfer (Arshia's suggestion)
 
 ## Project Vision
 
@@ -200,3 +200,4 @@ curl http://localhost:8351/health  # check if KOI backend running
 | 2026-03-06 | Research + Octo | Deep research prompt + Report II ("The Living Salish Sea") to vault + Octo knowledge garden (salishsee.life); 27 entities ingested; fixed Octo chat widget (model config + timeout); salishsee.life now canonical URL |
 | 2026-03-09 | Training data (`364134a6`) | Briony crop pipeline + 36-image corpus; iNat scrape (740, 37 species); QC review (539 approved, 201 rejected); marine-photo-base built (539 at 512x512); TELUS smoke test (FID 474.6→502.8 — expected with only 36 images, pure-Python fallback); artifacts downloaded; docs updated; committed `aef147c` |
 | 2026-03-11 | Briony corpus expansion | Expanded Briony corpus from 36 to 54 images — broadened scope from marine-only to all ecological watercolors (salmon-forest, camas, landscapes); fixed crop_box bug in prep_training_data.py (crop coordinates were being ignored) |
+| 2026-03-12 | Arshia feedback + meeting prep | Integrated Arshia's training guidance: kimg=1000+ target, LoRA+img2img as style transfer alternative, Mac Autolume in dev; prepared Prav screen share meeting notes |
