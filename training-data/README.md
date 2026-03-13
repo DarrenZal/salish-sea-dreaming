@@ -12,32 +12,32 @@ Training datasets for The Salish Sea Dreaming installation's generative visual s
 
 ## Corpora
 
-### `marine-photo-base/`
+### [`marine-photo-base/`](marine-photo-base/)
 539 curated underwater/nearshore marine photographs at 512x512.
 
 **v1 scope: underwater/nearshore only.** Fish (single and schools), kelp, eelgrass, octopus, invertebrates, close underwater scenes. These share lighting, color palette, and spatial grammar — "one strong image grammar," not semantic completeness.
 
 **NOT in v1:** Boats, seabirds on open water, horizon-heavy ocean scenes, aerial coastlines, harbor infrastructure. These are visually different domains → separate models later.
 
-**Source:** iNaturalist research-grade observations — 740 images scraped across 37 Salish Sea species at 1024px, then QC-reviewed via species contact sheets. 539 approved (72.8% pass rate), 201 rejected. All CC-BY or CC-BY-NC licensed.
+**Source:** iNaturalist research-grade observations — 740 images scraped across [37 Salish Sea species](../tools/salish-sea-species.tsv) at 1024px, then QC-reviewed via species contact sheets. 539 approved (72.8% pass rate), 201 rejected. All CC-BY or CC-BY-NC licensed.
 
 **QC criteria — reject:** wrong species, dead specimens on docks, fish in hands/buckets, lab/dish photos, text overlays, watermarks, rulers/ID tags, severely degraded (extremely blurry, overexposed), above-water landscape where species barely visible.
 
-**QC tools:** `tools/qc_approve.py` (batch approve/reject from reject list), reject list at `review/rejects.csv`, contact sheets at `review/contact-sheets/marine-base/`.
+**QC tools:** [`tools/qc_approve.py`](../tools/qc_approve.py) (batch approve/reject from reject list), reject list at [`review/rejects.csv`](review/rejects.csv), contact sheets at [`review/contact-sheets/`](review/contact-sheets/).
 
-### `briony-marine-colour/`
+### [`briony-marine-colour/`](briony-marine-colour/)
 54 ecological watercolor images at 512x512, curated from Briony Penn's archive. Expanded from the initial 36-image marine-only corpus to include all ecological watercolors (salmon-forest cycles, camas meadows, landscapes). Pipeline fix: crop_box coordinates are now correctly applied during prep.
 
 **Includes:** Marine paintings (panoramas, ecosystem cross-sections, octopus, basking shark, kelp forest), Central Coast illustrations (estuary, inshore, offshore scenes), terrestrial ecological scenes (salmon-forest, camas, landscapes), compositional crops (horizontal thirds, panorama zones, center crops).
 
 **Excludes:** Pen-and-ink (separate corpus), illustrated maps (text-heavy), signage/murals, text-heavy mandalas, images dominated by labels.
 
-### `briony-linework/`
+### [`briony-linework/`](briony-linework/)
 Reserved for future pen-and-ink corpus. Not mixed into the colour model.
 
 ## Provenance Tracking
 
-**`provenance.csv`** is the single source of truth for approval and export. Every image — original or derivative — must have a row.
+**[`provenance.csv`](provenance.csv)** is the single source of truth for approval and export. Every image — original or derivative — must have a row.
 
 | Column | Required | Description |
 |--------|----------|-------------|
@@ -56,9 +56,9 @@ Reserved for future pen-and-ink corpus. Not mixed into the colour model.
 
 ## Crop Workflow
 
-1. `scripts/crop_candidates.py` generates candidate crops + contact sheets
-2. Human marks keep/reject in `review/keep.csv`
-3. `--promote` copies approved crops into `provenance.csv` with full metadata
+1. [`scripts/crop_candidates.py`](../scripts/crop_candidates.py) generates candidate crops + contact sheets
+2. Human marks keep/reject in [`review/keep.csv`](review/keep.csv)
+3. `--promote` copies approved crops into [`provenance.csv`](provenance.csv) with full metadata
 
 ## Augmentation
 
@@ -99,6 +99,6 @@ FID worsened then partially recovered — expected with only 36 images and no ba
 - [x] `marine-photo-base/`: 539 images, QC-reviewed from 740 candidates
 - [x] `provenance.csv` complete for every training image (776 rows total)
 - [x] Pilot 512px training validates quality (TELUS smoke test)
-- [ ] Base model training on 539 marine photos
+- [x] Base model training on 539 marine photos (v1: 200 kimg complete, resume to 1000 kimg running)
 - [ ] Fine-tune on Briony corpus from base checkpoint
-- [ ] `dream_briony.py` pipeline still functional as fallback
+- [ ] [`dream_briony.py`](../scripts/dream_briony.py) pipeline still functional as fallback
