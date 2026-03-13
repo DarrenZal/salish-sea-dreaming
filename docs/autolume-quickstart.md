@@ -1,6 +1,6 @@
 # Autolume Quickstart — Loading Our Checkpoint
 
-**For Prav** — get the smoke test checkpoint running in Autolume on your RTX 3060 laptop (Windows).
+**For Prav** — get the base model checkpoint running in Autolume on your RTX 3060 laptop (Windows).
 
 ## 1. Prerequisites
 
@@ -24,20 +24,20 @@ mkdir -p models sr_models
 
 ## 3. Download Our Checkpoint
 
-Download **network-snapshot-000025.pkl** (347 MB) from Google Drive:
+Download **network-snapshot-000200.pkl** (347 MB) — the base v1 model (200 kimg on 539 marine photos, TELUS H200):
 
-**[Download 000025.pkl](https://drive.google.com/file/d/1WOMcUhi3RaML_TjqEilvHZOh8mBNyu7E/view)**
+**[Download 000200.pkl](https://drive.google.com/file/d/1QmmeCt2-P_C-KY1Kss2jSvz1gc6CpQB3/view)**
 
 Copy it into Autolume's `models/` folder:
 ```bash
-copy %USERPROFILE%\Downloads\network-snapshot-000025.pkl models\
+copy %USERPROFILE%\Downloads\network-snapshot-000200.pkl models\
 ```
 
-Other checkpoints (optional):
-| File | Size | Link |
-|------|------|------|
-| network-snapshot-000000.pkl | 347 MB | [Download](https://drive.google.com/file/d/1MJGq7VkvS6V3aZKIkKsOQIsTyObT0a5_/view) |
-| network-snapshot-000020.pkl | 347 MB | [Download](https://drive.google.com/file/d/1tquQsIQCTiplsLDPZRBOXGsT_5qtEfQR/view) |
+Earlier smoke test checkpoints (optional — undertrained, mostly useful for comparison):
+| File | Size | Notes | Link |
+|------|------|-------|------|
+| network-snapshot-000025.pkl | 347 MB | 25 kimg smoke test | [Download](https://drive.google.com/file/d/1WOMcUhi3RaML_TjqEilvHZOh8mBNyu7E/view) |
+| network-snapshot-000020.pkl | 347 MB | 20 kimg smoke test | [Download](https://drive.google.com/file/d/1tquQsIQCTiplsLDPZRBOXGsT_5qtEfQR/view) |
 
 ## 4. Launch
 
@@ -50,13 +50,15 @@ Autolume scans the `models/` directory on startup. Our checkpoint should appear 
 
 ## 5. What to Expect
 
-This is a **smoke test checkpoint** — 25 kimg on 36 Briony watercolors, no base model. Outputs will be abstract/noisy, not recognizable paintings. That's expected.
+This is the **base v1 model** — 200 kimg on 539 marine photos (underwater, nearshore, 37 Salish Sea species). Outputs will look **photographic/marine** — recognizable sea life forms, ocean colors and textures. Not painterly yet — that comes after the Briony fine-tune.
+
+Extended training (kimg=1000) is running now and will produce sharper, more coherent output. Briony fine-tune checkpoints after that will give a **gradient from photographic → painterly**.
 
 The goal right now:
-1. **Confirm the PKL loads** without errors
+1. **Confirm the PKL loads** without errors — this is the critical compatibility check
 2. **Learn the Autolume UI** — latent navigation, truncation PSI, Network Bending
 3. **Test NDI output** into TouchDesigner
-4. **Be ready** to swap in the real fine-tuned checkpoint when it lands (this week)
+4. **Be ready** to swap in fine-tuned checkpoints as they land
 
 ## ⚠ Potential Compatibility Issue
 

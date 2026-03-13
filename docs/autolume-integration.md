@@ -49,20 +49,28 @@ On the **TELUS H200 GPU cluster**: hardware exceeds all requirements. H200 = 141
 ## Architecture
 
 ```
-MIDI controller
-      │
-      ▼
+MIDI controller       Ableton Live + Max for Live
+      │                    │ (biosonification)
+      ▼                    ▼
   Autolume ←──── OSC ────→ TouchDesigner
   (Windows/TELUS)               │
       │ NDI video stream         ▼
-      └──────────────────→  LED volume visuals
-                            (Nicholas's rig)
+      └──────────────────→  Resolume Arena ────→ Projection
+                            (mapping/mixing)     (1-2 projectors)
 ```
 
 Two-way flow:
 - **Autolume → TD**: NDI video stream (use NDI In TOP in TouchDesigner)
+- **TD → Resolume Arena**: Final compositing, projection mapping, video mixing
 - **TD ↔ Autolume**: OSC bidirectional (latent parameters, control signals)
 - **MIDI → Autolume**: Direct via Network Bending, or routed through TD
+- **Sound**: Ableton Live + Max for Live biosonification (Prav + TBC collaborator)
+
+### Operational Modes
+
+**Autonomous Installation:** Runs unattended with pre-programmed latent space navigation and audio-reactive parameters. For gallery hours when no performer is present.
+
+**Live Performance:** Prav performing real-time latent space navigation, audio-reactive visuals, MIDI/OSC control. For openings, special events, and scheduled performances.
 
 ---
 

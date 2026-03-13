@@ -4,26 +4,30 @@
 
 Interactive AI art installation exploring the Salish Sea ecosystem. The vision: not humans looking at nature through technology, but the Salish Sea using technology to perceive itself.
 
-**Target:** Salt Spring Spring Art Show, April 2026.
+**Target:** Salt Spring Spring Art Show — "Digital Ecologies: Bridging Nature and Technology" at Mahon Hall, April 10–26, 2026.
 
 ## Current Status
 
-**Date:** 2026-03-12
-**Status:** Base model training running on TELUS H200. Arshia recommends extending to kimg=1000+.
+**Date:** 2026-03-13
+**Status:** Base v1 (200 kimg) complete + downloaded. Resume to kimg=1000 running on TELUS. 000200.pkl shared with Prav on Drive.
 
 **What's Done:**
-- Briony fine-tune corpus: 54 images at 512x512 (expanded from marine-only to all ecological watercolors), provenance tracked, committed
-- Pipeline fix: crop_box now correctly applied in prep_training_data.py (was being ignored)
-- Marine photo base corpus: 539 images at 512x512 (scraped 740, QC'd down to 539)
-- TELUS H200 smoke test: pipeline validated (25 kimg on Briony, FID 474.6→502.8), PKLs in `models/briony-test-run/`
-- Full QC pipeline: `qc_approve.py`, `rejects.csv` (201 rejects), 37 species contact sheets
-- iNat scraper enhanced with `--species-list`, `--per-taxon`, `--provenance` flags
+- Base model v1 complete: 200 kimg on 539 marine photos, TELUS H200, ~25 hours. Checkpoints downloaded to `models/base-v1/`
+- 000200.pkl uploaded to shared Drive for Prav to test in Autolume
+- Resume training kicked off: run 00012, kimg=1000 target, ~4 days remaining
+- Prav briefing PDF created (`docs/2026-03-12-prav-briefing.md` → PDF) — standalone doc with all links, quickstart, scope alignment
+- Prav's 3 project PDFs (Collaboration Outline, Tech Rider, Exhibition Outline) integrated into meeting notes + repo
+- Team/architecture updated: Moonfish Media, Natalia, Eve Marenghi, David Denning, Resolume Arena, sound layer, Phase 2 venues
+- Exhibition date corrected: April 10–26 (not April 12)
+- TELUS Jupyter API access working (`Jupyter_REST_API` in `.env`) — can monitor training, download checkpoints, execute commands remotely
 
 **What's Left:**
-1. Base model training running on TELUS H200 (kimg=1000 target per Arshia, current run at 200 kimg is v1 checkpoint — resume to 1000+ from there)
-2. Fine-tune on Briony corpus from base checkpoint (`--resume`) — note: 54 images is low for non-regularized case per Arshia, experimental
-3. Test checkpoint in AutoLume with Prav
-4. David Denning photos — LoRA + img2img may be better than GAN fine-tune for style transfer (Arshia's suggestion)
+1. Monitor TELUS resume training (run 00012, kimg=1000, ~4 days) — check progress via API, download snapshots for visual review
+2. Prav: test 000200.pkl in Autolume — **critical compatibility check** (NVlabs vs Autolume fork)
+3. Fine-tune on Briony corpus from best base checkpoint (`--resume`)
+4. David Denning photos — LoRA + img2img for style transfer (Arshia's suggestion)
+5. Joint doc update pass with Prav (his project docs missing TELUS/Arshia info)
+6. Hardware decision for April 10 exhibition (NVIDIA GPU required)
 
 ## Project Vision
 
@@ -40,8 +44,11 @@ Technology not as extraction, but as perception. The bioregion already has consc
 | **Briony Penn** | Naturalist, illustrator | Watercolors, ecological storytelling |
 | **Darren Zal** | Technical infrastructure | Knowledge graphs, KOI, data integration |
 | **Shawn** | Creative technologist | Claude Code, GPU activation |
-| **Eve (Maya)** | Data scientist | Regen Commons steward |
+| **Eve Marenghi** | Data scientist | Regen Commons steward |
 | **Brad Necyk** | Artist, researcher | Latent space concepts, studio at Cobble Hill |
+| **Moonfish Media** | Underwater cinematography | Herring, salmon, marine habitat footage |
+| **Natalia Lebedinskaia** | Panel moderation | Contextual framing |
+| **David Denning** | Photographer | Long-term bioregional witnessing |
 
 **Curator:** Raf (Digital Ecologies / Salt Spring) — not ACON, not "Rob"
 
@@ -105,7 +112,9 @@ Key TD tools: `create_td_node`, `get_td_nodes`, `execute_python_script`, `update
 - TouchDesigner with MCP integration for AI-assisted development
 - Python scripts for procedural generation (in `scripts/`)
 - Kinect presence detection, projection mapping
+- Resolume Arena for projection mapping/video mixing
 - StreamDiffusion TOX for real-time AI visuals
+- Sound: Ableton Live + Max for Live biosonification
 - Pravin's stack: TD, Unity, VVVV, Stable Diffusion, Ableton/Max for Live
 
 ### Web (Prototyping)
@@ -201,3 +210,5 @@ curl http://localhost:8351/health  # check if KOI backend running
 | 2026-03-09 | Training data (`364134a6`) | Briony crop pipeline + 36-image corpus; iNat scrape (740, 37 species); QC review (539 approved, 201 rejected); marine-photo-base built (539 at 512x512); TELUS smoke test (FID 474.6→502.8 — expected with only 36 images, pure-Python fallback); artifacts downloaded; docs updated; committed `aef147c` |
 | 2026-03-11 | Briony corpus expansion | Expanded Briony corpus from 36 to 54 images — broadened scope from marine-only to all ecological watercolors (salmon-forest, camas, landscapes); fixed crop_box bug in prep_training_data.py (crop coordinates were being ignored) |
 | 2026-03-12 | Arshia feedback + meeting prep | Integrated Arshia's training guidance: kimg=1000+ target, LoRA+img2img as style transfer alternative, Mac Autolume in dev; prepared Prav screen share meeting notes |
+| 2026-03-12 | Prav's project docs | Integrated 3 PDFs (Collaboration Outline, Tech Rider, Exhibition Outline) into meeting notes + repo; fixed date to April 10–26; added Moonfish Media, Natalia, Resolume Arena, sound layer, Phase 2 venues |
+| 2026-03-13 (`93132576`) | Base v1 + TELUS ops | Base 200 kimg complete, downloaded via Jupyter API, uploaded 000200.pkl to Drive for Prav; created standalone briefing PDF; kicked off resume to kimg=1000 via API (run 00012); TELUS remote API workflow established |
