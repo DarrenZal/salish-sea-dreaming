@@ -4,23 +4,32 @@
 
 ## 1. Prerequisites
 
-- **CUDA 12.8** — [Download (Dev + Runtime)](https://developer.nvidia.com/cuda-12-8-0-download-archive)
-- **Microsoft C++ Build Tools** — [Download](https://visualstudio.microsoft.com/visual-cpp-build-tools/) → select "Desktop development with C++"
-- **Miniconda** — [Download](https://docs.anaconda.com/miniconda/)
+- **NVIDIA GPU with CUDA** (your RTX 3060 is fine)
+- **Windows or Linux** (no Mac support yet)
 
 ## 2. Install Autolume
 
+Download the prebuilt executable from the MetaCreation Lab — no Python/conda setup needed:
+
+**[metacreation.net/autolume#download](https://metacreation.net/autolume#download)**
+
+Download the zip, extract it, and run the executable.
+
+<details>
+<summary>Alternative: Developer install from source</summary>
+
+If the prebuilt doesn't work or you need to modify Autolume:
+
+1. Install [CUDA 12.8](https://developer.nvidia.com/cuda-12-8-0-download-archive), [C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/), [Miniconda](https://docs.anaconda.com/miniconda/)
+2. Clone and install:
 ```bash
 git clone https://github.com/Metacreation-Lab/autolume.git
 cd autolume
 conda create -n autolume python=3.10
 conda activate autolume
 pip install -r requirements.txt
-
-# Download required support models (Real-ESRGAN + face-parsing)
-mkdir -p models sr_models
-# See Autolume README for the sr_model download commands
 ```
+</details>
 
 ## 3. Download Our Checkpoint
 
@@ -41,12 +50,7 @@ Earlier smoke test checkpoints (optional — undertrained, mostly useful for com
 
 ## 4. Launch
 
-```bash
-conda activate autolume
-python main.py
-```
-
-Autolume scans the `models/` directory on startup. Our checkpoint should appear in the model picker UI. If not, use the **"Find"** button to browse to the `.pkl` file.
+Run the Autolume executable (or `python main.py` if using the dev install). It scans the `models/` directory on startup. Our checkpoint should appear in the model picker UI. If not, use the **"Find"** button to browse to the `.pkl` file.
 
 ## 5. What to Expect
 
@@ -60,6 +64,10 @@ The goal right now:
 3. **Test NDI output** into TouchDesigner
 4. **Be ready** to swap in fine-tuned checkpoints as they land
 
+## 6. Evaluating Training Progress
+
+**Tip from Arshia:** Check the `fakesXXXXXX.png` grid images in the training output folder — they show generated samples at each snapshot and give a clear picture of how training is progressing before you load the pkl. The grids for the base v1 run are on the [shared Drive](https://drive.google.com/drive/folders/1UvJ6G65FbSRngtCy0hMFpUwqhadfywFr) (`fakes000000.png` through `fakes000200.png`).
+
 ## ⚠ Potential Compatibility Issue
 
 Our PKL was trained with the **NVlabs StyleGAN3** codebase (`--cfg=stylegan2`). Autolume uses its own **fork of StyleGAN2-ada**. There could be architecture mismatches when loading.
@@ -68,7 +76,8 @@ Our PKL was trained with the **NVlabs StyleGAN3** codebase (`--cfg=stylegan2`). 
 
 ## Resources
 
-- [Autolume GitHub](https://github.com/Metacreation-Lab/autolume)
+- [Autolume download](https://metacreation.net/autolume#download) — prebuilt executable
+- [Autolume GitHub](https://github.com/Metacreation-Lab/autolume) — source code
 - [Autolume docs](https://metacreation-lab.github.io/autolume/)
 - [Our training data & pipeline](https://github.com/DarrenZal/salish-sea-dreaming/tree/main/training-data)
 - [Full technical architecture](https://github.com/DarrenZal/salish-sea-dreaming/blob/main/docs/autolume-integration.md)
