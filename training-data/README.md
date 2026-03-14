@@ -99,6 +99,6 @@ FID worsened then partially recovered — expected with only 36 images and no ba
 - [x] `marine-photo-base/`: 539 images, QC-reviewed from 740 candidates
 - [x] `provenance.csv` complete for every training image (776 rows total)
 - [x] Pilot 512px training validates quality (TELUS smoke test)
-- [x] Base model training on 539 marine photos (v1: 200 kimg complete, resume to 1000 kimg running)
+- [x] Base model training on 539 marine photos (v1: 200 kimg complete, resume reached 320 kimg then stopped — dataset too diverse per Arshia)
 - [ ] Fine-tune on Briony corpus from base checkpoint
 - [ ] [`dream_briony.py`](../scripts/dream_briony.py) pipeline still functional as fallback

@@ -8,26 +8,39 @@ Interactive AI art installation exploring the Salish Sea ecosystem. The vision: 
 
 ## Current Status
 
-**Date:** 2026-03-13
-**Status:** Base v1 (200 kimg) complete + downloaded. Resume to kimg=1000 running on TELUS. 000200.pkl shared with Prav on Drive.
+**Date:** 2026-03-14
+**Status:** Multi-layer installation approach confirmed. GAN is one visual voice, not single point of failure. Existing 200/320 kimg checkpoints confirmed loading in Autolume (Prav tested). Parallel tracks active.
 
 **What's Done:**
-- Base model v1 complete: 200 kimg on 539 marine photos, TELUS H200, ~25 hours. Checkpoints downloaded to `models/base-v1/`
-- 000200.pkl uploaded to shared Drive for Prav to test in Autolume
-- Resume training kicked off: run 00012, kimg=1000 target, ~4 days remaining
-- Prav briefing PDF created (`docs/2026-03-12-prav-briefing.md` → PDF) — standalone doc with all links, quickstart, scope alignment
-- Prav's 3 project PDFs (Collaboration Outline, Tech Rider, Exhibition Outline) integrated into meeting notes + repo
-- Team/architecture updated: Moonfish Media, Natalia, Eve Marenghi, David Denning, Resolume Arena, sound layer, Phase 2 venues
-- Exhibition date corrected: April 10–26 (not April 12)
-- TELUS Jupyter API access working (`Jupyter_REST_API` in `.env`) — can monitor training, download checkpoints, execute commands remotely
+- Base model v1: 200 kimg on 539 marine photos, TELUS H200. Checkpoints in `models/base-v1/`
+- Resume run (00012) reached 320 kimg total (200 base + 120 resume) — then stopped per team decision
+- Run 00012 checkpoints downloaded to `models/base-v1-resume/` via Jupyter REST API
+- `marine-base-320kimg.pkl` uploaded to shared Drive → Models folder for Prav
+- **PKL loads in Autolume — CONFIRMED** (Prav tested 000200, NDI → TD pipeline working)
+- Team meeting (2026-03-13): Arshia flagged base dataset too diverse (37 species, inconsistent high-level features)
+- New direction agreed: LoRA → synthetic data → GAN pipeline for Briony style transfer
+- TELUS Jupyter API workflow established: list kernels, kill terminals, download files remotely
+- Meeting prep doc: `docs/2026-03-14-meeting-prep.md`
+
+**Active Tracks (see `docs/2026-03-14-meeting-prep.md` for full detail):**
+- **Track A: Autolume + Existing Checkpoints** (Prav) — foundation layer, proven pipeline
+- **Track B: Dataset Redesign + Retrain** (Darren) — TELUS go/no-go by March 15, B2 underwater scene coherence
+- **Track C: LoRA / IP Adapters** (exploration only) — keep off April critical path, ComfyUI IP Adapters more achievable
+- **Track D: Non-GAN Visual Assets** (both) — dream transforms, video loops, Moonfish footage, TD generative, Briony originals
+- **Track E: Sound** — needs owner TODAY, minimum: generative ambient in Ableton
 
 **What's Left:**
-1. Monitor TELUS resume training (run 00012, kimg=1000, ~4 days) — check progress via API, download snapshots for visual review
-2. Prav: test 000200.pkl in Autolume — **critical compatibility check** (NVlabs vs Autolume fork)
-3. Fine-tune on Briony corpus from best base checkpoint (`--resume`)
-4. David Denning photos — LoRA + img2img for style transfer (Arshia's suggestion)
-5. Joint doc update pass with Prav (his project docs missing TELUS/Arshia info)
-6. Hardware decision for April 10 exhibition (NVIDIA GPU required)
+1. **TELUS go/no-go by March 15** — check compiler issue, either fix + kick off B2 retrain, or drop track
+2. **Redesign base dataset** (B2: underwater scene coherence, ~300-400 images) if TELUS is go
+3. **LoRA research** + Briony corpus pruning recommendations
+4. **Fallback media package** — video loops via `create_loops.py` from Briony originals (locally generated, no API dependency)
+5. **Sound owner decision** — name, minimum spec, timeline
+6. **Hardware decision** — laptop vs dedicated desktop for 16-day exhibition
+7. **Burn-in test** — 8+ hours continuous stack test before April 10
+8. **Daily restart procedure** — written checklist for gallery staff
+9. **Fallback playback mode** — Resolume plays pre-rendered loops if Autolume crashes
+10. **Rehearsal at Mahon Hall** — at least 1 day before opening
+11. Darren away March 20–28 — handoff deliverables defined in meeting prep doc
 
 ## Project Vision
 
@@ -212,3 +225,5 @@ curl http://localhost:8351/health  # check if KOI backend running
 | 2026-03-12 | Arshia feedback + meeting prep | Integrated Arshia's training guidance: kimg=1000+ target, LoRA+img2img as style transfer alternative, Mac Autolume in dev; prepared Prav screen share meeting notes |
 | 2026-03-12 | Prav's project docs | Integrated 3 PDFs (Collaboration Outline, Tech Rider, Exhibition Outline) into meeting notes + repo; fixed date to April 10–26; added Moonfish Media, Natalia, Resolume Arena, sound layer, Phase 2 venues |
 | 2026-03-13 (`93132576`) | Base v1 + TELUS ops | Base 200 kimg complete, downloaded via Jupyter API, uploaded 000200.pkl to Drive for Prav; created standalone briefing PDF; kicked off resume to kimg=1000 via API (run 00012); TELUS remote API workflow established |
+| 2026-03-13 (`f85e12c9`) | Training stop + pivot | Team call: Arshia flagged dataset too diverse → stop training, redesign dataset. Stopped run 00012 via Jupyter API (killed terminal). Downloaded 320 kimg checkpoints to models/base-v1-resume/. Uploaded marine-base-320kimg.pkl to Drive. New direction: LoRA → synthetic data → GAN. |
+| 2026-03-14 | Meeting prep + strategy | Multi-layer installation strategy doc (`docs/2026-03-14-meeting-prep.md`). 5 parallel tracks (Autolume, retrain, LoRA, non-GAN assets, sound). 6 decisions for Prav call. Gap analysis vs exhibition promises. Operational stability plan (burn-in, restart, fallback). |
