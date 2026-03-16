@@ -8,34 +8,29 @@ Interactive AI art installation exploring the Salish Sea ecosystem. The vision: 
 
 ## Current Status
 
-**Date:** 2026-03-15
-**Status:** CC-safe corpus rebuild in progress. All three corpora scraping (commercial-safe licenses only). Legacy fish corpus archived.
+**Date:** 2026-03-16
+**Status:** All three CC-safe corpora scraped — ready for QC review. Images on Drive.
 
 **License Policy:** COMMERCIAL USE — CC0, CC BY, CC BY-SA only. Artist fee at exhibition = commercial under CC terms. CC BY-NC excluded.
 
 **What's Done:**
-- Base model v1 (200 kimg) + resume (320 kimg) — checkpoints in `models/`, uploaded to Drive; **PKL loads in Autolume CONFIRMED** (Prav tested, NDI→TD working)
-- Team pivot (2026-03-13): Arshia flagged base dataset too diverse → three focused species models (Fish, Whales, Birds) as separate Autolume instances mixed via NDI in TouchDesigner
-- Multi-corpus pipeline built: `scraper`, `qc_approve`, `prep_training_data` all have `--corpus` flag + `--license-filter` on scraper; new minimums (fish/whale/bird: 150 each); qc_approve has `--rejects-file` scoping
-- `--license-filter` added to scraper: CC0/CC BY/CC BY-SA allowlist, filters before download (no wasted bandwidth)
-- `scripts/backfill_licenses.py` created: queries iNat API to fill license column, optionally purges non-safe rows
-- Species TSV files: `tools/species-fish.tsv` (13 bony fish — dropped Longfin Smelt/Surf Smelt/Yelloweye Rockfish: <7 CC-safe on iNat), `tools/species-whales.tsv` (6 cetaceans), `tools/species-birds.tsv` (10 seabirds). All taxon_ids populated.
-- Legacy fish corpus archived: `training-data/fish-model-legacy-unsafe-20260315/` (305 images, only 21 CC-safe)
-- Backfill + purge run on fish-model provenance: 96 non-CC-safe rows marked `approved_for_training=no`
-- CC-safe supply assessed via dry-runs: Fish=~800, Whale=728, Bird=1729 (all well above 150 threshold)
-- All three CC-safe scrapes launched (2026-03-15): downloading to `images/fish-commercial-raw/`, `images/whales-raw/`, `images/birds-raw/`
-- Meeting prep doc: `docs/2026-03-14-meeting-prep.md` — 5 parallel tracks, operational stability plan
+- Base model v1 (200 kimg) + resume (320 kimg) — **PKL loads in Autolume CONFIRMED** (Prav tested, NDI→TD working)
+- Team pivot (2026-03-13): three focused species models (Fish, Whales, Birds) as separate Autolume instances mixed via NDI in TouchDesigner
+- Multi-corpus pipeline: `scraper` (`--corpus`, `--license-filter`, 30s download timeout), `qc_approve` (`--corpus`, `--rejects-file`), `prep_training_data` (`--corpus`). `scripts/backfill_licenses.py` for retroactive license auditing.
+- Species TSVs: `tools/species-fish.tsv` (13 bony fish), `tools/species-whales.tsv` (6 cetaceans), `tools/species-birds.tsv` (10 seabirds). All taxon_ids populated.
+- **All three CC-safe corpora scraped** (2026-03-15): Fish 911 images (13 sp), Whale 731 (6 sp), Bird 1729 (10 sp). All provenance tracked. Zips uploaded to [Drive](https://drive.google.com/drive/folders/17QVEYgmEZDYupWI4vGF2QicXSVKWfk_6).
+- Legacy fish corpus archived: `training-data/fish-model-legacy-unsafe-20260315/` (only 21/305 were CC-safe)
+- 3 thin fish species dropped (Longfin Smelt=2, Surf Smelt=6, Yelloweye Rockfish=4 CC-safe on iNat)
 
 **What's Left:**
 1. **QC all three corpora** — review raw images in Finder, create per-corpus rejects files, run `qc_approve --corpus <name> --rejects-file ...`
 2. **Prep all three corpora** — `prep_training_data.py --resolution 512 --corpus <name>`
-3. **Signal Prav** about his 400-500 image fish dataset — may provide higher-quality underwater shots
-4. **Contact Moonfish Media** for explicit permission on herring footage (CC-safe iNat herring = 47, want more)
-5. **TELUS go/no-go** — check compiler issue; if go, kick off Fish training first
-6. **Multi-instance burn-in** — test 3 Autolume + NDI + TD on Prav's hardware before committing to training
-7. **Operational stability** — burn-in test 8+ hrs, daily restart checklist, Resolume fallback
-8. **Sound owner decision** — name, minimum spec, timeline
-9. Darren away March 20–28 — handoff deliverables defined in meeting prep doc
+3. **Kick off TELUS training** — Fish first (most images, highest confidence), then Whales, then Birds
+4. **Contact Moonfish Media** for explicit permission on herring footage (CC-safe iNat herring = 50, want more)
+5. **Multi-instance burn-in** — test 3 Autolume + NDI + TD on Prav's hardware before committing to training
+6. **Operational stability** — burn-in test 8+ hrs, daily restart checklist, Resolume fallback
+7. **Sound owner decision** — name, minimum spec, timeline
+8. Darren away March 20–28 — handoff deliverables defined in meeting prep doc
 
 ## Project Vision
 
@@ -104,7 +99,7 @@ salish-sea-dreaming/
 | `tools/scrape_inaturalist_guide.py` | Scrape iNaturalist guide taxa with provenance tracking (`--corpus` flag for multi-dataset) |
 | `tools/qc_approve.py` | Batch approve/reject iNat images (`--corpus` + `--rejects-file` for scoped review) |
 | `tools/salish-sea-species.tsv` | 37 curated Salish Sea species (full marine) |
-| `tools/species-fish.tsv` | 16 bony fish species for fish-model |
+| `tools/species-fish.tsv` | 13 bony fish species for fish-model |
 | `tools/species-whales.tsv` | 6 cetaceans for whale-model |
 | `tools/species-birds.tsv` | 10 coastal seabirds for bird-model |
 
@@ -195,7 +190,7 @@ cd web && npm install && npm run dev  # http://localhost:3000
 python tools/scrape_inaturalist_guide.py \
   --guide 0 --species-list tools/species-whales.tsv \
   --per-taxon 50 --size large \
-  --output ./images/whales-raw --provenance --corpus whale-model
+  --output ./images/whales-raw --provenance --corpus whale-model --license-filter
 
 # QC review + approve (scoped to corpus)
 python tools/qc_approve.py --corpus whale-model \
@@ -224,3 +219,4 @@ curl http://localhost:8351/health  # check if KOI backend running
 | `f85e12c9` | 2026-03-13 | Pivot | Arshia: dataset too diverse → stopped training, downloaded 320 kimg checkpoints, new direction: LoRA→synthetic→GAN |
 | — | 2026-03-14 | Meeting prep | Multi-layer strategy doc, 5 parallel tracks, gap analysis, operational stability plan |
 | `f024a856` | 2026-03-14 | Dataset pipeline | Three-dataset strategy: multi-corpus scraper/qc/prep pipeline; fish/whale/bird TSVs; fish corpus assembled (174); supplement scraped (207 unique herring+salmon); dedupe fix |
+| `ba05bf17` | 2026-03-15 | License + scrape | CC-safe rebuild: --license-filter + download timeout on scraper, backfill_licenses.py, archived unsafe fish corpus, scraped all 3 corpora (fish 911, whale 731, bird 1729), uploaded to Drive |
