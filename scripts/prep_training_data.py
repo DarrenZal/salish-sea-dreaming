@@ -43,6 +43,9 @@ PROVENANCE_CSV = os.path.join(TRAINING_DIR, "provenance.csv")
 MINIMUMS = {
     "briony-marine-colour": 40,
     "marine-photo-base": 500,
+    "fish-model": 150,
+    "whale-model": 150,
+    "bird-model": 150,
 }
 
 
@@ -151,6 +154,8 @@ def validate_provenance(approved_rows):
 
 def process(args):
     approved = load_provenance(PROVENANCE_CSV)
+    if args.corpus:
+        approved = [r for r in approved if corpus_name(r["filename"]) == args.corpus]
     if not approved:
         print("No approved rows found in provenance.csv")
         return
@@ -213,17 +218,20 @@ def process(args):
         print(f"  {corp:<30} {count:>6}{flag}")
     print("=" * 50)
 
-    # --- Orphan check ---
-    orphans = validate_provenance(approved)
-    if orphans:
-        print()
-        print(f"WARNING: {len(orphans)} image(s) in training-data/ lack provenance entries:")
-        for o in sorted(orphans):
-            print(f"  {o}")
+    # --- Orphan check (skip when --corpus is set: corpus may contain assembled files) ---
+    if not args.corpus:
+        orphans = validate_provenance(approved)
+        if orphans:
+            print()
+            print(f"WARNING: {len(orphans)} image(s) in training-data/ lack provenance entries:")
+            for o in sorted(orphans):
+                print(f"  {o}")
 
 
 def validate_only(args):
     approved = load_provenance(PROVENANCE_CSV)
+    if args.corpus:
+        approved = [r for r in approved if corpus_name(r["filename"]) == args.corpus]
 
     # Corpus counts from manifest
     corpus_counts = {}
@@ -258,12 +266,15 @@ def validate_only(args):
         for s in sorted(missing_sources):
             print(f"  {s}")
 
-    orphans = validate_provenance(approved)
-    if orphans:
-        print()
-        print(f"WARNING: {len(orphans)} image(s) in training-data/ lack provenance entries:")
-        for o in sorted(orphans):
-            print(f"  {o}")
+    if not args.corpus:
+        orphans = validate_provenance(approved)
+        if orphans:
+            print()
+            print(f"WARNING: {len(orphans)} image(s) in training-data/ lack provenance entries:")
+            for o in sorted(orphans):
+                print(f"  {o}")
+    else:
+        orphans = []
 
     if not missing_sources and not orphans:
         print()
@@ -290,6 +301,12 @@ def main():
         "--validate-only",
         action="store_true",
         help="Only run validation checks (no processing)",
+    )
+    parser.add_argument(
+        "--corpus",
+        type=str,
+        default=None,
+        help="Only process rows for this corpus (filters filename prefix)",
     )
     args = parser.parse_args()
 

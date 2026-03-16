@@ -27,6 +27,12 @@ tmp/
 
 # Raw scraped images (large, not committed)
 images/marine-base-raw/
+images/fish-commercial-raw/
+images/fish-supplement-raw/
+images/whales-raw/
+images/birds-raw/
+images/herring-eggs-raw/
+images/herring-spawn-raw/
 
 # Trained model checkpoints (~347 MB each, share via file transfer)
 models/

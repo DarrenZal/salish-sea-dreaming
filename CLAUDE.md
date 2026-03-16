@@ -8,39 +8,34 @@ Interactive AI art installation exploring the Salish Sea ecosystem. The vision: 
 
 ## Current Status
 
-**Date:** 2026-03-14
-**Status:** Multi-layer installation approach confirmed. GAN is one visual voice, not single point of failure. Existing 200/320 kimg checkpoints confirmed loading in Autolume (Prav tested). Parallel tracks active.
+**Date:** 2026-03-15
+**Status:** CC-safe corpus rebuild in progress. All three corpora scraping (commercial-safe licenses only). Legacy fish corpus archived.
+
+**License Policy:** COMMERCIAL USE — CC0, CC BY, CC BY-SA only. Artist fee at exhibition = commercial under CC terms. CC BY-NC excluded.
 
 **What's Done:**
-- Base model v1: 200 kimg on 539 marine photos, TELUS H200. Checkpoints in `models/base-v1/`
-- Resume run (00012) reached 320 kimg total (200 base + 120 resume) — then stopped per team decision
-- Run 00012 checkpoints downloaded to `models/base-v1-resume/` via Jupyter REST API
-- `marine-base-320kimg.pkl` uploaded to shared Drive → Models folder for Prav
-- **PKL loads in Autolume — CONFIRMED** (Prav tested 000200, NDI → TD pipeline working)
-- Team meeting (2026-03-13): Arshia flagged base dataset too diverse (37 species, inconsistent high-level features)
-- New direction agreed: LoRA → synthetic data → GAN pipeline for Briony style transfer
-- TELUS Jupyter API workflow established: list kernels, kill terminals, download files remotely
-- Meeting prep doc: `docs/2026-03-14-meeting-prep.md`
-
-**Active Tracks (see `docs/2026-03-14-meeting-prep.md` for full detail):**
-- **Track A: Autolume + Existing Checkpoints** (Prav) — foundation layer, proven pipeline
-- **Track B: Dataset Redesign + Retrain** (Darren) — TELUS go/no-go by March 15, B2 underwater scene coherence
-- **Track C: LoRA / IP Adapters** (exploration only) — keep off April critical path, ComfyUI IP Adapters more achievable
-- **Track D: Non-GAN Visual Assets** (both) — dream transforms, video loops, Moonfish footage, TD generative, Briony originals
-- **Track E: Sound** — needs owner TODAY, minimum: generative ambient in Ableton
+- Base model v1 (200 kimg) + resume (320 kimg) — checkpoints in `models/`, uploaded to Drive; **PKL loads in Autolume CONFIRMED** (Prav tested, NDI→TD working)
+- Team pivot (2026-03-13): Arshia flagged base dataset too diverse → three focused species models (Fish, Whales, Birds) as separate Autolume instances mixed via NDI in TouchDesigner
+- Multi-corpus pipeline built: `scraper`, `qc_approve`, `prep_training_data` all have `--corpus` flag + `--license-filter` on scraper; new minimums (fish/whale/bird: 150 each); qc_approve has `--rejects-file` scoping
+- `--license-filter` added to scraper: CC0/CC BY/CC BY-SA allowlist, filters before download (no wasted bandwidth)
+- `scripts/backfill_licenses.py` created: queries iNat API to fill license column, optionally purges non-safe rows
+- Species TSV files: `tools/species-fish.tsv` (13 bony fish — dropped Longfin Smelt/Surf Smelt/Yelloweye Rockfish: <7 CC-safe on iNat), `tools/species-whales.tsv` (6 cetaceans), `tools/species-birds.tsv` (10 seabirds). All taxon_ids populated.
+- Legacy fish corpus archived: `training-data/fish-model-legacy-unsafe-20260315/` (305 images, only 21 CC-safe)
+- Backfill + purge run on fish-model provenance: 96 non-CC-safe rows marked `approved_for_training=no`
+- CC-safe supply assessed via dry-runs: Fish=~800, Whale=728, Bird=1729 (all well above 150 threshold)
+- All three CC-safe scrapes launched (2026-03-15): downloading to `images/fish-commercial-raw/`, `images/whales-raw/`, `images/birds-raw/`
+- Meeting prep doc: `docs/2026-03-14-meeting-prep.md` — 5 parallel tracks, operational stability plan
 
 **What's Left:**
-1. **TELUS go/no-go by March 15** — check compiler issue, either fix + kick off B2 retrain, or drop track
-2. **Redesign base dataset** (B2: underwater scene coherence, ~300-400 images) if TELUS is go
-3. **LoRA research** + Briony corpus pruning recommendations
-4. **Fallback media package** — video loops via `create_loops.py` from Briony originals (locally generated, no API dependency)
-5. **Sound owner decision** — name, minimum spec, timeline
-6. **Hardware decision** — laptop vs dedicated desktop for 16-day exhibition
-7. **Burn-in test** — 8+ hours continuous stack test before April 10
-8. **Daily restart procedure** — written checklist for gallery staff
-9. **Fallback playback mode** — Resolume plays pre-rendered loops if Autolume crashes
-10. **Rehearsal at Mahon Hall** — at least 1 day before opening
-11. Darren away March 20–28 — handoff deliverables defined in meeting prep doc
+1. **QC all three corpora** — review raw images in Finder, create per-corpus rejects files, run `qc_approve --corpus <name> --rejects-file ...`
+2. **Prep all three corpora** — `prep_training_data.py --resolution 512 --corpus <name>`
+3. **Signal Prav** about his 400-500 image fish dataset — may provide higher-quality underwater shots
+4. **Contact Moonfish Media** for explicit permission on herring footage (CC-safe iNat herring = 47, want more)
+5. **TELUS go/no-go** — check compiler issue; if go, kick off Fish training first
+6. **Multi-instance burn-in** — test 3 Autolume + NDI + TD on Prav's hardware before committing to training
+7. **Operational stability** — burn-in test 8+ hrs, daily restart checklist, Resolume fallback
+8. **Sound owner decision** — name, minimum spec, timeline
+9. Darren away March 20–28 — handoff deliverables defined in meeting prep doc
 
 ## Project Vision
 
@@ -106,9 +101,12 @@ salish-sea-dreaming/
 
 | Tool | Purpose |
 |------|---------|
-| `tools/scrape_inaturalist_guide.py` | Scrape iNaturalist guide taxa with provenance tracking |
-| `tools/qc_approve.py` | Batch approve/reject iNat images from QC review reject list |
-| `tools/salish-sea-species.tsv` | 37 curated Salish Sea species for iNat scraping |
+| `tools/scrape_inaturalist_guide.py` | Scrape iNaturalist guide taxa with provenance tracking (`--corpus` flag for multi-dataset) |
+| `tools/qc_approve.py` | Batch approve/reject iNat images (`--corpus` + `--rejects-file` for scoped review) |
+| `tools/salish-sea-species.tsv` | 37 curated Salish Sea species (full marine) |
+| `tools/species-fish.tsv` | 16 bony fish species for fish-model |
+| `tools/species-whales.tsv` | 6 cetaceans for whale-model |
+| `tools/species-birds.tsv` | 10 coastal seabirds for bird-model |
 
 Scripts use TouchDesigner's Python API (`op()`, `noiseTOP`, `edgeTOP`, etc.). To test, paste into TouchDesigner's Textport or run via the TouchDesigner MCP.
 
@@ -193,18 +191,20 @@ Use MCP vault tools (`vault_read_note`, `vault_search_notes`) to access these.
 # Web prototype
 cd web && npm install && npm run dev  # http://localhost:3000
 
-# iNaturalist scraper (species list + provenance tracking)
+# Scrape a species corpus (e.g., whales)
 python tools/scrape_inaturalist_guide.py \
-  --species-list tools/salish-sea-species.tsv \
-  --per-taxon 20 --size large \
-  --output ./images/marine-base-raw --provenance --dry-run
+  --guide 0 --species-list tools/species-whales.tsv \
+  --per-taxon 50 --size large \
+  --output ./images/whales-raw --provenance --corpus whale-model
 
-# QC review + approve
-python tools/qc_approve.py --dry-run   # preview
-python tools/qc_approve.py --apply     # writes .bak backup, then updates provenance.csv
+# QC review + approve (scoped to corpus)
+python tools/qc_approve.py --corpus whale-model \
+  --rejects-file training-data/review/rejects-whale-model.csv --dry-run
+python tools/qc_approve.py --corpus whale-model \
+  --rejects-file training-data/review/rejects-whale-model.csv --apply
 
-# Build training corpora from approved images
-python scripts/prep_training_data.py --resolution 512
+# Build corpus from approved images
+python scripts/prep_training_data.py --resolution 512 --corpus whale-model
 
 # Knowledge graph
 curl http://localhost:8351/health  # check if KOI backend running
@@ -213,17 +213,14 @@ curl http://localhost:8351/health  # check if KOI backend running
 
 ## Session History
 
-| Date | Scope | Key Work |
-|------|-------|----------|
-| 2026-02-08 | Scripts | Dream transformations (dream_briony.py), video loops, mycelium/psychedelic TD scripts |
-| 2026-02-13 | Visual sprint | Animation research, prototype review |
-| 2026-03-02 | Docs + tools | One-pager for Raf finalized; iNaturalist scraper built (128 marine taxa); Proton Drive shared with Prav; coordination drafts written; Autolume/GAN + TELUS GPU plan outlined |
-| 2026-03-02 | Repo merge | Consolidated SalishSeaDreaming (Pascal) → salish-sea-dreaming (kebab); scripts/, VisualArt/ (git-lfs), docs migrated |
-| 2026-03-06 | Research + Octo | Deep research prompt + Report II ("The Living Salish Sea") to vault + Octo knowledge garden (salishsee.life); 27 entities ingested; fixed Octo chat widget (model config + timeout); salishsee.life now canonical URL |
-| 2026-03-09 | Training data (`364134a6`) | Briony crop pipeline + 36-image corpus; iNat scrape (740, 37 species); QC review (539 approved, 201 rejected); marine-photo-base built (539 at 512x512); TELUS smoke test (FID 474.6→502.8 — expected with only 36 images, pure-Python fallback); artifacts downloaded; docs updated; committed `aef147c` |
-| 2026-03-11 | Briony corpus expansion | Expanded Briony corpus from 36 to 54 images — broadened scope from marine-only to all ecological watercolors (salmon-forest, camas, landscapes); fixed crop_box bug in prep_training_data.py (crop coordinates were being ignored) |
-| 2026-03-12 | Arshia feedback + meeting prep | Integrated Arshia's training guidance: kimg=1000+ target, LoRA+img2img as style transfer alternative, Mac Autolume in dev; prepared Prav screen share meeting notes |
-| 2026-03-12 | Prav's project docs | Integrated 3 PDFs (Collaboration Outline, Tech Rider, Exhibition Outline) into meeting notes + repo; fixed date to April 10–26; added Moonfish Media, Natalia, Resolume Arena, sound layer, Phase 2 venues |
-| 2026-03-13 (`93132576`) | Base v1 + TELUS ops | Base 200 kimg complete, downloaded via Jupyter API, uploaded 000200.pkl to Drive for Prav; created standalone briefing PDF; kicked off resume to kimg=1000 via API (run 00012); TELUS remote API workflow established |
-| 2026-03-13 (`f85e12c9`) | Training stop + pivot | Team call: Arshia flagged dataset too diverse → stop training, redesign dataset. Stopped run 00012 via Jupyter API (killed terminal). Downloaded 320 kimg checkpoints to models/base-v1-resume/. Uploaded marine-base-320kimg.pkl to Drive. New direction: LoRA → synthetic data → GAN. |
-| 2026-03-14 | Meeting prep + strategy | Multi-layer installation strategy doc (`docs/2026-03-14-meeting-prep.md`). 5 parallel tracks (Autolume, retrain, LoRA, non-GAN assets, sound). 6 decisions for Prav call. Gap analysis vs exhibition promises. Operational stability plan (burn-in, restart, fallback). |
+| Session ID | Date | Scope | Key Work |
+|------------|------|-------|----------|
+| — | 2026-02-08 | Scripts | Dream transforms, video loops, mycelium/psychedelic TD scripts |
+| — | 2026-03-02 | Docs + tools | One-pager for Raf; iNat scraper built; repo merge (Pascal→kebab); Autolume/TELUS plan |
+| — | 2026-03-06 | Research | "The Living Salish Sea" Report II → vault + salishsee.life; 27 entities ingested |
+| — | 2026-03-09 | Training data | Briony crop pipeline + 54-image corpus; iNat scrape (739, 37sp); QC (539 approved); marine-photo-base built; TELUS smoke test |
+| — | 2026-03-12 | Arshia + Prav docs | Training guidance integrated (kimg=1000+, LoRA alt); Prav's 3 PDFs added; exhibition date fixed |
+| `93132576` | 2026-03-13 | TELUS ops | Base 200 kimg downloaded + uploaded to Drive; resume to kimg=1000 kicked off (run 00012) |
+| `f85e12c9` | 2026-03-13 | Pivot | Arshia: dataset too diverse → stopped training, downloaded 320 kimg checkpoints, new direction: LoRA→synthetic→GAN |
+| — | 2026-03-14 | Meeting prep | Multi-layer strategy doc, 5 parallel tracks, gap analysis, operational stability plan |
+| `f024a856` | 2026-03-14 | Dataset pipeline | Three-dataset strategy: multi-corpus scraper/qc/prep pipeline; fish/whale/bird TSVs; fish corpus assembled (174); supplement scraped (207 unique herring+salmon); dedupe fix |

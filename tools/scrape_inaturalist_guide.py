@@ -44,6 +44,9 @@ GUIDE_URL = "https://www.inaturalist.org/guides/{guide_id}"
 IMAGE_HOST = "inaturalist-open-data.s3.amazonaws.com"
 INAT_API = "https://api.inaturalist.org/v1"
 
+# Commercial-safe licenses for art exhibition use (artist fee = commercial)
+SAFE_LICENSES = {"cc0", "cc-by", "cc-by-sa"}
+
 
 def parse_species(html: str) -> list:
     """
@@ -190,6 +193,7 @@ def fetch_taxon_photos(
     taxon_id: int,
     n: int,
     size: str,
+    license_filter: bool = False,
 ) -> list[dict]:
     """
     Fetch up to N research-grade observation photos for a taxon.
@@ -241,6 +245,12 @@ def fetch_taxon_photos(
             photo_url = photo.get("url", "")
             if not photo_url:
                 continue
+
+            # Skip non-commercial-safe licenses when filter is active
+            if license_filter:
+                license_code = (photo.get("license_code") or "").lower()
+                if license_code not in SAFE_LICENSES:
+                    continue
 
             # iNaturalist API returns URLs with "square" size — swap to requested
             photo_url = re.sub(r"/square\.", f"/{size}.", photo_url)
@@ -312,7 +322,7 @@ PROVENANCE_COLUMNS = [
 ]
 
 
-def upsert_provenance(manifest: list[dict], output_dir: Path, dry_run: bool = False):
+def upsert_provenance(manifest: list[dict], output_dir: Path, corpus: str, dry_run: bool = False):
     """Upsert iNaturalist scrape results into training-data/provenance.csv.
 
     Idempotency: upsert by filename. If a row with the same filename already
@@ -334,8 +344,8 @@ def upsert_provenance(manifest: list[dict], output_dir: Path, dry_run: bool = Fa
     skipped = 0
     for m in manifest:
         obs_id = m.get("observation_id", "")
-        filename = f"marine-photo-base/{m['file']}"
-        source_file = f"images/marine-base-raw/{m['file']}"
+        filename = f"{corpus}/{m['file']}"
+        source_file = f"{str(output_dir)}/{m['file']}"
 
         if filename in existing:
             skipped += 1
@@ -389,6 +399,8 @@ def scrape(
     per_taxon: int = 0,
     species_list_path: Path | None = None,
     provenance: bool = False,
+    corpus: str = "marine-photo-base",
+    license_filter: bool = False,
 ):
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -476,8 +488,9 @@ def scrape(
                 shortfalls.append((name, 0, per_taxon))
                 continue
 
-            print(f"    Taxon ID: {taxon_id} — fetching up to {per_taxon} photos...")
-            photos = fetch_taxon_photos(taxon_id, per_taxon, size)
+            filter_msg = " (CC-safe only)" if license_filter else ""
+            print(f"    Taxon ID: {taxon_id} — fetching up to {per_taxon} photos{filter_msg}...")
+            photos = fetch_taxon_photos(taxon_id, per_taxon, size, license_filter=license_filter)
 
             if len(photos) < per_taxon:
                 shortfalls.append((name, len(photos), per_taxon))
@@ -507,9 +520,14 @@ def scrape(
 
                 if not dry_run and not dest.exists():
                     try:
-                        urlretrieve(url, dest)
+                        req = Request(url, headers={"User-Agent": "SalishSeaDreaming/1.0"})
+                        with urlopen(req, timeout=30) as resp:
+                            with open(dest, "wb") as fout:
+                                fout.write(resp.read())
                     except Exception as e:
                         print(f"      ERROR downloading {filename}: {e}")
+                        if dest.exists() and dest.stat().st_size == 0:
+                            dest.unlink()  # remove zero-byte file
                     time.sleep(0.3)
 
             time.sleep(1)  # pause between taxa
@@ -546,7 +564,7 @@ def scrape(
 
     # Upsert provenance if requested (only meaningful for per-taxon mode)
     if provenance and per_taxon:
-        upsert_provenance(manifest, output_dir, dry_run=dry_run)
+        upsert_provenance(manifest, output_dir, corpus, dry_run=dry_run)
 
 
 def main():
@@ -585,6 +603,10 @@ Examples:
                         help="Path to curated species list (TSV/CSV with taxon_id, common_name, scientific_name)")
     parser.add_argument("--provenance", action="store_true",
                         help="Upsert download metadata into training-data/provenance.csv (per-taxon mode only)")
+    parser.add_argument("--corpus", type=str, default="marine-photo-base",
+                        help="Corpus name prefix for provenance rows (default: marine-photo-base)")
+    parser.add_argument("--license-filter", action="store_true",
+                        help="Only download CC0/CC BY/CC BY-SA images (commercial-safe)")
     args = parser.parse_args()
 
     print(f"iNaturalist Guide Scraper")
@@ -597,7 +619,9 @@ Examples:
     if args.species_list:
         print(f"  Species list: {args.species_list}")
     if args.provenance:
-        print(f"  Provenance: enabled")
+        print(f"  Provenance: enabled (corpus: {args.corpus})")
+    if args.license_filter:
+        print(f"  License filter: CC0, CC BY, CC BY-SA only")
     print()
 
     scrape(
@@ -608,6 +632,8 @@ Examples:
         per_taxon=args.per_taxon,
         species_list_path=Path(args.species_list) if args.species_list else None,
         provenance=args.provenance,
+        corpus=args.corpus,
+        license_filter=args.license_filter,
     )
 
 

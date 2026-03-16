@@ -69,11 +69,24 @@ def main():
         action="store_true",
         help="Write changes to provenance.csv (creates .bak backup first)",
     )
+    parser.add_argument(
+        "--corpus",
+        type=str,
+        default=None,
+        help="Only process rows whose filename starts with CORPUS/ (e.g. whale-model)",
+    )
+    parser.add_argument(
+        "--rejects-file",
+        type=str,
+        default=None,
+        help="Path to rejects CSV (default: training-data/review/rejects.csv)",
+    )
     args = parser.parse_args()
 
     # Load reject list
-    rejects = load_rejects(REJECTS_CSV)
-    print(f"Loaded {len(rejects)} rejects from {REJECTS_CSV}")
+    rejects_path = args.rejects_file if args.rejects_file else REJECTS_CSV
+    rejects = load_rejects(rejects_path)
+    print(f"Loaded {len(rejects)} rejects from {rejects_path}")
     print()
 
     # Load provenance
@@ -102,6 +115,10 @@ def main():
 
         # Only touch iNaturalist + pending rows
         if source != "iNaturalist" or status != "pending":
+            skipped += 1
+            continue
+        # Scope to corpus if specified
+        if args.corpus and not row.get("filename", "").startswith(args.corpus + "/"):
             skipped += 1
             continue
 
