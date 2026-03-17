@@ -33,9 +33,22 @@ images/whales-raw/
 images/birds-raw/
 images/herring-eggs-raw/
 images/herring-spawn-raw/
+images/fish-schools-raw/
+images/birds-in-fish-raw/
+
+# Prepped training corpora (512x512, regenerable from raw via prep_training_data.py)
+training-data/fish-model/
+training-data/whale-model/
+training-data/bird-model/
+
+# Legacy/archived corpora
+training-data/fish-model-legacy-unsafe-*/
 
 # Trained model checkpoints (~347 MB each, share via file transfer)
 models/
+
+# Playwright MCP logs
+.playwright-mcp/
 
 # QC contact sheets (large PNGs, regenerable from raw images)
 training-data/review/contact-sheets/

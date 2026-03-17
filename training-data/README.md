@@ -90,6 +90,33 @@ Time: ~3h 09m total (pure-Python fallback — no C/C++ compiler on TELUS noteboo
 
 FID worsened then partially recovered — expected with only 36 images and no base model foundation. The pipeline works: checkpoints load, fakes grids show recognizable marine forms. The base+fine-tune approach should yield much better FID. PKL checkpoints saved locally in `models/briony-test-run/` (not committed — ~347 MB each, available on request).
 
+### TELUS Compiler Fix (2026-03-12)
+
+The smoke test ran in pure-Python fallback (10-20x slower) because the TELUS notebook had no C/C++ compiler. Workaround found:
+
+```bash
+# Install conda-forge compilers (system gcc 15.2 was too new for CUDA 12.4)
+conda install gcc_linux-64=12 gxx_linux-64=12
+
+# Point PyTorch to conda compilers
+export CC=$CONDA_PREFIX/bin/x86_64-conda-linux-gnu-gcc
+export CXX=$CONDA_PREFIX/bin/x86_64-conda-linux-gnu-g++
+export CUDAHOSTCXX=$CXX
+
+# Add CUDA headers to include path
+export CPATH=$CONDA_PREFIX/include:$CPATH
+
+# Verify: custom CUDA extensions now compile → ~347 sec/kimg, 100% GPU utilization
+```
+
+**Speed comparison (batch=8, gamma=20, 539 images):**
+- Pure-Python fallback: ~454 sec/kimg (smoke test extrapolated)
+- With compiler fix: **~540 sec/kimg** at 100% GPU utilization (from run 00012 log)
+- 1000 kimg ≈ 150 hours ≈ 6.3 days
+
+Previous runs saved in `telus/` directory (logs, training_options.json, stats.jsonl).
+Full TELUS setup: `scripts/telus-training-setup.sh`.
+
 ## Verification Checklist
 
 - [x] Parser fix validated: spot-check 10 species common/scientific alignment

@@ -9,7 +9,7 @@ Interactive AI art installation exploring the Salish Sea ecosystem. The vision: 
 ## Current Status
 
 **Date:** 2026-03-16
-**Status:** All three CC-safe corpora scraped — ready for QC review. Images on Drive.
+**Status:** Fish model training LIVE on TELUS H200 (~353 sec/kimg, ETA March 20-21). Whale + bird awaiting QC.
 
 **License Policy:** COMMERCIAL USE — CC0, CC BY, CC BY-SA only. Artist fee at exhibition = commercial under CC terms. CC BY-NC excluded.
 
@@ -18,19 +18,22 @@ Interactive AI art installation exploring the Salish Sea ecosystem. The vision: 
 - Team pivot (2026-03-13): three focused species models (Fish, Whales, Birds) as separate Autolume instances mixed via NDI in TouchDesigner
 - Multi-corpus pipeline: `scraper` (`--corpus`, `--license-filter`, 30s download timeout), `qc_approve` (`--corpus`, `--rejects-file`), `prep_training_data` (`--corpus`). `scripts/backfill_licenses.py` for retroactive license auditing.
 - Species TSVs: `tools/species-fish.tsv` (13 bony fish), `tools/species-whales.tsv` (6 cetaceans), `tools/species-birds.tsv` (10 seabirds). All taxon_ids populated.
-- **All three CC-safe corpora scraped** (2026-03-15): Fish 911 images (13 sp), Whale 731 (6 sp), Bird 1729 (10 sp). All provenance tracked. Zips uploaded to [Drive](https://drive.google.com/drive/folders/17QVEYgmEZDYupWI4vGF2QicXSVKWfk_6).
-- Legacy fish corpus archived: `training-data/fish-model-legacy-unsafe-20260315/` (only 21/305 were CC-safe)
-- 3 thin fish species dropped (Longfin Smelt=2, Surf Smelt=6, Yelloweye Rockfish=4 CC-safe on iNat)
+- **All three CC-safe corpora scraped** (2026-03-15): Fish 911 (13 sp), Whale 731 (6 sp), Bird 1729 (10 sp). All provenance tracked.
+- **Fish QC complete** (2026-03-16): 378 approved, 507 rejected (dead fish, blurry, wrong species). Herring eggs (15), fish schools (12), birds-in-fish (5) separated to own folders for future training.
+- **Fish model prepped** at 512x512 (378 images) and **training kicked off** on TELUS H200 at ~353 sec/kimg with compiled CUDA extensions. kimg=1000, snap=50.
+- TELUS training artifacts saved locally: `telus/` (logs, training_options, stats from runs 00009+00012), `scripts/telus-training-setup.sh` (reproducible bootstrap)
+- All datasets + QC'd zips uploaded to [Drive](https://drive.google.com/drive/folders/17QVEYgmEZDYupWI4vGF2QicXSVKWfk_6)
+- Arshia feedback: fish + bird datasets look best; whale last (shapes unclear). Training order: Fish → Bird → Whale.
 
 **What's Left:**
-1. **QC all three corpora** — review raw images in Finder, create per-corpus rejects files, run `qc_approve --corpus <name> --rejects-file ...`
-2. **Prep all three corpora** — `prep_training_data.py --resolution 512 --corpus <name>`
-3. **Kick off TELUS training** — Fish first (most images, highest confidence), then Whales, then Birds
-4. **Contact Moonfish Media** for explicit permission on herring footage (CC-safe iNat herring = 50, want more)
-5. **Multi-instance burn-in** — test 3 Autolume + NDI + TD on Prav's hardware before committing to training
-6. **Operational stability** — burn-in test 8+ hrs, daily restart checklist, Resolume fallback
-7. **Sound owner decision** — name, minimum spec, timeline
-8. Darren away March 20–28 — handoff deliverables defined in meeting prep doc
+1. **Download fish checkpoints** — every 50 kimg (~4.9 hrs), test in Autolume. Training ETA ~March 20-21.
+2. **QC whale + bird corpora** — review in Finder, create rejects CSVs, run `qc_approve`, `prep_training_data`
+3. **Kick off bird training** on TELUS after fish completes (Arshia ranked bird #2)
+4. **Kick off whale training** last (Arshia: shapes unclear, consider YOLO crop later)
+5. **Contact Moonfish Media** for herring footage permission (CC-safe iNat herring = 15 after QC)
+6. **Multi-instance burn-in** — test 3 Autolume + NDI + TD on Prav's hardware
+7. **Operational stability** — burn-in 8+ hrs, Resolume fallback
+8. Darren away March 20–28
 
 ## Project Vision
 
@@ -219,4 +222,4 @@ curl http://localhost:8351/health  # check if KOI backend running
 | `f85e12c9` | 2026-03-13 | Pivot | Arshia: dataset too diverse → stopped training, downloaded 320 kimg checkpoints, new direction: LoRA→synthetic→GAN |
 | — | 2026-03-14 | Meeting prep | Multi-layer strategy doc, 5 parallel tracks, gap analysis, operational stability plan |
 | `f024a856` | 2026-03-14 | Dataset pipeline | Three-dataset strategy: multi-corpus scraper/qc/prep pipeline; fish/whale/bird TSVs; fish corpus assembled (174); supplement scraped (207 unique herring+salmon); dedupe fix |
-| `ba05bf17` | 2026-03-15 | License + scrape | CC-safe rebuild: --license-filter + download timeout on scraper, backfill_licenses.py, archived unsafe fish corpus, scraped all 3 corpora (fish 911, whale 731, bird 1729), uploaded to Drive |
+| `ba05bf17` | 2026-03-15/16 | License → training | CC-safe pipeline (--license-filter, backfill_licenses.py), scraped 3 corpora, fish QC (378/911 approved), prepped 512px, kicked off TELUS H200 training (~353 sec/kimg), saved TELUS artifacts, Drive updated |
