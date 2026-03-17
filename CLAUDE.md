@@ -8,8 +8,8 @@ Interactive AI art installation exploring the Salish Sea ecosystem. The vision: 
 
 ## Current Status
 
-**Date:** 2026-03-16
-**Status:** Fish model training LIVE on TELUS H200 (~353 sec/kimg, ETA March 20-21). Whale + bird awaiting QC.
+**Date:** 2026-03-17
+**Status:** Fish model training LIVE on TELUS H200 (~353 sec/kimg, ETA March 20-21). Holonic vision documented. Whale + bird awaiting QC.
 
 **License Policy:** COMMERCIAL USE — CC0, CC BY, CC BY-SA only. Artist fee at exhibition = commercial under CC terms. CC BY-NC excluded.
 
@@ -24,15 +24,18 @@ Interactive AI art installation exploring the Salish Sea ecosystem. The vision: 
 - TELUS training artifacts saved locally: `telus/` (logs, training_options, stats from runs 00009+00012), `scripts/telus-training-setup.sh` (reproducible bootstrap)
 - All datasets + QC'd zips uploaded to [Drive](https://drive.google.com/drive/folders/17QVEYgmEZDYupWI4vGF2QicXSVKWfk_6)
 - Arshia feedback: fish + bird datasets look best; whale last (shapes unclear). Training order: Fish → Bird → Whale.
+- **Holonic morphing vision** documented in `docs/autolume-integration.md` — food web as fractal cycle, boids system, recursive instancing, cross-model transitions via NDI crossfades
+- `docs/` reorganized: 11 dated/sent docs archived to `docs/archive/`
+- Prav shopping for RTX 3090 desktop (~$2900 FB marketplace). Meeting Natalia Tue re: budget.
 
 **What's Left:**
-1. **Download fish checkpoints** — every 50 kimg (~4.9 hrs), test in Autolume. Training ETA ~March 20-21.
-2. **QC whale + bird corpora** — review in Finder, create rejects CSVs, run `qc_approve`, `prep_training_data`
-3. **Kick off bird training** on TELUS after fish completes (Arshia ranked bird #2)
-4. **Kick off whale training** last (Arshia: shapes unclear, consider YOLO crop later)
-5. **Contact Moonfish Media** for herring footage permission (CC-safe iNat herring = 15 after QC)
-6. **Multi-instance burn-in** — test 3 Autolume + NDI + TD on Prav's hardware
-7. **Operational stability** — burn-in 8+ hrs, Resolume fallback
+1. **Wednesday work jam** with Prav, Shawn, Eve — discuss holonic vision, hardware, boids approach
+2. **Download fish checkpoints** — every 50 kimg (~4.9 hrs), test in Autolume. Training ETA ~March 20-21.
+3. **QC whale + bird corpora** — review in Finder, create rejects CSVs, run `qc_approve`, `prep_training_data`
+4. **Kick off bird training** on TELUS after fish completes (Arshia ranked bird #2)
+5. **Kick off whale training** last (Arshia: shapes unclear, consider YOLO crop later)
+6. **Contact Moonfish Media** for herring footage permission (CC-safe iNat herring = 15 after QC)
+7. **Multi-instance burn-in** — test 3 Autolume + NDI + TD once Prav has GPU machine
 8. Darren away March 20–28
 
 ## Project Vision
@@ -222,4 +225,4 @@ curl http://localhost:8351/health  # check if KOI backend running
 | `f85e12c9` | 2026-03-13 | Pivot | Arshia: dataset too diverse → stopped training, downloaded 320 kimg checkpoints, new direction: LoRA→synthetic→GAN |
 | — | 2026-03-14 | Meeting prep | Multi-layer strategy doc, 5 parallel tracks, gap analysis, operational stability plan |
 | `f024a856` | 2026-03-14 | Dataset pipeline | Three-dataset strategy: multi-corpus scraper/qc/prep pipeline; fish/whale/bird TSVs; fish corpus assembled (174); supplement scraped (207 unique herring+salmon); dedupe fix |
-| `ba05bf17` | 2026-03-15/16 | License → training | CC-safe pipeline (--license-filter, backfill_licenses.py), scraped 3 corpora, fish QC (378/911 approved), prepped 512px, kicked off TELUS H200 training (~353 sec/kimg), saved TELUS artifacts, Drive updated |
+| `ba05bf17` | 2026-03-15–17 | License → training → vision | CC-safe pipeline + 3 corpora scraped, fish QC (378 approved), TELUS training live (353 sec/kimg), holonic morphing vision documented, docs reorganized, Drive updated |
