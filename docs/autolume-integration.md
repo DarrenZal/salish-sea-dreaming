@@ -49,22 +49,30 @@ On the **TELUS H200 GPU cluster**: hardware exceeds all requirements. H200 = 141
 ## Architecture
 
 ```
-MIDI controller       Ableton Live + Max for Live
-      │                    │ (biosonification)
-      ▼                    ▼
-  Autolume ←──── OSC ────→ TouchDesigner
-  (Windows/TELUS)               │
-      │ NDI video stream         ▼
-      └──────────────────→  Resolume Arena ────→ Projection
-                            (mapping/mixing)     (1-2 projectors)
+Autolume (Fish Model) ──────► NDI In TOP ──┐
+Autolume (Whale Model) ─────► NDI In TOP ──┤──► TouchDesigner Compositor
+Autolume (Bird Model) ──────► NDI In TOP ──┘          │
+Autolume (320k base) ───────► NDI In TOP ─────────────┤  ("dreaming mind" bg layer)
+                                                       ▼
+MIDI controller ──────────────────────────────► Boids Particle System
+Ableton/Max for Live ── OSC /audio/* ─────────► (instanced with GAN texture)
+                                                       │
+                                                       ▼
+                                            Recursive Instancing / Zoom
+                                           (scales → fish → school → whale)
+                                                       │
+                                                       ▼
+                                            Resolume Arena ────→ Projection
 ```
 
-Two-way flow:
-- **Autolume → TD**: NDI video stream (use NDI In TOP in TouchDesigner)
-- **TD → Resolume Arena**: Final compositing, projection mapping, video mixing
+**Signal flow:**
+- **3 Autolume instances → TD**: NDI video streams (one per species model)
+- **Background layer**: 320 kimg base checkpoint as abstract "dreaming mind" texture
+- **TD boids system**: Particle system with GAN textures, drives all visual movement
 - **TD ↔ Autolume**: OSC bidirectional (latent parameters, control signals)
+- **Audio → TD**: Ableton/Max for Live sends `/audio/amplitude` and `/audio/freq_band` via OSC
 - **MIDI → Autolume**: Direct via Network Bending, or routed through TD
-- **Sound**: Ableton Live + Max for Live biosonification (Prav + TBC collaborator)
+- **TD → Resolume**: Final compositing, projection mapping
 
 ### Operational Modes
 
@@ -133,78 +141,155 @@ TD becomes the hub: MIDI controls both TD visuals and Autolume parameters simult
 
 ## Training Dataset Strategy
 
-### Core Insight: One Strong Image Grammar
+### Three Focused Species Models
 
-StyleGAN2-ada doesn't need all-one-species or all-one-composition, but it **does** need visual coherence. At ~500 images, optimize for a shared visual world, not semantic completeness.
+The original base model (539 mixed marine photos) was too visually diverse — Arshia flagged this after reviewing the 320 kimg checkpoint. The pivot: three separate models, each learning one visual domain.
 
-Ecological data doesn't tell one GAN what to draw. Instead, data drives:
-- Which model/checkpoint is active (underwater vs. painterly)
-- Where you navigate in latent space (sparse → abundant)
-- How outputs blend in TouchDesigner (layer opacity, compositing)
+| Model | Dataset | Images | Status |
+|-------|---------|--------|--------|
+| **Fish** | 13 bony fish species (salmon, herring, lingcod, rockfish, etc.) | 378 (QC'd) | **Training on TELUS** (~353 sec/kimg, ETA Mar 20-21) |
+| **Bird** | 10 coastal seabird species (eagle, heron, murre, puffin, etc.) | 1,729 (awaiting QC) | Next after fish |
+| **Whale** | 6 cetacean species (orca, humpback, gray, minke, porpoise, dolphin) | 731 (awaiting QC) | Last (shapes less clear per Arshia) |
+| **Base (320 kimg)** | Original 539 mixed marine — abstract, impressionistic | 539 | Done — used as background "dreaming mind" layer |
 
-Multiple models = multiple visual voices. Ecological data = the conductor.
+**License policy:** CC0/CC BY/CC BY-SA only (artist fee = commercial use). All images scraped with `--license-filter`. Provenance tracked in `training-data/provenance.csv`.
 
-### v1 Strategy: Base + Fine-tune
+**Training order per Arshia:** Fish → Bird → Whale. Fish and bird datasets are more consistent; whale photos often have unclear shapes.
 
-**For April: one base + one Briony fine-tune is the minimum viable path.**
+### Individual Fish, Not Schools
 
-| Model | Dataset | Size | Training Time (H200) |
-|-------|---------|------|---------------------|
-| `base-underwater-v1.pkl` | `marine-photo-base/` (500+ underwater/nearshore photos) | 512x512 | kimg=1000+ (Arshia rec.) |
-| `briony-v1.pkl` | Fine-tune on `briony-marine-colour/` (54 images) | 512x512 | ~30-60 min |
-| `david-v1.pkl` | Fine-tune on `david-denning/` (if archive arrives) | 512x512 | ~30-60 min |
+School images are excluded from the fish-model corpus — mixing schools into an individual-fish dataset creates a bimodal distribution that StyleGAN struggles with. Schools are created in TouchDesigner via boids + instancing (see Holonic Morphing System below). The GAN provides individual fish appearance; TD provides emergent schooling behavior.
 
-**Arshia's recommendation (March 2026):** Train base to kimg=1000+, evaluate visually at each snapshot, stop when good or when collapse begins. kimg=200 is a v1 checkpoint — resume from there to reach 1000+. If training shows collapse or explosion, retrain with different gamma.
+School images (12) and herring eggs (15) are saved separately for potential future corpus training.
 
-Save multiple fine-tune checkpoints at `--snap=10` to get a gradient from photographic → painterly.
+### Future Training Seeds
 
-**Note on 54 Briony images:** This is low for non-regularized fine-tuning per Arshia — experimental, results depend on dataset coherence.
+| Corpus | Images | Purpose |
+|--------|--------|---------|
+| `herring-eggs-raw/` | 15 | Herring spawn/egg imagery — future model |
+| `fish-schools-raw/` | 12 | School formations — future fish-school model if TD instancing looks too synthetic |
+| `briony-marine-colour/` | 54 | Briony Penn watercolors at 512x512 — fine-tune candidate |
 
-### Alternative: LoRA + img2img for Style Transfer
+---
 
-Arshia suggests that for applying Briony's style to photographic imagery (e.g. David Denning photos), a **LoRA fine-tune + img2img pipeline** may produce better results than pure GAN fine-tune. This approach:
-- Fine-tunes a lightweight LoRA adapter on Briony's watercolors
-- Uses img2img to transform photographic inputs through the learned style
-- More flexible for style transfer across different source imagery
+## Holonic Morphing System
 
-Needs more visual examples and discussion — on agenda for Friday 12:30 call with Arshia.
+### Vision: The Food Web as Fractal Cycle
 
-### Current Assets
+The installation explores the Salish Sea food web through fractal, self-similar transitions. Each creature contains the whole:
 
-- `training-data/briony-marine-colour/` — 54 images at 512x512 (committed, ready)
-- `images/marine/` — 128 species × 500px JPEGs from iNaturalist Guide 19640
-- Curated species list: `tools/salish-sea-species.tsv` (~38 underwater/nearshore taxa)
+- Scales of a fish → become individual fish in a school
+- School of herring → condenses into a salmon (herring eaten by salmon)
+- School of salmon → becomes a whale (salmon eaten by whale)
+- Whale breaks the surface → dissolves into a murmuration of birds
+- Bird murmuration dives → becomes a herring ball (birds eating herring)
+- Herring ball → individual herring whose scales are fish
 
-### v1 Base Model Scope: Underwater/Nearshore
+Each holon contains the whole. The cycle is the food web.
 
-Fish (single and schools), kelp, eelgrass, octopus, invertebrates, close underwater scenes — these share lighting, color palette, and spatial grammar.
+### How It Works: GAN Language + TD Grammar
 
-**NOT in v1 base:** Boats, seabirds on open water, horizon-heavy ocean scenes, aerial coastlines, harbor infrastructure. These are visually different domains → separate models in v2.
+The GANs provide the *visual language* (what fish/whales/birds look like). TouchDesigner provides the *grammar* (how they move, flock, morph, and consume each other). Cross-model morphing (fish face structurally transforming into whale face) is NOT achievable across separate GANs. What we CAN do is choreographed sequences that feel intentional and on-theme.
 
-### Building the Base Dataset
+### Boids Particle System (TD)
 
-```bash
-# Scrape ~570 research-grade photos with provenance tracking
-python tools/scrape_inaturalist_guide.py \
-  --species-list tools/salish-sea-species.tsv \
-  --per-taxon 15 --size large \
-  --output ./images/marine-base-raw \
-  --provenance
+Three behavioral modes for the particle system, each textured with the corresponding GAN output:
 
-# After QC review, process approved images
-python scripts/prep_training_data.py --resolution 512
+**FISH_SCHOOL mode:**
+- High cohesion (0.8), high alignment (0.7), fast speed
+- Thin disc formation (fish schools are flat, not spherical)
+- Silver flash effect: particles briefly brighten on direction change
+
+**BIRD_MURMURATION mode:**
+- Medium cohesion (0.5), altitude variation (y-axis drift)
+- Wave-like density pulsation, expansion/contraction in long curving shapes
+
+**SINGLE_ENTITY mode:**
+- Particles collapse to single point (count → 1)
+- GAN output fills full frame (whale: slow drift, breathing surface animation)
+
+**OSC control parameters:**
+```
+/boids/cohesion     [0.0-1.0]
+/boids/separation   [0.0-1.0]
+/boids/alignment    [0.0-1.0]
+/boids/count        [1-10000]
+/boids/mode         [fish|bird|single]
+/boids/speed        [0.0-1.0]
 ```
 
-Target: ~38 taxa × 15 = ~570 raw. After QC → 400-500 usable. If below 500, increase `--per-taxon` to 20.
+**Audio reactivity:**
+- Boids speed ← audio amplitude (silent = slow drift, loud = fast school burst)
+- Boids cohesion ← frequency band (bass = tight school, treble = dispersed)
 
-### Future Models (v2+)
+### Cross-Model Transitions (The Food Web Cycle)
 
-| Visual Domain | Description |
-|--------------|-------------|
-| `surface-horizon` | Whales breaching, seabirds on water, ocean surface |
-| `boats-vessels` | Fishing boats, ferries, canoes (Prav's request) |
-| `aerial-coastal` | Coastline, estuaries, spawn events from above |
-| `forage-school` | Dedicated herring/anchovy schooling model (artistically powerful) |
+| Transition | What it looks like | What actually happens |
+|---|---|---|
+| Herring → Salmon | Color warms, form shifts | Latent walk within fish model (herring → salmon cluster) — **real structural morph** |
+| School condenses | Many fish → tight ball | Boids cohesion → 1.0 |
+| School → Whale | Ball implodes, large form emerges | Boids count → 1, crossfade fish → whale NDI |
+| Whale → Bird flock | Form disperses upward | Boids count scales up, crossfade whale → bird NDI, mode → MURMURATION |
+| Birds → Herring ball | Murmuration contracts down | Boids mode → FISH_SCHOOL, crossfade bird → fish NDI |
+
+**The crossfades ARE the consumption.** The disappearance of herring IS the salmon. The collapse of the salmon school IS the whale. Coupled with boids expansion/contraction and the fractal instancing, these read as organic transformations, not dissolves.
+
+**The one true structural morph:** Herring → salmon within the fish model via latent space interpolation. After training, Arshia can identify approximate latent clusters via Autolume's projection feature and interpolate between those seeds. This is the keystone moment of the cycle.
+
+### Recursive Instancing — "Fish Made of Fish"
+
+Render-to-texture recursion in TD:
+
+```
+Level 0: GAN individual fish texture (from Autolume NDI)
+Level 1: Instance 200 fish textures arranged as a fish silhouette
+         → Viewer sees "fish made of fish"
+Level 2: Instance 50 Level-1 schools arranged as a whale silhouette
+         → Viewer sees "whale made of schools"
+```
+
+Controlled by a master `zoom_level` parameter [0.0–2.0] via OSC:
+- `zoom=0`: Sea of silver light (impressionistic, deep zoom out)
+- `zoom=0.5`: Vast school of fish
+- `zoom=1.0`: Individual fish, clearly defined
+- `zoom=2.0`: Scales magnified → each is a tiny fish
+
+Implementation: `Render TOP` → `Feedback` loop → `Instance Texture` on SOP point clouds shaped from fish/whale silhouette SDFs.
+
+### Background Layer: The Dreaming Mind
+
+The original 320 kimg base model (37 species, abstract/impressionistic) runs as a persistent background layer at low opacity — the Salish Sea dreaming itself while individual organisms swim through. This provides visual continuity during transitions and grounds the installation in the "dreaming" concept.
+
+### Implementation Phasing (April 10 deadline)
+
+**Must-have for April:**
+1. Three species models trained (TELUS) ← fish training started
+2. Three Autolume instances running → NDI into TD
+3. Basic boids fish school (starting point: `examples/FishSchool.toe`)
+4. Choreographed crossfades between NDI feeds + boids expansion/contraction
+5. Latent walk within fish model (herring ↔ salmon)
+6. Background 320 kimg layer
+7. Basic audio reactivity (amplitude → boids speed/cohesion)
+
+**Nice-to-have for April:**
+8. Fish → whale boids count transition (school → single point → whale)
+9. Boids rule morph: fish school ↔ bird murmuration
+10. Level-1 recursive instancing: "fish of fish"
+
+**Post-April (MOVE37XR Symposium, Oct 2026):**
+11. Full automated food web cycle choreography
+12. Level-2 recursive instancing ("whale of schools of fish")
+13. Interactive depth (stillness reveals deeper recursion)
+
+### Hardware for Multi-Instance
+
+Three simultaneous Autolume instances + NDI + TD. Prav's minimum spec to curator: RTX 3090.
+
+**Option A — Single RTX 4090 (test first):** 3 instances at 1080p/30fps feasible; VRAM tight. Validate with burn-in test.
+
+**Option B — Two machines (if A fails):** Split Autolume instances across two GPUs, TD on third machine receiving NDI.
+
+**NDI bandwidth:** 1080p ≈ 100-180 Mbps per feed. 4 feeds ≈ 600 Mbps — gigabit LAN minimum, no Wi-Fi.
 
 ---
 
@@ -213,58 +298,46 @@ Target: ~38 taxa × 15 = ~570 raw. After QC → 400-500 usable. If below 500, in
 ### TELUS H200 Notebook Bootstrap
 
 Console: `https://console.ai.telus.com` → Developer Hub → Notebooks → "Jupyter Notebook - 1 H200 GPU"
-Account: `zaldarren@gmail.com` (Org Admin). Deploy takes ~90 sec.
+Jupyter API: `https://salishsea-0b50s.paas.ai.telus.com` (token in `.env`)
+
+Full reproducible setup: **`scripts/telus-training-setup.sh`**. Previous run artifacts saved in **`telus/`** (logs, training_options, stats).
 
 ```bash
-# 1. Install dependencies
+# Key steps (see telus-training-setup.sh for full script):
+
+# 1. Install PyTorch + deps
 pip install torch==2.5.1 torchvision --index-url https://download.pytorch.org/whl/cu124
 pip install ninja imageio-ffmpeg==0.4.9 psutil scipy click requests tqdm pyspng
 
-# 2. Clone StyleGAN3 codebase (trains both SG2 and SG3 configs)
-git clone https://github.com/NVlabs/stylegan3.git
-cd stylegan3
+# 2. CUDA toolkit + compilers (system gcc 15.2 too new for CUDA 12.4)
+mamba install -y -c nvidia/label/cuda-12.4.0 cuda-nvcc cuda-cudart-dev
+conda install -y gcc_linux-64=12 gxx_linux-64=12
 
-# 3. Upload training data zip via JupyterLab file browser
-#    Local: zip -j briony-marine-colour.zip training-data/briony-marine-colour/*.png
-unzip briony-marine-colour.zip -d ./data/briony/
+# 3. Compiler env vars (CRITICAL — without these, falls back to pure-Python, 1.5x slower)
+export CC=/opt/conda/bin/x86_64-conda-linux-gnu-gcc
+export CXX=/opt/conda/bin/x86_64-conda-linux-gnu-g++
+export CUDAHOSTCXX=$CXX
+export TORCH_CUDA_ARCH_LIST="9.0"
+NVIDIA_INC=$(find /opt/conda/lib/python3.11/site-packages/nvidia -name include -type d | tr '\n' ':')
+export CPATH="${NVIDIA_INC}${CPATH}"
 
-# 4. Prepare dataset (creates ZIP with metadata for StyleGAN)
-python dataset_tool.py --source=./data/briony/ --dest=./data/briony512.zip --resolution=512x512
+# 4. Test CUDA compilation
+python -c 'from torch_utils.ops import bias_act; bias_act._init(); print("OK")'
 
-# 5. Verify
-python dataset_tool.py --source=./data/briony512.zip
-
-# 6. Train (smoke test: 200 kimg, ~36 images — will be bad but proves pipeline)
-python train.py --outdir=./results \
-  --cfg=stylegan2 \
-  --data=./data/briony512.zip \
-  --gpus=1 --batch=16 --gamma=6.6 \
-  --kimg=200 --snap=25
-
-# 7. Full base training (500+ images) — Arshia recommends kimg=1000+
-python train.py --outdir=./results \
-  --cfg=stylegan2 \
-  --data=./data/marine-base512.zip \
-  --gpus=1 --batch=8 --gamma=20 \
-  --kimg=1000 --snap=10 --metrics=none
-
-# 8. Fine-tune Briony on top of base
-python train.py --outdir=./results \
-  --cfg=stylegan2 \
-  --data=./data/briony512.zip \
-  --gpus=1 --batch=16 --gamma=6.6 \
-  --kimg=200 --snap=10 \
-  --resume=./results/BASE_CHECKPOINT.pkl
+# 5. Train (proven params: batch=8, gamma=20)
+python train.py --outdir=./results --cfg=stylegan2 \
+  --data=./data/fish512.zip --gpus=1 --batch=8 --gamma=20 \
+  --kimg=1000 --snap=50 --metrics=none
 ```
 
-**TELUS-specific notes:**
-- Storage is **ephemeral** — download `.pkl` checkpoints immediately. A K8s restart wipes everything.
-- Keep notebook session open during training (no background jobs on POC).
-- One GPU workload at a time.
-- GPU: H200, 141 GB HBM3e, CUDA 13.0, Python 3.11.6, ~7.8 TB disk.
-- Full reference: `IndigenomicsAI/docs/telus/gpu-access.md`
+**Confirmed speed:** ~353 sec/kimg with compiled CUDA, 100% GPU utilization. 1000 kimg ≈ 4 days.
 
-**Fallback:** If TELUS has CUDA version issues, use RunPod A100 ($2/hr) or Arshia's Compute Canada 4x H100.
+**TELUS-specific notes:**
+- Storage is **ephemeral** — download `.pkl` checkpoints before pod restarts.
+- Training survives browser disconnect (confirmed: 10+ hours unattended).
+- Pod lifecycle / idle timeout: unknown — download checkpoints regularly.
+- GPU: H200, 141 GB HBM3e, Python 3.11.6.
+- Full reference: `IndigenomicsAI/docs/telus/telus-friday-questions-2026-03-13.md`
 
 ### Completed Training Runs
 
@@ -275,11 +348,12 @@ python train.py --outdir=./results \
 - Fakes grids and training logs included
 - **To share:** Send PKLs via file transfer (Google Drive, rsync, etc.)
 
-### Training workflow
+### Training Workflow (Current)
 
-1. **Base model:** Train on `marine-photo-base/` (539 approved) → `base-underwater-v1.pkl` (2-4 hrs on H200)
-2. **Fine-tune Briony:** Resume from base, train on `briony-marine-colour/` (54 images) → `briony-v1.pkl` (30-60 min, save multiple checkpoints for photographic→painterly gradient)
-3. **Fine-tune David:** If his archive arrives → `david-v1.pkl`
+1. **Fish model** (378 images, 13 species) — **training now** on TELUS, kimg=1000, ETA Mar 20-21
+2. **Bird model** (1,729 images, 10 species) — next, after fish completes + QC
+3. **Whale model** (731 images, 6 species) — last (Arshia: shapes less consistent)
+4. **Briony fine-tune** (54 watercolors) — resume from species checkpoint for painterly gradient
 
 ### Inference (keep local for live performance)
 
@@ -300,27 +374,33 @@ In TouchDesigner, add an **OSC In CHOP** with port 7000, then 8000, then 9000 �
 
 ---
 
-## Open Questions for Prav
+## Open Questions
 
-1. **Which Autolume?** MetaCreation Lab's GitHub repo, or another tool?
-2. **His hardware:** Is he on Windows? Does he have an NVIDIA GPU?
-3. **TELUS access path:** Is Carol Anne the contact, or does Prav have direct credentials?
-4. **TELUS purpose:** Training new models, or running live inference remotely?
-5. **MIDI controller:** Which one? Is Max for Live already in the chain?
-6. **Output target:** Nicholas's LED volume, or smaller-scale Salt Spring Art Show rig?
-7. **Timeline:** Does he want something testable before Herring Fest (March 6–8)?
+**For Prav:**
+1. Multi-instance burn-in: can his hardware (RTX 3060 laptop?) run 3 Autolume instances + TD? Need to test before committing to full training pipeline.
+2. Boids + instancing approach for fish schools — does he have a starting point in TD, or build from `examples/FishSchool.toe`?
+3. Target resolution/fps for NDI output? (assumed 1080p/30fps)
+
+**For Arshia:**
+1. After fish model training, can you identify herring vs salmon latent clusters via Autolume's projection feature? This enables the herring→salmon within-model morph.
+2. Recommended Autolume NDI output resolution for 3 simultaneous instances on a single RTX 4090?
+3. YOLO-based smart cropping for whale dataset — worth doing before training, or try without first? (Arshia says try without first.)
 
 ---
 
 ## Verification Checklist
 
-- [ ] Confirm Prav's OS + GPU hardware
-- [ ] Autolume running on a test dataset (pre-trained checkpoint)
-- [ ] OSC messages from Autolume visible in TD's OSC In CHOP
-- [ ] NDI stream from Autolume visible in TD's NDI In TOP
-- [ ] MIDI controller changing a latent parameter in real time
-- [ ] Training dataset decided (species, threads, resolution, count)
-- [ ] TELUS access path confirmed (Carol Anne or direct)
+- [x] Training dataset decided: 3 species models (fish/bird/whale) at 512x512
+- [x] Fish model QC'd (378 images) and training started on TELUS
+- [x] Autolume loads PKL checkpoints (Prav confirmed with 320 kimg base)
+- [x] NDI stream from Autolume visible in TD (Prav confirmed)
+- [ ] Fish checkpoint downloaded + tested in Autolume (ETA Mar 20-21)
+- [ ] Bird + whale QC'd, prepped, trained
+- [ ] Multi-instance burn-in: 3 Autolume + TD on Prav's hardware
+- [ ] Boids fish school prototype in TD
+- [ ] Choreographed crossfade between 2+ NDI feeds
+- [ ] Audio reactivity: amplitude → boids speed via OSC
+- [ ] Herring → salmon latent walk demonstrated
 
 ---
 
