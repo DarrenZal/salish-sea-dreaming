@@ -26,48 +26,23 @@ This is early training (200 of 1000 kimg) — fish are recognizable but not full
 
 The LoRA sits on top of **Stable Diffusion 1.5** and runs in **img2img mode** — it takes a frame in and returns a styled frame.
 
-**Settings:**
+In your StreamDiffusion component inside TouchDesigner, set:
+
 - **Base model:** `runwayml/stable-diffusion-v1-5`
-- **LoRA file:** `briony_watercolor_v1.safetensors` (weight: 1.0)
+- **LoRA file:** point it to `briony_watercolor_v1.safetensors` (weight: 1.0)
 - **Prompt:** `brionypenn watercolor painting, soft edges, natural pigment, ecological illustration`
-- **Strength:** `0.45` (this is the sweet spot — clear watercolor style, fish still recognizable)
+- **Strength/delta:** `0.45` (sweet spot — clear watercolor style, fish still recognizable)
 - **Mode:** img2img
 
-If StreamDiffusion is a Python process on your machine:
-
-```python
-from streamdiffusion import StreamDiffusion
-
-stream = StreamDiffusion(
-    model_id_or_path="runwayml/stable-diffusion-v1-5",
-    lora_dict={"briony_watercolor_v1.safetensors": 1.0},
-    t_index_list=[30, 35, 40, 45],
-    torch_dtype=torch.float16,
-    mode="img2img",
-)
-stream.prepare(
-    prompt="brionypenn watercolor painting, soft edges, natural pigment, ecological illustration",
-    guidance_scale=1.2,
-    delta=0.5,
-)
-
-# In your frame loop:
-styled_frame = stream(input_frame)
-```
-
-If it's a TOX component in TouchDesigner, load the LoRA file and set the same prompt/strength in the TOX parameters.
+The key thing is `brionypenn` in the prompt — that's the trigger token that activates the style. Without it, you just get vanilla SD 1.5.
 
 ## Step 4: Route it in TouchDesigner
 
 ```
-Autolume ──NDI──> TD (NDI In TOP) ──> StreamDiffusion (LoRA) ──> TD (composite) ──> Resolume
+Autolume ──NDI──> NDI In TOP ──> StreamDiffusion (LoRA) ──> composite ──> Resolume
 ```
 
-1. Capture Autolume NDI with NDI In TOP
-2. Send to StreamDiffusion via Spout Out TOP (or however your StreamDiffusion integration works)
-3. Receive styled frame back
-4. Composite / mix as needed
-5. Output to Resolume
+Feed the Autolume NDI In TOP into your StreamDiffusion component as the img2img input. The LoRA styles each frame and passes it downstream. Composite or mix with the original as needed, then output to Resolume.
 
 ## Tuning the strength
 
