@@ -8,8 +8,8 @@ Interactive AI art installation exploring the Salish Sea ecosystem. The vision: 
 
 ## Current Status
 
-**Date:** 2026-03-17
-**Status:** Fish model training LIVE on TELUS H200 (~353 sec/kimg, ETA March 20-21). Holonic vision documented. Whale + bird awaiting QC.
+**Date:** 2026-03-19
+**Status:** RTX 3090 desktop 6/8 phases set up via SSH. Fish model at kimg 376/1000 on TELUS (37.6%, ETA March 22-23). Briony LoRA + SD-Turbo merged and ready for TouchDiffusion. Creative jam today/tomorrow with Prav, Shawn, Eve.
 
 **License Policy:** COMMERCIAL USE — CC0, CC BY, CC BY-SA only. Artist fee at exhibition = commercial under CC terms. CC BY-NC excluded.
 
@@ -20,28 +20,29 @@ Interactive AI art installation exploring the Salish Sea ecosystem. The vision: 
 - Species TSVs: `tools/species-fish.tsv` (13 bony fish), `tools/species-whales.tsv` (6 cetaceans), `tools/species-birds.tsv` (10 seabirds). All taxon_ids populated.
 - **All three CC-safe corpora scraped** (2026-03-15): Fish 911 (13 sp), Whale 731 (6 sp), Bird 1729 (10 sp). All provenance tracked.
 - **Fish QC complete** (2026-03-16): 378 approved, 507 rejected (dead fish, blurry, wrong species). Herring eggs (15), fish schools (12), birds-in-fish (5) separated to own folders for future training.
-- **Fish model training** (run 00014): started March 17 03:32 UTC, kimg=1000, snap=50 (→ checkpoint every 200 kimg). At kimg 136 as of March 17 ~20:00 UTC. First fakes grid due ~March 18 05:00 UTC. ETA March 22-23. **Arshia: if no meaningful results by kimg 500, restart with different gamma.**
+- **Fish model training** (run 00014): started March 17 03:32 UTC, kimg=1000, snap=50 (→ checkpoint every 200 kimg). At **kimg 376** as of March 19 ~19:00 UTC (~573 sec/kimg). kimg 200 checkpoint + fakes grid downloaded — fish shapes emerging, training healthy. ETA completion: **March 22-23**. **Arshia: if no meaningful results by kimg 500, restart with different gamma.**
 - TELUS training artifacts saved locally: `telus/` (logs, training_options, stats from runs 00009+00012), `scripts/telus-training-setup.sh` (reproducible bootstrap)
 - **TELUS Jupyter API:** `https://salishsea-0b50s.paas.ai.telus.com` — token in `.env` (`Jupyter_REST_API`). Check run status: `GET /api/contents/stylegan3/results/00014-stylegan2-fish512-gpus1-batch8-gamma20?token=<token>`
 - All datasets + QC'd zips uploaded to [Drive](https://drive.google.com/drive/folders/17QVEYgmEZDYupWI4vGF2QicXSVKWfk_6)
 - Arshia feedback: fish + bird datasets look best; whale last (shapes unclear). Training order: Fish → Bird → Whale.
 - **Holonic morphing vision** documented in `docs/autolume-integration.md` — food web as fractal cycle, boids system, recursive instancing, cross-model transitions via NDI crossfades
 - `docs/` reorganized: 11 dated/sent docs archived to `docs/archive/`
-- Darren buying RTX 3090 desktop: Ryzen 7700X + Gigabyte RTX 3090 24GB + 32GB DDR5 + 1TB NVMe + 1000W PSU — CA$1,950 FB Marketplace Langford BC. **Autolume confirmed: only 1 instance per machine** (Arshia, March 17).
+- **RTX 3090 desktop purchased + 6/8 phases set up** (2026-03-19): Ryzen 7700X + Gigabyte RTX 3090 24GB + 32GB DDR5 + 1TB NVMe + 1000W PSU — CA$1,950. Setup via SSH: GPU verified (24GB, 61 MiB idle), VS 2022 Build Tools (MSVC 14.44), Miniconda3 (conda 26.1.1), Autolume env (Python 3.10, PyTorch 2.8.0+cu128, ndi-python, python-osc), TouchDiffusion repo cloned + Briony LoRA merged into SD-Turbo (128 layers fused, saved as diffusers + UNet safetensors). **Remaining (needs GUI):** TD 2025 install, TouchDiffusion first run (webui.bat → venv + TensorRT build ~10 min), NDI networking test, integration burn-in. **Autolume: only 1 instance per machine** (Arshia, March 17).
 
 - **Briony LoRA trained + evaluated** (2026-03-18): LoRA v1 trained on 22 Briony Penn watercolors (rank 16, 1000 steps, SD 1.5 base) on Windows RTX 3090. 18 eval images confirm style generalizes across marine, land, and atmospheric subjects. Checkpoint: `briony_watercolor_v1.safetensors` on Windows desktop.
 - **LoRA img2img integration tested** (2026-03-18): Successfully applied LoRA as post-processing "Briony filter" on StyleGAN fish output. 20 GAN frames tested at 5 strength levels (0.25–0.65). **Sweet spot: s0.35–0.45** — watercolor aesthetic visible while preserving GAN composition. Avg latency: 0.97s/frame on RTX 3090 (~1 fps, viable for pre-rendered pipeline). Temporal coherence test shows stable style across frames. Results: `briony-lora/eval/img2img_compare.html`.
+- **SD-Turbo LoRA variant** (2026-03-18): Retrained LoRA on SD-Turbo base to match Prav's StreamDiffusionTD setup. `briony_watercolor_sdturbo.safetensors` (13 MB). Merged into TouchDiffusion on RTX 3090 desktop — 128 layers fused into base model. Integration guide: `docs/prav-lora-integration-guide.md`. Trigger token: `brionypenn`.
 
 **What's Left:**
-1. **Wednesday work jam** with Prav, Shawn, Eve — discuss holonic vision, hardware, boids approach
-2. **Download fish checkpoints** — every 50 kimg (~4.9 hrs), test in Autolume. Training ETA ~March 20-21.
-3. **QC whale + bird corpora** — review in Finder, create rejects CSVs, run `qc_approve`, `prep_training_data`
-4. **Kick off bird training** on TELUS after fish completes (Arshia ranked bird #2)
-5. **Kick off whale training** last (Arshia: shapes unclear, consider YOLO crop later)
-6. **Contact Moonfish Media** for herring footage permission (CC-safe iNat herring = 15 after QC)
-7. **Multi-instance burn-in** — test 3 Autolume + NDI + TD once Prav has GPU machine
-8. **Present LoRA findings to team** — side-by-side comparison of GAN→LoRA at different strengths, recommend s0.45 as default, discuss real-time integration path (TD → StreamDiffusion → styled frame)
-9. Darren away March 20–28
+1. **Creative jam** (March 19-20) with Prav, Shawn, Eve — lock proof-of-experience scope, test LoRA on projector, define minimum viable build
+2. **RTX 3090 remaining setup** (needs GUI): TD 2025 install, TouchDiffusion first run (webui.bat → TensorRT ~10 min), NDI networking, integration burn-in. Fish PKL → `C:\Users\user\autolume\models\`
+3. **Download fish kimg 400 checkpoint** — due ~March 19-20, test in Autolume on RTX 3090
+4. **QC whale + bird corpora** — review in Finder, create rejects CSVs, run `qc_approve`, `prep_training_data`
+5. **Kick off bird training** on TELUS after fish completes (~March 22-23)
+6. **Contact Moonfish Media** for herring footage permission
+7. **Herring data + biosonification** — Eve/Shawn herring datasets, Ableton + Manifest plugin, OSC→boids reactivity
+8. Darren away March 20–28
+9. **Post-jam:** Whale training (last), multi-instance burn-in, full integration test
 
 ## Project Vision
 
@@ -240,3 +241,5 @@ curl http://localhost:8351/health  # check if KOI backend running
 | `f024a856` | 2026-03-14 | Dataset pipeline | Three-dataset strategy: multi-corpus scraper/qc/prep pipeline; fish/whale/bird TSVs; fish corpus assembled (174); supplement scraped (207 unique herring+salmon); dedupe fix |
 | `ba05bf17` | 2026-03-15–17 | License → training → vision | CC-safe pipeline + 3 corpora scraped, fish QC (378 approved), TELUS training live (353 sec/kimg), holonic morphing vision documented, docs reorganized, Drive updated |
 | — | 2026-03-18 | Briony LoRA | LoRA trained (22 images, rank 16, 1000 steps), eval confirmed style transfer. img2img integration tested on 20 GAN frames × 5 strengths — sweet spot s0.35–0.45, avg 0.97s/frame. Temporal coherence stable. HTML comparison viewer created. |
+| — | 2026-03-18–19 | RTX 3090 setup | Desktop purchased ($1,950 CAD). 6/8 phases via SSH: GPU verified, VS Build Tools, Miniconda3, Autolume env (PyTorch 2.8+cu128), TouchDiffusion cloned + Briony LoRA merged into SD-Turbo. Remaining: TD 2025 GUI install, webui.bat first run, NDI networking, integration test. |
+| — | 2026-03-19 | Training monitor + overview | Fish model at kimg 376/1000 (37.6%), kimg 200 fakes grid shows healthy fish shape emergence. PKL downloaded. Comprehensive project overview synthesized for creative jam. |
