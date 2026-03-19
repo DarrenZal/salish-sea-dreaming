@@ -47,8 +47,19 @@ training-data/fish-model-legacy-unsafe-*/
 # Trained model checkpoints (~347 MB each, share via file transfer)
 models/
 
+# TELUS fakes grids (~60MB each, keep local only)
+telus/fakes*.png
+
 # Playwright MCP logs
 .playwright-mcp/
+
+# LoRA generated artifacts (large, regenerable from scripts)
+briony-lora/gan-frames/
+briony-lora/eval/img2img/
+briony-lora/eval/temporal/
+
+# Excalidraw logs
+excalidraw.log
 
 # QC contact sheets (large PNGs, regenerable from raw images)
 training-data/review/contact-sheets/

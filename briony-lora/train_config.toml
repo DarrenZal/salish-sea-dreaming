@@ -1,0 +1,44 @@
+# Briony Penn Watercolor LoRA Training Config
+# Base: SD 1.5 | Rank 16 | ~22 images | RTX 3090 24GB
+# Trigger token: brionypenn
+
+[model]
+pretrained_model_name_or_path = "runwayml/stable-diffusion-v1-5"
+
+[dataset]
+resolution = 512
+batch_size = 2
+caption_extension = ".txt"
+enable_bucket = true              # Handle non-square images gracefully
+
+[[dataset.subsets]]
+image_dir = "C:/Users/user/briony-training/images"
+num_repeats = 10                  # 22 images * 10 repeats = 220 images/epoch
+
+[training]
+output_dir = "C:/Users/user/briony-training/output"
+output_name = "briony_watercolor_v1"
+save_model_as = "safetensors"
+save_every_n_steps = 200
+max_train_steps = 1000            # ~4.5 epochs of 220 images/batch2 = ~1000 steps
+seed = 42
+
+# LoRA parameters
+network_module = "networks.lora"
+network_dim = 16                  # Rank 16 — balance detail vs overfitting
+network_alpha = 16                # alpha = rank (standard)
+
+# Optimizer
+optimizer_type = "AdamW8bit"
+learning_rate = 5e-5
+lr_scheduler = "cosine"
+lr_warmup_steps = 50
+
+# Precision & performance
+mixed_precision = "fp16"
+gradient_checkpointing = true     # Save VRAM
+xformers = true                   # Memory-efficient attention
+
+# Logging
+logging_dir = "C:/Users/user/briony-training/logs"
+log_prefix = "briony_v1"

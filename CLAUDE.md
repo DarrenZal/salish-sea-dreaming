@@ -20,13 +20,17 @@ Interactive AI art installation exploring the Salish Sea ecosystem. The vision: 
 - Species TSVs: `tools/species-fish.tsv` (13 bony fish), `tools/species-whales.tsv` (6 cetaceans), `tools/species-birds.tsv` (10 seabirds). All taxon_ids populated.
 - **All three CC-safe corpora scraped** (2026-03-15): Fish 911 (13 sp), Whale 731 (6 sp), Bird 1729 (10 sp). All provenance tracked.
 - **Fish QC complete** (2026-03-16): 378 approved, 507 rejected (dead fish, blurry, wrong species). Herring eggs (15), fish schools (12), birds-in-fish (5) separated to own folders for future training.
-- **Fish model prepped** at 512x512 (378 images) and **training kicked off** on TELUS H200 at ~353 sec/kimg with compiled CUDA extensions. kimg=1000, snap=50.
+- **Fish model training** (run 00014): started March 17 03:32 UTC, kimg=1000, snap=50 (→ checkpoint every 200 kimg). At kimg 136 as of March 17 ~20:00 UTC. First fakes grid due ~March 18 05:00 UTC. ETA March 22-23. **Arshia: if no meaningful results by kimg 500, restart with different gamma.**
 - TELUS training artifacts saved locally: `telus/` (logs, training_options, stats from runs 00009+00012), `scripts/telus-training-setup.sh` (reproducible bootstrap)
+- **TELUS Jupyter API:** `https://salishsea-0b50s.paas.ai.telus.com` — token in `.env` (`Jupyter_REST_API`). Check run status: `GET /api/contents/stylegan3/results/00014-stylegan2-fish512-gpus1-batch8-gamma20?token=<token>`
 - All datasets + QC'd zips uploaded to [Drive](https://drive.google.com/drive/folders/17QVEYgmEZDYupWI4vGF2QicXSVKWfk_6)
 - Arshia feedback: fish + bird datasets look best; whale last (shapes unclear). Training order: Fish → Bird → Whale.
 - **Holonic morphing vision** documented in `docs/autolume-integration.md` — food web as fractal cycle, boids system, recursive instancing, cross-model transitions via NDI crossfades
 - `docs/` reorganized: 11 dated/sent docs archived to `docs/archive/`
-- Prav shopping for RTX 3090 desktop (~$2900 FB marketplace). Meeting Natalia Tue re: budget.
+- Darren buying RTX 3090 desktop: Ryzen 7700X + Gigabyte RTX 3090 24GB + 32GB DDR5 + 1TB NVMe + 1000W PSU — CA$1,950 FB Marketplace Langford BC. **Autolume confirmed: only 1 instance per machine** (Arshia, March 17).
+
+- **Briony LoRA trained + evaluated** (2026-03-18): LoRA v1 trained on 22 Briony Penn watercolors (rank 16, 1000 steps, SD 1.5 base) on Windows RTX 3090. 18 eval images confirm style generalizes across marine, land, and atmospheric subjects. Checkpoint: `briony_watercolor_v1.safetensors` on Windows desktop.
+- **LoRA img2img integration tested** (2026-03-18): Successfully applied LoRA as post-processing "Briony filter" on StyleGAN fish output. 20 GAN frames tested at 5 strength levels (0.25–0.65). **Sweet spot: s0.35–0.45** — watercolor aesthetic visible while preserving GAN composition. Avg latency: 0.97s/frame on RTX 3090 (~1 fps, viable for pre-rendered pipeline). Temporal coherence test shows stable style across frames. Results: `briony-lora/eval/img2img_compare.html`.
 
 **What's Left:**
 1. **Wednesday work jam** with Prav, Shawn, Eve — discuss holonic vision, hardware, boids approach
@@ -36,7 +40,8 @@ Interactive AI art installation exploring the Salish Sea ecosystem. The vision: 
 5. **Kick off whale training** last (Arshia: shapes unclear, consider YOLO crop later)
 6. **Contact Moonfish Media** for herring footage permission (CC-safe iNat herring = 15 after QC)
 7. **Multi-instance burn-in** — test 3 Autolume + NDI + TD once Prav has GPU machine
-8. Darren away March 20–28
+8. **Present LoRA findings to team** — side-by-side comparison of GAN→LoRA at different strengths, recommend s0.45 as default, discuss real-time integration path (TD → StreamDiffusion → styled frame)
+9. Darren away March 20–28
 
 ## Project Vision
 
@@ -78,6 +83,14 @@ salish-sea-dreaming/
 │   ├── briony-marine-colour/ # 54 Briony watercolors at 512x512
 │   ├── marine-photo-base/    # 539 QC'd marine photos at 512x512
 │   └── review/               # QC contact sheets + rejects.csv
+├── briony-lora/           # LoRA style transfer exploration
+│   ├── *.png/*.txt        # 22 training image+caption pairs
+│   ├── train_config.toml  # kohya_ss training config
+│   ├── train.sh           # Cross-platform training automation
+│   ├── extract_frames.py  # Slice fakes grids into individual frames
+│   ├── test_img2img.py    # img2img batch with strength sweep
+│   ├── evaluate_lora.py   # Generate eval images across subjects
+│   └── eval/              # Evaluation results + HTML comparison pages
 ├── models/               # Trained checkpoints (gitignored, ~347 MB each)
 └── VisualArt/            # Briony Penn's full art archive (git-lfs)
 ```
@@ -226,3 +239,4 @@ curl http://localhost:8351/health  # check if KOI backend running
 | — | 2026-03-14 | Meeting prep | Multi-layer strategy doc, 5 parallel tracks, gap analysis, operational stability plan |
 | `f024a856` | 2026-03-14 | Dataset pipeline | Three-dataset strategy: multi-corpus scraper/qc/prep pipeline; fish/whale/bird TSVs; fish corpus assembled (174); supplement scraped (207 unique herring+salmon); dedupe fix |
 | `ba05bf17` | 2026-03-15–17 | License → training → vision | CC-safe pipeline + 3 corpora scraped, fish QC (378 approved), TELUS training live (353 sec/kimg), holonic morphing vision documented, docs reorganized, Drive updated |
+| — | 2026-03-18 | Briony LoRA | LoRA trained (22 images, rank 16, 1000 steps), eval confirmed style transfer. img2img integration tested on 20 GAN frames × 5 strengths — sweet spot s0.35–0.45, avg 0.97s/frame. Temporal coherence stable. HTML comparison viewer created. |
