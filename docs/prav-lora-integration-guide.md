@@ -7,71 +7,72 @@ We trained a LoRA that paints Briony Penn's watercolor style onto any image. The
 
 Check the sample images on Drive to see what it does — compare `sample-telus200_007_original.png` (raw GAN fish) with `sample-telus200_007_s0.45.png` (same fish, Briony-styled).
 
-## Step 1: Download two files from Google Drive
+## Step 1: Download from Google Drive
 
 From the [shared folder](https://drive.google.com/drive/folders/17QVEYgmEZDYupWI4vGF2QicXSVKWfk_6):
 
 | File | Size | What it is |
 |------|------|------------|
-| `fish-network-snapshot-000200.pkl` | 347 MB | Fish model for Autolume |
-| `briony_watercolor_v1.safetensors` | 38 MB | Briony watercolor LoRA for StreamDiffusion |
+| `briony_watercolor_sdturbo.safetensors` | 13 MB | **Use this one.** Briony LoRA trained on SD-Turbo — matches your StreamDiffusionTD base model. |
+| `fish-network-snapshot-000200.pkl` | 347 MB | Fish model for Autolume (optional — see note below). |
 
-## Step 2: Load the fish model in Autolume
+**Note on the old LoRA:** `briony_watercolor_v1.safetensors` (38 MB) was trained on SD 1.5 and won't work with SD-Turbo — you'll get an "Architecture mismatch" error. Use the `sdturbo` version instead.
 
-Load `fish-network-snapshot-000200.pkl` the same way you loaded the base model before. NDI output to TouchDesigner as usual.
+## Step 2: Load the LoRA in StreamDiffusionTD
 
-This is early training (200 of 1000 kimg) — fish are recognizable but not fully converged. Better checkpoints coming March 22-23.
-
-## Step 3: Load the merged model in StreamDiffusion
-
-We merged the LoRA weights directly into SD 1.5 to produce a single model with Briony's style baked in. This means you don't need to deal with separate LoRA loading — just load the model and go. It also means you can compile it to **TensorRT** for real-time performance.
-
-Download `sd15-briony-merged/` from the [shared Drive folder](https://drive.google.com/drive/folders/17QVEYgmEZDYupWI4vGF2QicXSVKWfk_6). This is a full SD 1.5 model directory (~2-3 GB).
+Drop `briony_watercolor_sdturbo.safetensors` into your StreamDiffusionTD LoRA models folder (same place you put the old one).
 
 In your StreamDiffusion component inside TouchDesigner:
 
-1. **Set img2img mode** — the model needs to receive Autolume frames as input and style them. If it's in txt2img mode it will generate images from scratch instead of styling the fish.
+1. **Base model:** Keep `sd-turbo` — the LoRA is trained on it.
 
-2. **Model:** Point it to the `sd15-briony-merged` directory (instead of `runwayml/stable-diffusion-v1-5`).
+2. **Set img2img mode** — the LoRA needs to receive frames as input and style them. If it's in txt2img mode it will generate from scratch instead of styling input.
 
-3. **Prompt:** `brionypenn watercolor painting, soft edges, natural pigment, ecological illustration`
+3. **LoRA:** Select `briony_watercolor_sdturbo.safetensors`, weight `1.0` (or dial down to taste).
 
-4. **Strength/delta:** Start at `0.45`.
+4. **Prompt:** `brionypenn watercolor painting, soft edges, natural pigment, ecological illustration`
 
-5. **TensorRT:** Compile the model to TensorRT for real-time speed. This should take the performance from ~1 fps to 15-30+ fps.
+5. **Strength/delta:** Start at `0.45`.
 
 ### About the prompt
 
-`brionypenn` is a made-up trigger token — SD 1.5 has no idea what it means by default. During LoRA training, every image was captioned with `brionypenn watercolor painting...`, so the model learned: "when you see `brionypenn`, apply this watercolor style." It won't try to generate a person. Without `brionypenn` in the prompt, you get vanilla SD 1.5 output.
+`brionypenn` is a made-up trigger token — SD-Turbo has no idea what it means by default. During training, every image was captioned with `brionypenn watercolor painting...`, so the LoRA learned: "when you see `brionypenn`, apply this watercolor style." It won't try to generate a person. Without `brionypenn` in the prompt, the LoRA has no effect.
 
-### Fallback: load LoRA separately
+## Step 3: Feed it input
 
-If for some reason the merged model doesn't work with your StreamDiffusion setup, you can instead load vanilla `runwayml/stable-diffusion-v1-5` and point the LoRA loader to `briony_watercolor_v1.safetensors` (weight 1.0). Same result, just can't use TensorRT acceleration.
+You can feed anything into the img2img input:
 
-## Step 4: Route it in TouchDesigner
+- **Autolume NDI** — GAN-generated fish get the Briony watercolor treatment
+- **Camera / Kinect** — visitors become part of a Briony watercolor (interactive)
+- **Any video / image source** — everything gets styled
 
 ```
-Autolume ──NDI──> NDI In TOP ──> StreamDiffusion (LoRA) ──> composite ──> Resolume
+Input source ──> StreamDiffusion (LoRA) ──> composite ──> Resolume
 ```
 
-Feed the Autolume NDI In TOP into your StreamDiffusion component as the img2img input. The LoRA styles each frame and passes it downstream. Composite or mix with the original as needed, then output to Resolume.
+If using Autolume, load `fish-network-snapshot-000200.pkl` and route the NDI into StreamDiffusion's img2img input. But any input works — the LoRA styles whatever it receives.
 
-## Tuning the strength
+## Tuning
 
-Strength controls how much watercolor style vs how much of the original fish is preserved:
+**LoRA weight** — controls how much Briony style is applied:
+- `0.4` — Subtle watercolor wash
+- **`1.0` — Full effect** (start here)
+- You already had it at 0.44 in your last run, try higher
 
-- `0.35` — Light wash, fish very clear
-- **`0.45` — Recommended** — Briony aesthetic obvious, fish still recognizable
-- `0.55` — Heavy watercolor, fish start to abstract
-
-You can change this live if StreamDiffusion supports it — experiment with what looks best at exhibition scale.
+**Strength/delta** — controls how much the output differs from the input:
+- `0.35` — Light, input very recognizable
+- **`0.45` — Recommended** — clear watercolor style, input still recognizable
+- `0.55` — Heavy watercolor, input starts to abstract
 
 ## Performance
 
-We measured 0.97s/frame in batch mode on an RTX 3090. StreamDiffusion should be significantly faster (5-15 fps) since it's optimized for streaming. Temporal coherence is stable — no shimmer or flicker between frames.
+You were already getting **6 fps** on your RTX 3060 with SD-Turbo. The LoRA shouldn't slow it down much. With TensorRT compiled, could be faster.
+
+Temporal coherence is stable — no shimmer or flicker between frames. Safe for exhibition.
 
 ## Questions for Wednesday
 
 - What strength looks best on the projector?
 - Where in your TD patch should the filter sit — before or after boids?
-- Should we try blending styled + unstyled (e.g., 50/50 mix) for a subtler effect?
+- Should we try blending styled + unstyled for a subtler effect?
+- Does TensorRT work with the LoRA loaded, or do we need to bake it in first?
