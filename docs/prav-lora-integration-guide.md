@@ -22,25 +22,31 @@ Load `fish-network-snapshot-000200.pkl` the same way you loaded the base model b
 
 This is early training (200 of 1000 kimg) — fish are recognizable but not fully converged. Better checkpoints coming March 22-23.
 
-## Step 3: Set up the LoRA in StreamDiffusion
+## Step 3: Load the merged model in StreamDiffusion
 
-The LoRA sits on top of **Stable Diffusion 1.5** and runs in **img2img mode** — it takes a frame in and returns a styled frame.
+We merged the LoRA weights directly into SD 1.5 to produce a single model with Briony's style baked in. This means you don't need to deal with separate LoRA loading — just load the model and go. It also means you can compile it to **TensorRT** for real-time performance.
+
+Download `sd15-briony-merged/` from the [shared Drive folder](https://drive.google.com/drive/folders/17QVEYgmEZDYupWI4vGF2QicXSVKWfk_6). This is a full SD 1.5 model directory (~2-3 GB).
 
 In your StreamDiffusion component inside TouchDesigner:
 
-1. **Set img2img mode** — the LoRA needs to receive Autolume frames as input and style them. If it's in txt2img mode it will generate images from scratch instead of styling the fish. (You'll know where this setting is in your StreamDiffusionTD setup — I don't know the exact parameter name.)
+1. **Set img2img mode** — the model needs to receive Autolume frames as input and style them. If it's in txt2img mode it will generate images from scratch instead of styling the fish.
 
-2. **Base model:** `runwayml/stable-diffusion-v1-5` — the LoRA was trained on SD 1.5.
+2. **Model:** Point it to the `sd15-briony-merged` directory (instead of `runwayml/stable-diffusion-v1-5`).
 
-3. **Load the LoRA:** Point the LoRA loader to `briony_watercolor_v1.safetensors`, weight `1.0`.
+3. **Prompt:** `brionypenn watercolor painting, soft edges, natural pigment, ecological illustration`
 
-4. **Prompt:** `brionypenn watercolor painting, soft edges, natural pigment, ecological illustration`
+4. **Strength/delta:** Start at `0.45`.
 
-5. **Strength/delta:** Start at `0.45`.
+5. **TensorRT:** Compile the model to TensorRT for real-time speed. This should take the performance from ~1 fps to 15-30+ fps.
 
 ### About the prompt
 
-`brionypenn` is a made-up trigger token — SD 1.5 has no idea what it means by default. During LoRA training, every image was captioned with `brionypenn watercolor painting...`, so the LoRA learned: "when you see `brionypenn`, apply this watercolor style." It won't try to generate a person. Without the LoRA loaded, the word does nothing. With the LoRA loaded, it activates the style.
+`brionypenn` is a made-up trigger token — SD 1.5 has no idea what it means by default. During LoRA training, every image was captioned with `brionypenn watercolor painting...`, so the model learned: "when you see `brionypenn`, apply this watercolor style." It won't try to generate a person. Without `brionypenn` in the prompt, you get vanilla SD 1.5 output.
+
+### Fallback: load LoRA separately
+
+If for some reason the merged model doesn't work with your StreamDiffusion setup, you can instead load vanilla `runwayml/stable-diffusion-v1-5` and point the LoRA loader to `briony_watercolor_v1.safetensors` (weight 1.0). Same result, just can't use TensorRT acceleration.
 
 ## Step 4: Route it in TouchDesigner
 
