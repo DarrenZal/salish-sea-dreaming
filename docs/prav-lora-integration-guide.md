@@ -26,15 +26,21 @@ This is early training (200 of 1000 kimg) — fish are recognizable but not full
 
 The LoRA sits on top of **Stable Diffusion 1.5** and runs in **img2img mode** — it takes a frame in and returns a styled frame.
 
-In your StreamDiffusion component inside TouchDesigner, set:
+In your StreamDiffusion component inside TouchDesigner:
 
-- **Base model:** `runwayml/stable-diffusion-v1-5`
-- **LoRA file:** point it to `briony_watercolor_v1.safetensors` (weight: 1.0)
-- **Prompt:** `brionypenn watercolor painting, soft edges, natural pigment, ecological illustration`
-- **Strength/delta:** `0.45` (sweet spot — clear watercolor style, fish still recognizable)
-- **Mode:** img2img
+1. **Set img2img mode** — the LoRA needs to receive Autolume frames as input and style them. If it's in txt2img mode it will generate images from scratch instead of styling the fish. (You'll know where this setting is in your StreamDiffusionTD setup — I don't know the exact parameter name.)
 
-The key thing is `brionypenn` in the prompt — that's the trigger token that activates the style. Without it, you just get vanilla SD 1.5.
+2. **Base model:** `runwayml/stable-diffusion-v1-5` — the LoRA was trained on SD 1.5.
+
+3. **Load the LoRA:** Point the LoRA loader to `briony_watercolor_v1.safetensors`, weight `1.0`.
+
+4. **Prompt:** `brionypenn watercolor painting, soft edges, natural pigment, ecological illustration`
+
+5. **Strength/delta:** Start at `0.45`.
+
+### About the prompt
+
+`brionypenn` is a made-up trigger token — SD 1.5 has no idea what it means by default. During LoRA training, every image was captioned with `brionypenn watercolor painting...`, so the LoRA learned: "when you see `brionypenn`, apply this watercolor style." It won't try to generate a person. Without the LoRA loaded, the word does nothing. With the LoRA loaded, it activates the style.
 
 ## Step 4: Route it in TouchDesigner
 
