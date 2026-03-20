@@ -98,6 +98,8 @@ Switched to SD 1.5 base with `briony_watercolor_v1.safetensors`. txt2img with pr
 
 See the [LoRA evaluation page](https://darrenzal.github.io/salish-sea-dreaming/briony-lora/eval/compare-v2.html) — Briony's actual paintings next to what the LoRA produces. Her signature: **bold ink outlines, vivid saturated teals/reds/ochres, flat illustrative perspective, ecosystem cross-sections.** The LoRA captures softness but misses the linework, the saturation, and the composition.
 
+**Training images:** The LoRA was trained on [22 curated watercolors](https://darrenzal.github.io/salish-sea-dreaming/briony-lora/training_contact_sheet.png) — a subset selected for consistent watercolor style. Briony's [full archive](https://darrenzal.github.io/salish-sea-dreaming/briony-lora/archive_not_in_training.png) (~67 works across 9 categories) includes pen-and-ink, maps, mandalas, field journals, and signage — mixed styles that would confuse a LoRA. The curated watercolor corpus has 55 images in `training-data/briony-marine-colour/` if retraining with more.
+
 ### Which LoRA file to use
 
 | File | Base model | Status | Link |

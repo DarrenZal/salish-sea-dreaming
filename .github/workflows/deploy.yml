@@ -47,6 +47,8 @@ jobs:
           cp -r briony-lora/eval/* web/dist/briony-lora/eval/
           cp briony-lora/whole-*.png web/dist/briony-lora/ 2>/dev/null || true
           cp briony-lora/Central*.png web/dist/briony-lora/ 2>/dev/null || true
+          cp briony-lora/training_contact_sheet.png web/dist/briony-lora/ 2>/dev/null || true
+          cp briony-lora/archive_not_in_training.png web/dist/briony-lora/ 2>/dev/null || true
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
