@@ -96,7 +96,7 @@ Switched to SD 1.5 base with `briony_watercolor_v1.safetensors`. txt2img with pr
 
 ### The Gap
 
-Open `briony-lora/eval/compare-v2.html` locally to see Briony's actual paintings next to what the LoRA produces. Her signature: **bold ink outlines, vivid saturated teals/reds/ochres, flat illustrative perspective, ecosystem cross-sections.** The LoRA captures softness but misses the linework, the saturation, and the composition.
+See the [LoRA evaluation page](https://darrenzal.github.io/salish-sea-dreaming/briony-lora/eval/compare-v2.html) — Briony's actual paintings next to what the LoRA produces. Her signature: **bold ink outlines, vivid saturated teals/reds/ochres, flat illustrative perspective, ecosystem cross-sections.** The LoRA captures softness but misses the linework, the saturation, and the composition.
 
 ### Which LoRA file to use
 
@@ -368,7 +368,7 @@ Darren will download the final checkpoint when it completes and put it on Drive.
 | `docs/lora-integration-guide.md` | LoRA setup for StreamDiffusionTD |
 | `docs/autolume-integration.md` | Full technical architecture + holonic vision |
 | `docs/autolume-quickstart.md` | Loading checkpoints in Autolume |
-| `briony-lora/eval/compare-v2.html` | Honest evaluation — Briony's art vs LoRA output |
+| `briony-lora/eval/compare-v2.html` | [Honest evaluation](https://darrenzal.github.io/salish-sea-dreaming/briony-lora/eval/compare-v2.html) — Briony's art vs LoRA output |
 | `briony-lora/train_config.toml` | LoRA training config (if retraining) |
 | `.env` | TELUS API token |
 
