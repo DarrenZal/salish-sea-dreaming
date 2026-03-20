@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Briony LoRA — Honest Evaluation v2</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: system-ui, sans-serif; background: #111; color: #ddd; padding: 20px; max-width: 1600px; margin: 0 auto; }
+  h1 { text-align: center; color: #8ecae6; margin-bottom: 5px; }
+  .subtitle { text-align: center; color: #888; margin-bottom: 30px; font-size: 14px; }
+  h2 { color: #8ecae6; border-bottom: 1px solid #333; padding-bottom: 8px; margin: 40px 0 16px; }
+  h3 { color: #ccc; margin: 20px 0 10px; }
+
+  .section { margin-bottom: 50px; }
+
+  .row { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 16px; }
+  .card { flex: 0 0 auto; text-align: center; }
+  .card img {
+    height: 256px; width: 256px; object-fit: cover;
+    border-radius: 6px; border: 2px solid #333;
+    cursor: pointer; transition: border-color 0.2s;
+  }
+  .card img:hover { border-color: #8ecae6; }
+  .card .label { margin-top: 4px; font-size: 12px; color: #aaa; }
+
+  .card img.ref { border-color: #e8a87c; height: 256px; width: auto; max-width: 400px; }
+  .card img.orig { border-color: #666; }
+
+  .verdict { background: #1a1a2a; border: 1px solid #333; border-radius: 8px; padding: 16px; margin: 20px 0; line-height: 1.7; font-size: 14px; }
+  .verdict h3 { color: #e8a87c; margin-top: 0; }
+  .verdict ul { padding-left: 20px; }
+
+  .gap-analysis { background: #2a1a1a; border: 1px solid #4a2a2a; border-radius: 8px; padding: 16px; margin: 20px 0; }
+  .gap-analysis h3 { color: #e68a8a; margin-top: 0; }
+
+  .next-steps { background: #1a2a1a; border: 1px solid #2a4a2a; border-radius: 8px; padding: 16px; margin: 20px 0; }
+  .next-steps h3 { color: #8ae68a; margin-top: 0; }
+
+  .info { background: #1a1a1a; border-radius: 8px; padding: 16px; margin-bottom: 20px; font-size: 13px; line-height: 1.6; }
+
+  .compare-pair {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+    background: #1a1a1a; border-radius: 8px; padding: 16px; margin-bottom: 16px;
+  }
+  .compare-pair h3 { grid-column: 1 / -1; margin: 0 0 8px; }
+
+  .lightbox { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 1000; justify-content: center; align-items: center; cursor: pointer; }
+  .lightbox.active { display: flex; }
+  .lightbox img { max-width: 90%; max-height: 90%; border-radius: 8px; }
+
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin: 2px; }
+  .tag.briony { background: #3a2a1a; color: #e8a87c; }
+  .tag.lora { background: #1a2a3a; color: #8ecae6; }
+  .tag.gan { background: #2a2a1a; color: #ccc; }
+  .tag.warn { background: #4a2a1a; color: #e6a08e; }
+</style>
+</head>
+<body>
+
+<h1>Briony LoRA — Honest Evaluation v2</h1>
+<p class="subtitle">Does the LoRA actually capture Briony Penn's style? Side-by-side comparison for the team.</p>
+
+<div class="info">
+  <strong>Context:</strong> LoRA trained on 22 Briony Penn watercolors (rank 16, 1000 steps).
+  Two versions: <code>briony_watercolor_v1.safetensors</code> (SD 1.5, 30 steps, 38 MB) and
+  <code>briony_watercolor_sdturbo.safetensors</code> (SD-Turbo, 1-4 steps, 13 MB).
+  The img2img results below used the SD 1.5 version. The SD-Turbo version in TouchDesigner has fewer inference steps, which may further reduce style fidelity.<br><br>
+  <strong>Key question:</strong> Is this close enough to Briony's aesthetic for the exhibition, or do we need a different approach?
+</div>
+
+<!-- Section 0: What Briony's art actually looks like -->
+<div class="section">
+  <h2>0. Reference — What Briony's Art Actually Looks Like</h2>
+  <p style="color:#888; font-size:13px; margin-bottom:12px;">These are the training images. This is what we're trying to capture.</p>
+
+  <div class="row">
+    <div class="card"><img class="ref" src="../whole-kelp-forest-ecosystem.png" onclick="showLightbox(this.src)"><div class="label"><span class="tag briony">Briony</span> Kelp Forest Ecosystem</div></div>
+    <div class="card"><img class="ref" src="../whole-central-coast-inshore.png" onclick="showLightbox(this.src)"><div class="label"><span class="tag briony">Briony</span> Central Coast Inshore</div></div>
+    <div class="card"><img class="ref" src="../whole-giant-pacific-octopus.png" onclick="showLightbox(this.src)"><div class="label"><span class="tag briony">Briony</span> Giant Pacific Octopus</div></div>
+    <div class="card"><img class="ref" src="../whole-salmon-forest-cycle.png" onclick="showLightbox(this.src)"><div class="label"><span class="tag briony">Briony</span> Salmon Forest Cycle</div></div>
+    <div class="card"><img class="ref" src="../whole-central-coast-offshore.png" onclick="showLightbox(this.src)"><div class="label"><span class="tag briony">Briony</span> Central Coast Offshore</div></div>
+    <div class="card"><img class="ref" src="../whole-salish-sea-panorama.png" onclick="showLightbox(this.src)"><div class="label"><span class="tag briony">Briony</span> Salish Sea Panorama</div></div>
+  </div>
+
+  <div class="verdict">
+    <h3>Briony's signature characteristics</h3>
+    <ul>
+      <li><strong>Bold ink linework</strong> — dark outlines define every creature and plant, almost woodcut-like</li>
+      <li><strong>Vivid, saturated palette</strong> — teals, coral reds, ochre yellows, deep greens. Never muddy.</li>
+      <li><strong>Illustrative composition</strong> — cross-section views, ecosystem diagrams, educational layering (above/below water)</li>
+      <li><strong>Visible brushstrokes</strong> — hand-painted texture, pigment variation, not smooth gradients</li>
+      <li><strong>Ecological storytelling</strong> — every painting is a food web, a habitat, a relationship</li>
+      <li><strong>Flat/semi-flat perspective</strong> — not photorealistic depth, more like scientific illustration meets folk art</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Section 1: txt2img LoRA output -->
+<div class="section">
+  <h2>1. txt2img — LoRA Generating from Prompts (SD 1.5, 30 steps)</h2>
+  <p style="color:#888; font-size:13px; margin-bottom:12px;">LoRA loaded, generating from text prompts with <code>brionypenn</code> trigger. No input image.</p>
+
+  <div class="row">
+    <div class="card"><img src="lora_00_gs7.5.png" onclick="showLightbox(this.src)"><div class="label"><span class="tag lora">LoRA txt2img</span> Orca breaching</div></div>
+    <div class="card"><img src="lora_01_gs7.5.png" onclick="showLightbox(this.src)"><div class="label"><span class="tag lora">LoRA txt2img</span> Herring in kelp</div></div>
+    <div class="card"><img src="lora_02_gs7.5.png" onclick="showLightbox(this.src)"><div class="label"><span class="tag lora">LoRA txt2img</span> Octopus</div></div>
+    <div class="card"><img src="lora_03_gs7.5.png" onclick="showLightbox(this.src)"><div class="label"><span class="tag lora">LoRA txt2img</span> Cedar forest</div></div>
+    <div class="card"><img src="lora_04_gs7.5.png" onclick="showLightbox(this.src)"><div class="label"><span class="tag lora">LoRA txt2img</span> Camas meadow</div></div>
+    <div class="card"><img src="lora_05_gs7.5.png" onclick="showLightbox(this.src)"><div class="label"><span class="tag lora">LoRA txt2img</span> Bear + salmon</div></div>
+    <div class="card"><img src="lora_06_gs7.5.png" onclick="showLightbox(this.src)"><div class="label"><span class="tag lora">LoRA txt2img</span> Misty coast</div></div>
+    <div class="card"><img src="lora_07_gs7.5.png" onclick="showLightbox(this.src)"><div class="label"><span class="tag lora">LoRA txt2img</span> Kelp bioluminescent</div></div>
+  </div>
+
+  <div class="verdict">
+    <h3>Assessment: txt2img</h3>
+    <ul>
+      <li>The LoRA does shift toward a watercolor aesthetic — softer edges, more painterly</li>
+      <li>But it's more "generic watercolor" than specifically Briony — missing the bold linework, the vivid saturated palette, and the illustrative composition style</li>
+      <li>The orca (00) has the closest feel — dark shapes on water. But compare it to Briony's actual paintings above.</li>
+      <li>SD 1.5 with 30 steps and guidance 7.5 gives the best quality. SD-Turbo with 1-4 steps will be looser.</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Section 2: A/B comparison -->
+<div class="section">
+  <h2>2. A/B — Base SD 1.5 vs LoRA (same prompt, same seed)</h2>
+  <p style="color:#888; font-size:13px; margin-bottom:12px;">Left = base SD 1.5 (no LoRA). Right = LoRA with <code>brionypenn</code> trigger. How much difference does the LoRA make?</p>
+
+  <div class="compare-pair">
+    <h3>Orca breaching</h3>
+    <div class="card"><img src="compare_base_00.png" onclick="showLightbox(this.src)"><div class="label"><span class="tag">Base SD 1.5</span></div></div>
+    <div class="card"><img src="compare_lora_00.png" onclick="showLightbox(this.src)"><div class="label"><span class="tag lora">+ LoRA</span></div></div>
+  </div>
+  <div class="compare-pair">
+    <h3>Herring in kelp</h3>
+    <div class="card"><img src="compare_base_01.png" onclick="showLightbox(this.src)"><div class="label"><span class="tag">Base SD 1.5</span></div></div>
+    <div class="card"><img src="compare_lora_01.png" onclick="showLightbox(this.src)"><div class="label"><span class="tag lora">+ LoRA</span></div></div>
+  </div>
+  <div class="compare-pair">
+    <h3>Octopus</h3>
+    <div class="card"><img src="compare_base_02.png" onclick="showLightbox(this.src)"><div class="label"><span class="tag">Base SD 1.5</span></div></div>
+    <div class="card"><img src="compare_lora_02.png" onclick="showLightbox(this.src)"><div class="label"><span class="tag lora">+ LoRA</span></div></div>
+  </div>
+
+  <div class="verdict">
+    <h3>Assessment: A/B delta</h3>
+    <ul>
+      <li>The LoRA IS doing something — compositions shift, color palette changes, edges soften</li>
+      <li>The effect is subtle though. On a projector in a dark room, the difference from base SD might not read clearly as "Briony Penn"</li>
+      <li>Someone who knows Briony's work would not immediately say "that looks like a Briony Penn painting"</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Section 3: img2img on GAN output -->
+<div class="section">
+  <h2>3. img2img — GAN Fish → LoRA Filter (strength sweep)</h2>
+  <p style="color:#888; font-size:13px; margin-bottom:12px;">Original GAN output (kimg 200) on the left, then LoRA applied at increasing strength. SD 1.5, 30 steps.</p>
+
+  <div id="img2img-gallery"></div>
+</div>
+
+<!-- Section 4: The gap -->
+<div class="section">
+  <h2>4. The Gap</h2>
+
+  <div class="gap-analysis">
+    <h3>What the LoRA captures</h3>
+    <ul>
+      <li>General "watercolor" softness and edge quality</li>
+      <li>Some color palette shift toward natural pigments</li>
+      <li>Painterly texture over photorealistic sharpness</li>
+    </ul>
+  </div>
+
+  <div class="gap-analysis">
+    <h3>What the LoRA misses</h3>
+    <ul>
+      <li><strong>Bold ink outlines</strong> — Briony's most recognizable feature. The LoRA produces soft edges, not bold lines.</li>
+      <li><strong>Vivid color saturation</strong> — Briony uses intense teals, corals, ochres. The LoRA output is muted/muddy by comparison.</li>
+      <li><strong>Illustrative composition</strong> — Briony's cross-section views and ecosystem diagrams are compositional, not just stylistic. A LoRA can't learn composition from 22 images.</li>
+      <li><strong>Flat perspective</strong> — Briony's work is semi-flat, like scientific illustration. The LoRA still produces SD's default photographic depth.</li>
+    </ul>
+  </div>
+
+  <div class="gap-analysis">
+    <h3>Why the gap exists</h3>
+    <ul>
+      <li><strong>22 images is very few</strong> — the full set of 54 Briony watercolors might help, but the fundamental issue is that LoRA adapts style more than structure</li>
+      <li><strong>SD-Turbo compounds the problem</strong> — only 1-4 inference steps means even less room for the LoRA to influence the output. The SD 1.5 version (30 steps) shown here is the best case.</li>
+      <li><strong>GAN fish are dark/muddy</strong> — iNaturalist photos of fish on gravel are not great input for a vibrant watercolor filter. The LoRA is fighting the input palette.</li>
+      <li><strong>LoRA rank 16 may be too low</strong> — Briony's style has a lot of detail. Rank 32 or 64 might capture more.</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Section 5: Next steps -->
+<div class="section">
+  <h2>5. What We Can Try</h2>
+
+  <div class="next-steps">
+    <h3>Quick improvements (hours)</h3>
+    <ul>
+      <li><strong>Retrain with all 54 images</strong> instead of 22 — more style coverage</li>
+      <li><strong>Increase rank to 32 or 64</strong> — more capacity to capture Briony's detail</li>
+      <li><strong>More training steps</strong> (2000-3000) — let it learn deeper</li>
+      <li><strong>Better captions</strong> — describe Briony's specific characteristics in each caption ("bold ink outlines, vivid teal and coral, flat perspective, cross-section ecosystem view")</li>
+      <li><strong>Higher LoRA weight in TD</strong> — push to 1.5 or even 2.0 (may cause artifacts but worth testing)</li>
+      <li><strong>Feed brighter input</strong> — instead of dark GAN fish, try txt2img with vivid prompts, or bright underwater footage</li>
+    </ul>
+  </div>
+
+  <div class="next-steps">
+    <h3>Alternative approaches (if LoRA isn't enough)</h3>
+    <ul>
+      <li><strong>IP-Adapter</strong> — use Briony paintings directly as style reference at inference time, zero training</li>
+      <li><strong>ControlNet + LoRA</strong> — extract edges from Briony's actual paintings, use as structural guidance</li>
+      <li><strong>CycleGAN</strong> — train a photo→Briony domain translator (12-24 hrs, uses all 54 images + 378 fish photos)</li>
+      <li><strong>Neural Style Transfer</strong> — the classic approach. Slower but captures bold linework better because it explicitly matches gram matrices (texture statistics)</li>
+      <li><strong>Just use Briony's actual paintings</strong> — animate them directly in TD (pan, zoom, parallax, particle effects) instead of trying to generate new ones in her style</li>
+    </ul>
+    <p style="margin-top:10px; color:#888;">Full details: <a href="../../docs/style-transfer-guide.md" style="color:#8ecae6;">docs/style-transfer-guide.md</a></p>
+  </div>
+</div>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox" onclick="this.classList.remove('active')">
+  <img id="lightbox-img" src="">
+</div>
+
+<script>
+function showLightbox(src) {
+  document.getElementById('lightbox-img').src = src;
+  document.getElementById('lightbox').classList.add('active');
+}
+
+// Build img2img gallery
+const strengths = [0.25, 0.35, 0.45, 0.55, 0.65];
+const frames = [
+  'telus200_000', 'telus200_003', 'telus200_007', 'telus200_010', 'telus200_014',
+  'basev1_000', 'basev1_002', 'basev1_004',
+];
+const gallery = document.getElementById('img2img-gallery');
+
+frames.forEach(frame => {
+  const group = document.createElement('div');
+  group.style.cssText = 'background:#1a1a1a; border-radius:8px; padding:16px; margin-bottom:16px;';
+
+  const title = document.createElement('h3');
+  title.style.cssText = 'color:#ccc; margin:0 0 10px;';
+  const source = frame.startsWith('telus') ? 'Fish GAN (kimg 200)' : 'Base GAN (320k)';
+  title.innerHTML = `<span class="tag gan">${source}</span> ${frame}`;
+  group.appendChild(title);
+
+  const row = document.createElement('div');
+  row.className = 'row';
+
+  // Original
+  const origCard = document.createElement('div');
+  origCard.className = 'card';
+  const origImg = document.createElement('img');
+  origImg.src = `img2img/${frame}_original.png`;
+  origImg.className = 'orig';
+  origImg.onclick = () => showLightbox(origImg.src);
+  origImg.onerror = () => origCard.style.display = 'none';
+  origCard.appendChild(origImg);
+  origCard.innerHTML += '<div class="label"><span class="tag gan">Original GAN</span></div>';
+  row.appendChild(origCard);
+
+  strengths.forEach(s => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    const img = document.createElement('img');
+    img.src = `img2img/${frame}_s${s.toFixed(2)}.png`;
+    img.onclick = () => showLightbox(img.src);
+    img.onerror = () => card.style.display = 'none';
+    card.appendChild(img);
+    card.innerHTML += `<div class="label"><span class="tag lora">s${s}</span></div>`;
+    row.appendChild(card);
+  });
+
+  group.appendChild(row);
+  gallery.appendChild(group);
+});
+</script>
+
+</body>
+</html>
