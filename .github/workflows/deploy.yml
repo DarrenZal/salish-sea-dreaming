@@ -6,6 +6,7 @@ on:
     branches: [main]
     paths:
       - 'web/**'
+      - 'briony-lora/eval/**'
       - '.github/workflows/deploy.yml'
   workflow_dispatch:
 
@@ -39,6 +40,13 @@ jobs:
       - name: Build
         working-directory: web
         run: npm run build
+
+      - name: Copy eval pages into dist
+        run: |
+          mkdir -p web/dist/briony-lora/eval
+          cp -r briony-lora/eval/* web/dist/briony-lora/eval/
+          cp briony-lora/whole-*.png web/dist/briony-lora/ 2>/dev/null || true
+          cp briony-lora/Central*.png web/dist/briony-lora/ 2>/dev/null || true
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
