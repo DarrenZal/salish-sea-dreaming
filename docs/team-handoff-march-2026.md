@@ -100,11 +100,11 @@ Open `briony-lora/eval/compare-v2.html` locally to see Briony's actual paintings
 
 ### Which LoRA file to use
 
-| File | Base model | Status |
-|------|-----------|--------|
-| **`briony_watercolor_v1.safetensors`** (38 MB) | **SD 1.5** | **Use this.** Best results. |
-| `briony_watercolor_sdturbo.safetensors` (13 MB) | SD-Turbo | Skip — doesn't work |
-| `briony_watercolor_sdturbo_kohya.safetensors` (13 MB) | SD-Turbo | Skip — kohya format, also doesn't work |
+| File | Base model | Status | Link |
+|------|-----------|--------|------|
+| **`briony_watercolor_v1.safetensors`** (38 MB) | **SD 1.5** | **Use this.** Best results. | [Download](https://drive.google.com/file/d/1fIFBYGorHjfg76w82AwHOhyiiqptSBGu/view) |
+| `briony_watercolor_sdturbo.safetensors` (13 MB) | SD-Turbo | Skip — doesn't work | — |
+| `briony_watercolor_sdturbo_kohya.safetensors` (13 MB) | SD-Turbo | Skip — kohya format, also doesn't work | — |
 
 All on [shared Drive → Models](https://drive.google.com/drive/folders/1B5hwQEds0Bcg6nHmtNJBcz17xr_E2dr9).
 
@@ -250,6 +250,15 @@ Running autonomously. No action needed unless it fails.
 | ETA | ~March 22 |
 | Checkpoints | Every 200 kimg. kimg 200 + 400 on Drive. |
 | Status | Healthy, fish shapes clearly emerging |
+
+**Checkpoints on Drive** ([Models/Fish_model](https://drive.google.com/drive/folders/1A5KzChl5mPf42iAcKiHJCCpzSCnAEQDZ)):
+
+| File | Link |
+|------|------|
+| `fish-network-snapshot-000400.pkl` (347 MB) — latest, load in Autolume | [Download](https://drive.google.com/file/d/1F0j08z39X3ql-VdMwyuDTKcZGu6arsPd/view) |
+| `fakes000400.png` — kimg 400 fakes grid (see what the model produces) | [View](https://drive.google.com/file/d/1hfcIA8ilOEDwEJ-oMRiRvEw1ofZWTWz7/view) |
+| `fish-network-snapshot-000200.pkl` — earlier checkpoint | [Download](https://drive.google.com/file/d/1fUyo5Ob9T-Q1Tg5kXNGfkFbX-De2qjd3/view) |
+| `marine-base-320kimg.pkl` — base GAN model (working in Autolume) | [Download](https://drive.google.com/file/d/11_4WG130pFDq5euT4M75dL2RBNSYA_0X/view) |
 
 **Arshia's guidance:** If no meaningful results by kimg 500, restart with different gamma. kimg 400 looks good — no restart needed.
 
