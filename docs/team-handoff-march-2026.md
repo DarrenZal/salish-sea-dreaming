@@ -224,11 +224,17 @@ Built and tested. Sends real ecological data over OSC to TouchDesigner.
 - **Key story:** Targeting of matriarchs — herring that hold knowledge of where to spawn. Local extirpation. DFO's 1953 baseline was already a terrible year; Indigenous knowledge documents vastly different historical reality.
 - **Data quality caveat:** 1988 method break (surface→dive surveys), spawn index is a minimum estimate
 
-### Biosonification (Prav's domain)
-- Ableton Live + Manifest plugin
-- Herring population data → drone intensity, harmonic complexity
-- Tidal/seasonal cycles → rhythmic foundation
-- OSC bidirectional: Ableton ↔ TD
+### Biosonification
+
+**Decision (March 19):** Sonification is data-*inspired* artistic interpretation, not literal data-to-sound translation. Start with spreadsheet/MIDI, move to live OSC as second stage.
+
+**Phase 1 (this weekend):**
+- **Eve** is creating MIDI (0-127 CC range) and Manifest CSV data files from the ecological datasets — herring, temperature, tides, moon, spawn intensity, river flow
+- **Prav** tests MIDI files on Ableton + Manifest plugin and shares results over weekend
+
+**Phase 2 (stretch):**
+- Live OSC pulse server (`engine.py`) feeds real-time data to Ableton and TD simultaneously
+- Bidirectional: Ableton ↔ TD (sound drives visuals, visuals could drive sound)
 
 ---
 
@@ -257,20 +263,40 @@ Darren will download the final checkpoint when it completes and put it on Drive.
 1. **Test more inference steps** (8, 15, 20) with SD 1.5 + Briony LoRA — is the style there?
 2. **Try LCM-LoRA combo** if StreamDiffusionTD supports two LoRAs
 3. **Make the pivot decision** — LoRA working or try alternative approach?
-4. **RTX 3090 setup** — TD 2025 install, TouchDiffusion first run, NDI test
-5. **Audio layer** — Ableton + Manifest, herring sonification
-6. **Explore Nano Banana, OpenArt, or [20-min masterpiece](https://medium.com/@jamesonthecrow/20-minute-masterpiece-4b6043fdfff5)** approaches
+4. **Test MIDI files from Eve** on Ableton + Manifest — share results over weekend
+5. **Experiment with OSC integration** for live data
+6. **Get Moonfish Media footage from David** (Tuesday) — herring, salmon, birds, whales
+7. **RTX 3090 setup** — TD 2025 install, TouchDiffusion first run, NDI test
+8. **Explore Nano Banana, OpenArt, or [20-min masterpiece](https://medium.com/@jamesonthecrow/20-minute-masterpiece-4b6043fdfff5)** approaches
+9. **Connect with Caroline** about Gura Gladue involvement for hackathon
 
 ### Shawn
-1. **Help Prav with RTX 3090 GUI setup** — TD 2025, TouchDiffusion first run
-2. **Narrative framing** — what story do we tell visitors? Wall text. Framing for the herring data.
-3. **OSC engine → TD mapping** — wire the 4 data channels to visual parameters (color temperature, speed, opacity)
-4. **Download fish checkpoints** when they land (~March 22) — place PKL in `C:\Users\user\autolume\models\`
+1. **Take over style transfer work** — own the LoRA testing and fallback approaches (Fast NST, AdaIN, etc.) while Darren is away
+2. **Prepare contingency Python style transfer** if LoRA doesn't work — see [`docs/style-transfer-guide.md`](style-transfer-guide.md)
+3. **Boids flocking algorithm in TouchDesigner** — get a basic fish school working by weekend
+4. **Help Prav with RTX 3090 GUI setup** — TD 2025, TouchDiffusion first run
+5. **Narrative framing** — what story do we tell visitors? Wall text. Framing for the herring data.
+6. **Create new Signal group** for hackathon planning — invite Caroline, Kay, and team
+7. **Download fish checkpoints** when they land (~March 22) — place PKL in `C:\Users\user\autolume\models\`
+
+### Eve
+1. **Create MIDI (0-127) and Manifest CSV data files** from ecological datasets — herring, temperature, tides, moon, spawn intensity, river flow
+2. Deliver to Prav this weekend for Ableton testing
+
+### All
+- **Send bios to Prav on Signal** for exhibition curator
+- **Draft project definition statement** and vision document for Caroline re hackathon
+- **Collective crediting** for exhibition — decision made: not individual lead artist
+
+### Darren (remote)
+- Monitor TELUS training, download final fish checkpoint when done (~March 22)
+- Get Leo to help with TD 2025 + StreamDiffusion setup next week
+- Reachable on Signal for debugging
 
 ### Don't Worry About
 - Whale/bird QC (Darren when back)
-- TELUS training (autonomous, Darren monitors remotely)
 - Knowledge graph integration (post-April)
+- Hackathon logistics beyond Signal group setup + weekly sync cadence
 
 ---
 
@@ -285,6 +311,42 @@ Darren will download the final checkpoint when it completes and put it on Drive.
 | **Darren** | Data pipelines, training infra, knowledge graph | Away March 20-28, reachable on Signal |
 | **Carol Anne** | TELUS GPU access, Indigenomics framework | |
 | **Briony Penn** | The watercolors — the primary visual language | |
+| **Leo** | TouchDesigner + StreamDiffusion setup help | Darren connecting next week |
+| **David Denning** | Moonfish Media footage | Prav getting footage Tuesday |
+
+---
+
+## Incoming This Week
+
+- **Moonfish Media footage** (Tuesday) — Prav getting herring, salmon, birds, whales footage from David. This is a key input for img2img style transfer and Resolume layers.
+- **Eve's MIDI/CSV data** (weekend) — ecological datasets converted to MIDI 0-127 for Ableton/Manifest testing.
+- **Fish GAN final checkpoint** (~March 22) — kimg 1000, download from TELUS.
+- **Leo** — Darren connecting him for TD 2025 + StreamDiffusion setup help next week.
+
+---
+
+## Beyond April: Hackathon / Creator Jam
+
+**What:** Creator Jam / Hackathon at the Indigenomics Impact Summit at Northeastern University
+**When:** ~8 weeks out (late May)
+**Trajectory:** Life at the Center 2027, potential Indigenous Technology House at ETHCON
+
+**This week:**
+- Shawn creates new Signal group for hackathon planning — invite Caroline, Kay, and team
+- Draft project definition statement and vision document for Caroline
+- Set up weekly sync meetings for coordination
+- Prav connecting with Caroline about Gura Gladue involvement
+
+**Note on Gaia AI:** Prav's feedback — promising first step but reads as "Western idealistic." Needs Indigenous traditional wisdom and cultural grounding to become truly powerful. Not a blocker for the art show but important context for the hackathon direction.
+
+---
+
+## Key Decisions Made (March 19)
+
+1. **Collective crediting** for the exhibition — not individual lead artist
+2. **Sonification is artistic interpretation** — data-inspired, not literal data-to-sound translation
+3. **MIDI first, live OSC second** — prove the concept with spreadsheets before building live pipelines
+4. **SD 1.5, not SD-Turbo** — for the Briony LoRA. SD-Turbo is incompatible with style LoRAs.
 
 ---
 
