@@ -84,6 +84,8 @@ For April we do the **first layer** — Briony-styled visuals, data-driven movem
 
 This is the most important creative/technical challenge right now.
 
+**Step-by-step setup:** [`docs/lora-integration-guide.md`](lora-integration-guide.md) — loading the LoRA, trigger token, txt2img/img2img/video modes, tuning parameters, testing checklist.
+
 ### What We Tried (March 19)
 
 **SD-Turbo + LoRA: Doesn't work.**
@@ -292,7 +294,7 @@ Darren will download the final checkpoint when it completes and put it on Drive.
 |------|------|
 | `CLAUDE.md` | Project status — the source of truth |
 | `docs/style-transfer-guide.md` | All 9 style transfer options with code |
-| `docs/prav-lora-integration-guide.md` | LoRA setup for StreamDiffusionTD |
+| `docs/lora-integration-guide.md` | LoRA setup for StreamDiffusionTD |
 | `docs/autolume-integration.md` | Full technical architecture + holonic vision |
 | `docs/autolume-quickstart.md` | Loading checkpoints in Autolume |
 | `briony-lora/eval/compare-v2.html` | Honest evaluation — Briony's art vs LoRA output |

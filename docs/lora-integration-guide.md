@@ -1,7 +1,9 @@
-# Briony LoRA — Setup & Testing Guide
+# Briony LoRA — Integration Guide
 
-**Date:** 2026-03-19 (updated)
-**For:** Prav, Shawn, team
+**Date:** 2026-03-20 (updated)
+**For:** Team
+
+> **Status update (March 20):** SD-Turbo + LoRA doesn't work (blurry). Use **SD 1.5** with `briony_watercolor_v1.safetensors` instead. See [team handoff](team-handoff-march-2026.md) for full context and next steps.
 
 We trained a LoRA on 22 Briony Penn watercolors that teaches Stable Diffusion her style. It works in two modes: **txt2img** (generate Briony-style scenes from prompts) and **img2img** (paint any input in Briony's style). Both are worth testing at the jam.
 
