@@ -86,17 +86,27 @@ This is the most important creative/technical challenge right now.
 
 **Step-by-step setup:** [`docs/lora-integration-guide.md`](lora-integration-guide.md) — loading the LoRA, trigger token, txt2img/img2img/video modes, tuning parameters, testing checklist.
 
-### What We Tried (March 19)
+### What We Tried (March 19-21)
 
 **SD-Turbo + LoRA: Doesn't work.**
-SD-Turbo is distilled for 1-step generation. A style LoRA pushes it off its equilibrium — at low weight (0.04) nothing happens, at weight 1.0 everything goes blurry. There's no sweet spot. We tried both the original format and a kohya-converted version. Neither works.
+SD-Turbo is distilled for 1-step generation. A style LoRA pushes it off its equilibrium — at low weight (0.04) nothing happens, at weight 1.0 everything goes blurry. No sweet spot.
 
-**SD 1.5 + LoRA + 4 steps: Partially works.**
-Switched to SD 1.5 base with `briony_watercolor_v1.safetensors`. txt2img with prompts like `brionypenn watercolor fish` produced watercolor-ish results, but it wasn't obviously Briony's style — more "generic watercolor" than her bold linework and vivid colors. 4 steps may be too few.
+**SD 1.5 + LoRA + 4 steps (StreamDiffusion): Too few steps.**
+Switched to SD 1.5 base with `briony_watercolor_v1.safetensors`. txt2img produced watercolor-ish results, but not recognizably Briony. 4 steps isn't enough for the LoRA to express.
 
-### The Gap
+**SD 1.5 + LoRA + 30 steps (offline eval): Actually looks good.**
+The [evaluation images](https://darrenzal.github.io/salish-sea-dreaming/briony-lora/eval/compare-v2.html) generated at 30 steps with guidance 7.5 show real watercolor feel — soft edges, painterly texture, natural palette, some linework. **The LoRA IS working — the problem was the inference pipeline (too few steps), not the LoRA itself.**
 
-See the [LoRA evaluation page](https://darrenzal.github.io/salish-sea-dreaming/briony-lora/eval/compare-v2.html) — Briony's actual paintings next to what the LoRA produces. Her signature: **bold ink outlines, vivid saturated teals/reds/ochres, flat illustrative perspective, ecosystem cross-sections.** The LoRA captures softness but misses the linework, the saturation, and the composition.
+**AdaIN style transfer (March 21): Tested, weaker than LoRA.**
+Tested pretrained AdaIN on GAN fish frames + 3 Briony paintings as style reference. Transfers color palette but produces texture-pattern artifacts and no linework. The LoRA at 30 steps is actually better at capturing Briony's style.
+
+### Key Learning
+
+**The LoRA is the right approach.** It just needs more inference steps than SD-Turbo or StreamDiffusion at 4 steps can provide. The path forward: SD 1.5 + LoRA at 8-20 steps. LCM-LoRA can speed up inference without losing quality.
+
+### The Gap (still present)
+
+See the [LoRA evaluation page](https://darrenzal.github.io/salish-sea-dreaming/briony-lora/eval/compare-v2.html) — Briony's actual paintings next to what the LoRA produces. At 30 steps the output has watercolor feel but still misses her **boldest ink outlines and vivid saturated colors**. Retraining with all 54 curated watercolors (not 22) at rank 32 should close this gap.
 
 **Training images:** The LoRA was trained on [22 curated watercolors](https://darrenzal.github.io/salish-sea-dreaming/briony-lora/training_contact_sheet.png) — a subset selected for consistent watercolor style. Briony's [full archive](https://darrenzal.github.io/salish-sea-dreaming/briony-lora/archive_not_in_training.png) (~67 works across 9 categories) includes pen-and-ink, maps, mandalas, field journals, and signage — mixed styles that would confuse a LoRA. The curated watercolor corpus has 55 images in `training-data/briony-marine-colour/` if retraining with more.
 
@@ -165,15 +175,16 @@ Once the style looks right, fuse the LoRA into SD 1.5 and compile a TensorRT eng
 
 Full details: [`docs/style-transfer-guide.md`](style-transfer-guide.md)
 
-| Priority | Approach | Setup time | Real-time? | Why consider |
-|----------|----------|-----------|------------|--------------|
-| **1** | **Fast Neural Style (FNST)** | 2-4 hrs train | 30+ fps | **Try first.** Captures bold linework + vivid color better than LoRA. |
-| **2** | **AdaIN** | Minutes (pretrained) | 20-40 fps | Zero setup. Blend between Briony paintings with a fader. |
-| **3** | **LoRA retrain** (54 images, rank 32, SD 1.5) | 30-60 min | 1-6 fps | If FNST/AdaIN don't look right. |
-| **4** | **CycleGAN** | 12-24 hrs | 30 fps (trained) | Research bet. Deeper structural transformation. |
-| **5** | **Animate Briony's actual paintings** | Hours in TD | Yes | Pan, zoom, parallax on HER paintings. Most faithful. |
+| Priority | Approach | Setup time | Real-time? | Status |
+|----------|----------|-----------|------------|--------|
+| **1** | **SD 1.5 + LoRA (8-20 steps)** | Done | 1-6 fps | Best results so far at 30 steps. Find the right step count for real-time. |
+| **2** | **LoRA + LCM-LoRA combo** | Minutes | 3-8 fps (est.) | Speed up SD 1.5 to 4-8 steps without losing quality. |
+| **3** | **LoRA retrain** (54 images, rank 32) | 30-60 min | Same | Sharpen the Briony style further. |
+| **4** | **FNST** | 2-4 hrs train | 30+ fps | If LoRA fps is too low for live performance. |
+| **5** | **AdaIN** | Minutes | 20-40 fps | **Tested March 21 — color OK but texture artifacts, weaker than LoRA.** |
+| **6** | **CycleGAN** | 12-24 hrs | 30 fps | Research bet. |
 
-**The core decision this week:** Test FNST and AdaIN first — they're faster, higher fps, and better at capturing Briony's bold linework than the LoRA approach. If neither looks right, retrain the LoRA with all 54 images at higher rank. See [`docs/style-transfer-guide.md`](style-transfer-guide.md) for full code + instructions.
+**The core decision this week:** The LoRA works — it just needs more inference steps. Test SD 1.5 + LoRA at 8, 15, 20 steps. If fps is too low, try LCM-LoRA combo for speed. If that's still not enough, FNST is the real-time fallback (30+ fps). AdaIN was tested and is weaker than the LoRA. See [`docs/style-transfer-guide.md`](style-transfer-guide.md) for full details.
 
 ---
 

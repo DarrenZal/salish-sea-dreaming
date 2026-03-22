@@ -6,23 +6,28 @@
 
 The goal: apply Briony Penn's watercolor aesthetic to any input — GAN fish, David's photos, Moonfish footage, live camera. This doc covers every viable approach, ranked by readiness.
 
-> **Status update (March 21):** SD-Turbo + LoRA does NOT work (blurry at weight 1.0, invisible at low weight). The LoRA on SD 1.5 produces "generic watercolor" not Briony's bold linework. We're pivoting to alternative approaches. See [team handoff](team-handoff-march-2026.md) for full context.
+> **Status update (March 21):**
+> - **SD-Turbo + LoRA:** Does NOT work (blurry at weight 1.0, invisible at low weight).
+> - **SD 1.5 + LoRA at 30 steps:** Actually looks decent — watercolor feel, some linework, natural palette. The LoRA works, the problem was the inference pipeline (SD-Turbo + 4 steps), not the LoRA itself.
+> - **SD 1.5 + LoRA at 4 steps (StreamDiffusion):** Too few steps for the LoRA to express. Need 8-20 steps minimum.
+> - **AdaIN:** Tested March 21 on GAN fish frames + Briony paintings. Transfers color palette but produces texture-pattern artifacts, no linework. The LoRA at 30 steps is actually better.
+> - **Key learning:** The LoRA IS the right approach — it just needs more inference steps. SD 1.5 + LoRA + LCM-LoRA (for speed) is the most promising path.
 
 ## TL;DR — Priority Stack (Updated March 21)
 
 | Priority | Method | Setup Time | Real-time? | When to reach for it |
 |----------|--------|-----------|------------|---------------------|
-| **A** | Fast Neural Style (Johnson) | 2-4 hours train | Yes (30+ fps) | **Try first.** Captures bold linework + vivid color better than LoRA. |
-| **B** | AdaIN Arbitrary Style | Minutes (pretrained) | Yes (20-40 fps) | Zero setup. Blend between Briony paintings live. |
-| **C** | LoRA retrain (SD 1.5, 54 images, rank 32) | 30-60 min | Yes (1-6 fps) | If FNST/AdaIN don't look right. More training data + higher rank. |
-| **D** | CycleGAN | 12-24 hours | Yes (once trained) | Research bet. Deeper structural transformation. |
-| **E** | ControlNet + LoRA | Hours | No (pre-render) | Hero sequences from Moonfish footage. Batch overnight. |
-| **F** | Classic NST (Gatys) | Minutes | No (30-60s/img) | Guaranteed to work. 50 lines of Python. Pre-render only. |
-| **G** | IP-Adapter | Minutes | Yes (~6 fps) | Zero-shot style reference with SD. |
-| **H** | DreamBooth | 1 hour | Yes (via SD) | Full SD fine-tune if LoRA rank isn't enough. |
-| **I** | OpenArt / Cloud | Minutes | No | All local training environments broken. |
+| **A** | LoRA + SD 1.5 (8-20 steps) | Done (retrain for better) | 1-6 fps | **Best results so far at 30 steps.** Need to find the right step count for real-time. |
+| **B** | LoRA + LCM-LoRA combo | Minutes (download LCM) | 3-8 fps (est.) | Speed up SD 1.5 inference to 4-8 steps without losing quality. |
+| **C** | LoRA retrain (54 images, rank 32) | 30-60 min | Same | More training data + higher rank → sharper Briony style. |
+| **D** | Fast Neural Style (Johnson) | 2-4 hours train | 30+ fps | If LoRA fps is too low for live performance. Purpose-built for real-time. |
+| **E** | AdaIN Arbitrary Style | Minutes (pretrained) | 20-40 fps | **Tested March 21 — color transfer OK but texture artifacts, no linework. Weaker than LoRA.** |
+| **F** | CycleGAN | 12-24 hours | 30 fps (trained) | Research bet. Deeper structural transformation. |
+| **G** | ControlNet + LoRA | Hours | No (pre-render) | Hero sequences from Moonfish footage. Batch overnight. |
+| **H** | Classic NST (Gatys) | Minutes | No (30-60s/img) | Guaranteed to work. Pre-render only. |
 
-> **Previous primary (demoted):** LoRA + SD-Turbo StreamDiffusion — tested March 19, doesn't work. SD-Turbo's 1-step distillation is incompatible with style LoRAs. SD 1.5 + LoRA at 4 steps produces weak results. See Option C for the retrain path.
+> **Demoted:** SD-Turbo + LoRA — SD-Turbo's 1-step distillation is incompatible with style LoRAs.
+> **Demoted:** AdaIN — tested, produces texture-pattern artifacts rather than Briony's painterly style. Better for color palette transfer than full style transfer.
 
 ---
 
