@@ -122,6 +122,47 @@ A tagging system for QC, prompt design, Resolume sequencing, and v2 corpus curat
 - **Balance:** No single interface type should dominate. Cap at ~100 images per tag.
 - **Bridge discipline:** Only include surface/aerial/terrestrial images that visually bridge to the water-dominant core.
 
+## Composition as Transition Dimension
+
+### Multi-Subject Images Create Richer Latent Space
+
+A single image of "salmon chasing herring through eelgrass" gives StyleGAN three latent directions to organize around simultaneously:
+- Salmon body form
+- Herring school pattern
+- Eelgrass habitat texture
+
+That image sits at the **intersection** of those three dimensions in latent space. Navigate one direction and the salmon becomes more prominent. Navigate another and the eelgrass takes over. Navigate a third and the herring scatter. The more multi-subject compositions in the corpus, the richer the latent topology — more paths to navigate, more ecological relationships encoded.
+
+StyleGAN doesn't see "salmon" and "herring" as labeled concepts. It sees visual features at different spatial positions. A training image with multiple organisms teaches the model that those features **co-occur** — they belong in the same region of latent space. This is how ecological relationships become navigable without any labels or text.
+
+### Three Image Types for a Balanced Corpus
+
+| Image type | What it teaches the model | Example | Corpus share |
+|-----------|--------------------------|---------|-------------|
+| **Single organism, dominant** | Clear species morphology, silhouette, texture | Octopus filling the frame | ~60-70% |
+| **Multi-subject, ecological** | Co-occurrence, predation, relationship, transition paths | Salmon among herring in eelgrass bed | ~20-30% |
+| **Habitat-rich** | Environmental context, visual grammar bridges, depth | Kelp forest with multiple species at different depths | ~10-15% |
+
+**Prefer images with ecological context over isolated organisms:**
+- Salmon chasing herring > lone salmon on gravel
+- Anemone with hermit crab or small fish > anemone alone
+- Kelp forest with fish swimming through > kelp frond closeup
+- Octopus in its den surrounded by shells and urchins > octopus on blank substrate
+- Seal swimming among fish > seal portrait
+
+**But keep organism-dominant images as the majority** — the model needs clear morphological signal to learn species forms. Multi-subject images provide the transition paths between those forms. Both are needed.
+
+### QC Implication
+
+During QC, **tag composition type** alongside the ecological interface tags:
+- `single-dominant` — one organism fills frame
+- `multi-subject` — two or more species visible in ecological relationship
+- `habitat-scene` — habitat structure (kelp, eelgrass, reef) with organisms present
+
+Don't reject a strong multi-subject ecological scene just because no single organism dominates. These are the images that make the latent space navigable — the connective tissue between species clusters.
+
+---
+
 ## How Steering Works
 
 ### In the GAN (Autolume) — no text, no labels
