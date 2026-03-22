@@ -4,39 +4,49 @@
 
 ---
 
-The goal: apply Briony Penn's watercolor aesthetic to any input — GAN fish, David's photos, Moonfish footage, live camera. This doc covers every viable approach, ranked by readiness, so we have fallbacks if the primary method (LoRA + StreamDiffusion) hits issues.
+The goal: apply Briony Penn's watercolor aesthetic to any input — GAN fish, David's photos, Moonfish footage, live camera. This doc covers every viable approach, ranked by readiness.
 
-## TL;DR — Fallback Stack
+> **Status update (March 21):** SD-Turbo + LoRA does NOT work (blurry at weight 1.0, invisible at low weight). The LoRA on SD 1.5 produces "generic watercolor" not Briony's bold linework. We're pivoting to alternative approaches. See [team handoff](team-handoff-march-2026.md) for full context.
+
+## TL;DR — Priority Stack (Updated March 21)
 
 | Priority | Method | Setup Time | Real-time? | When to reach for it |
 |----------|--------|-----------|------------|---------------------|
-| **A (current)** | LoRA + StreamDiffusion | Done | Yes (6-15 fps) | Working. Use unless it breaks. |
-| **B** | IP-Adapter | Minutes | Yes (~6 fps) | LoRA file won't load or results look wrong. Zero training. |
-| **C** | Fast Neural Style (Johnson) | 2-4 hours | Yes (30+ fps) | StreamDiffusion itself is broken. Train feedforward net. |
-| **D** | AdaIN Arbitrary Style | Minutes | Yes (20-40 fps) | Want to blend between multiple Briony paintings live. |
+| **A** | Fast Neural Style (Johnson) | 2-4 hours train | Yes (30+ fps) | **Try first.** Captures bold linework + vivid color better than LoRA. |
+| **B** | AdaIN Arbitrary Style | Minutes (pretrained) | Yes (20-40 fps) | Zero setup. Blend between Briony paintings live. |
+| **C** | LoRA retrain (SD 1.5, 54 images, rank 32) | 30-60 min | Yes (1-6 fps) | If FNST/AdaIN don't look right. More training data + higher rank. |
+| **D** | CycleGAN | 12-24 hours | Yes (once trained) | Research bet. Deeper structural transformation. |
 | **E** | ControlNet + LoRA | Hours | No (pre-render) | Hero sequences from Moonfish footage. Batch overnight. |
-| **F** | Classic NST (Gatys) | Minutes | No (30-60s/img) | Everything else fails. 50 lines of Python, guaranteed to work. |
-| **G** | CycleGAN | 12-24 hours | Yes (once trained) | Need a fundamentally different look than LoRA provides. |
-| **H** | DreamBooth | 1 hour | Yes (via SD) | LoRA doesn't capture enough of Briony's style. |
+| **F** | Classic NST (Gatys) | Minutes | No (30-60s/img) | Guaranteed to work. 50 lines of Python. Pre-render only. |
+| **G** | IP-Adapter | Minutes | Yes (~6 fps) | Zero-shot style reference with SD. |
+| **H** | DreamBooth | 1 hour | Yes (via SD) | Full SD fine-tune if LoRA rank isn't enough. |
 | **I** | OpenArt / Cloud | Minutes | No | All local training environments broken. |
+
+> **Previous primary (demoted):** LoRA + SD-Turbo StreamDiffusion — tested March 19, doesn't work. SD-Turbo's 1-step distillation is incompatible with style LoRAs. SD 1.5 + LoRA at 4 steps produces weak results. See Option C for the retrain path.
 
 ---
 
-## Option A: LoRA + StreamDiffusion (PRIMARY — WORKING)
+## Option A: Fast Neural Style Transfer (RECOMMENDED — try first)
 
-**Status:** Trained, merged into SD-Turbo, tested on RTX 3090 and 3060.
+Moved to top priority. See Option C below for full details.
 
-**What it is:** A Low-Rank Adaptation fine-tuned on 22 Briony Penn watercolors. Teaches Stable Diffusion what "brionypenn watercolor" means. Combined with StreamDiffusion for real-time img2img inference inside TouchDesigner.
+---
+
+## Previous Option A (demoted): LoRA + StreamDiffusion
+
+**Status:** SD-Turbo version DOES NOT WORK. SD 1.5 version partially works but produces "generic watercolor" not Briony's bold style. See Option C (LoRA retrain) for improvement path.
+
+**What happened:** Tested March 19 on Prav's RTX 3060. SD-Turbo + LoRA is blurry at weight 1.0, invisible at low weight. SD 1.5 + LoRA at 4 steps produces watercolor-ish results but misses Briony's bold ink outlines, vivid color saturation, and illustrative composition. See [evaluation page](https://darrenzal.github.io/salish-sea-dreaming/briony-lora/eval/compare-v2.html).
 
 **Files:**
-- `briony_watercolor_sdturbo.safetensors` (13 MB) — **use this one** (matches Prav's SD-Turbo base)
-- `briony_watercolor_v1.safetensors` (38 MB) — SD 1.5 base, won't work with SD-Turbo
+- `briony_watercolor_v1.safetensors` (38 MB) — **SD 1.5 base, use this if testing LoRA**
+- `briony_watercolor_sdturbo.safetensors` (13 MB) — SD-Turbo base, skip (doesn't work)
 - Training config: `briony-lora/train_config.toml`
-- Evaluation results: `briony-lora/eval/img2img_compare.html`
+- Evaluation: `briony-lora/eval/compare-v2.html` ([live](https://darrenzal.github.io/salish-sea-dreaming/briony-lora/eval/compare-v2.html))
 
-**Pipeline:**
+**Pipeline (if using LoRA on SD 1.5):**
 ```
-Any input → StreamDiffusionTD (img2img, LoRA loaded) → TD compositor → Resolume → Projection
+Any input → StreamDiffusionTD (SD 1.5, img2img, LoRA loaded) → TD compositor → Resolume → Projection
 ```
 
 **Key settings:**

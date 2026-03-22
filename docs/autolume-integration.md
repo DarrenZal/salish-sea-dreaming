@@ -143,18 +143,29 @@ TD becomes the hub: MIDI controls both TD visuals and Autolume parameters simult
 
 ### Three Focused Species Models
 
-The original base model (539 mixed marine photos) was too visually diverse — Arshia flagged this after reviewing the 320 kimg checkpoint. The pivot: three separate models, each learning one visual domain.
+### Strategy Update (March 21)
+
+The original plan called for three separate species models mixed via NDI crossfades. This has been revised:
+
+**For April:** The **fish model** (378 images, 13 species, kimg 1000) is the primary live GAN. One model, one Autolume instance, one clear live center. Latent navigation across herring/salmon/rockfish clusters provides the visual vocabulary.
+
+**Stretch track for April:** A **CC-safe multi-species "dreaming model"** — fish + intertidal invertebrates (anemones, starfish, nudibranchs, octopus) in one shared latent space. Curated by visual grammar (underwater/intertidal, organism-dominant, consistent lighting), not taxonomy. This is the north star — a latent space where navigating IS navigating the ecosystem.
+
+**Post-April (MOVE37XR Oct 2026):** Expand the dreaming corpus, train to kimg 2000.
+
+**Why single > separate:** Within one model you get smooth latent interpolation — species morph organically. Between separate models you only get pixel crossfades. The dreaming model IS the project's vision: "each creature contains the whole."
+
+**Note on the 320 kimg base model:** The original base (539 images, 37 species) has a **license problem** — majority CC BY-NC or unlicensed. Cannot be used at the exhibition. R&D only. The concept it proved (multi-species latent space) is sound, but the corpus must be rebuilt CC-safe.
 
 | Model | Dataset | Images | Status |
 |-------|---------|--------|--------|
-| **Fish** | 13 bony fish species (salmon, herring, lingcod, rockfish, etc.) | 378 (QC'd) | **Training on TELUS** (~353 sec/kimg, ETA Mar 20-21) |
-| **Bird** | 10 coastal seabird species (eagle, heron, murre, puffin, etc.) | 1,729 (awaiting QC) | Next after fish |
-| **Whale** | 6 cetacean species (orca, humpback, gray, minke, porpoise, dolphin) | 731 (awaiting QC) | Last (shapes less clear per Arshia) |
-| **Base (320 kimg)** | Original 539 mixed marine — abstract, impressionistic | 539 | Done — used as background "dreaming mind" layer |
+| **Fish** | 13 bony fish species | 378 (QC'd, CC-safe) | **Primary for April.** kimg ~780/1000, ETA March 22. |
+| **Dreaming** | Fish + intertidal invertebrates | TBD (~500-800) | Stretch track. Corpus curation starts March 22. |
+| **Base (320 kimg)** | Original 539 mixed marine | 539 | R&D only — license-tainted. |
+| Bird | 10 seabird species | 1,729 (awaiting QC) | Post-April |
+| Whale | 6 cetaceans | 731 (awaiting QC) | Post-April |
 
 **License policy:** CC0/CC BY/CC BY-SA only (artist fee = commercial use). All images scraped with `--license-filter`. Provenance tracked in `training-data/provenance.csv`.
-
-**Training order per Arshia:** Fish → Bird → Whale. Fish and bird datasets are more consistent; whale photos often have unclear shapes.
 
 ### Individual Fish, Not Schools
 

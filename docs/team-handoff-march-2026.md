@@ -165,15 +165,15 @@ Once the style looks right, fuse the LoRA into SD 1.5 and compile a TensorRT eng
 
 Full details: [`docs/style-transfer-guide.md`](style-transfer-guide.md)
 
-| Approach | Setup time | Real-time? | Why consider |
-|----------|-----------|------------|--------------|
-| **Fast Neural Style** | 2-4 hrs train | 30+ fps | Captures bold linework better than LoRA. Purpose-built for this. |
-| **AdaIN** | Minutes (pretrained) | 20-40 fps | Blend between multiple Briony paintings with a fader. |
-| **IP-Adapter** | Minutes (no training) | ~6 fps | Use Briony painting as image prompt. Works with SD. |
-| **Classic NST** | Minutes | No (30-60s/img) | 50 lines of Python. Guaranteed to work. Pre-render overnight. |
-| **Animate Briony's actual paintings** | Hours in TD | Yes | Pan, zoom, parallax, particles on HER paintings. Most faithful. |
+| Priority | Approach | Setup time | Real-time? | Why consider |
+|----------|----------|-----------|------------|--------------|
+| **1** | **Fast Neural Style (FNST)** | 2-4 hrs train | 30+ fps | **Try first.** Captures bold linework + vivid color better than LoRA. |
+| **2** | **AdaIN** | Minutes (pretrained) | 20-40 fps | Zero setup. Blend between Briony paintings with a fader. |
+| **3** | **LoRA retrain** (54 images, rank 32, SD 1.5) | 30-60 min | 1-6 fps | If FNST/AdaIN don't look right. |
+| **4** | **CycleGAN** | 12-24 hrs | 30 fps (trained) | Research bet. Deeper structural transformation. |
+| **5** | **Animate Briony's actual paintings** | Hours in TD | Yes | Pan, zoom, parallax on HER paintings. Most faithful. |
 
-**The core decision this week:** Is LoRA + StreamDiffusion the right path, or should we pivot? If steps 1-3 above don't produce recognizable Briony style, pivot to Fast NST or AdaIN early. Better to pivot now than push a pipeline that doesn't capture her aesthetic.
+**The core decision this week:** Test FNST and AdaIN first — they're faster, higher fps, and better at capturing Briony's bold linework than the LoRA approach. If neither looks right, retrain the LoRA with all 54 images at higher rank. See [`docs/style-transfer-guide.md`](style-transfer-guide.md) for full code + instructions.
 
 ---
 
@@ -240,31 +240,40 @@ Built and tested. Sends real ecological data over OSC to TouchDesigner.
 
 ---
 
-## Fish GAN Training (TELUS)
+## GAN Strategy
 
-Running autonomously. No action needed unless it fails.
+### Fish model = April's live center
+
+The fish model is the production GAN for April. One model, one Autolume instance, one clear live center.
 
 | Metric | Value |
 |--------|-------|
 | Run | 00014 (fish512, 378 images, StyleGAN2) |
-| Progress | ~kimg 500 / 1,000 (~50%) |
+| Progress | ~kimg 780 / 1,000 (~78%) |
 | Speed | ~570 sec/kimg |
 | ETA | ~March 22 |
-| Checkpoints | Every 200 kimg. kimg 200 + 400 on Drive. |
-| Status | Healthy, fish shapes clearly emerging |
+| Status | Healthy, fish shapes clearly emerging at kimg 600 |
 
 **Checkpoints on Drive** ([Models/Fish_model](https://drive.google.com/drive/folders/1A5KzChl5mPf42iAcKiHJCCpzSCnAEQDZ)):
 
 | File | Link |
 |------|------|
 | `fish-network-snapshot-000400.pkl` (347 MB) — latest, load in Autolume | [Download](https://drive.google.com/file/d/1F0j08z39X3ql-VdMwyuDTKcZGu6arsPd/view) |
-| `fakes000400.png` — kimg 400 fakes grid (see what the model produces) | [View](https://drive.google.com/file/d/1hfcIA8ilOEDwEJ-oMRiRvEw1ofZWTWz7/view) |
+| `fakes000400.png` — kimg 400 fakes grid | [View](https://drive.google.com/file/d/1hfcIA8ilOEDwEJ-oMRiRvEw1ofZWTWz7/view) |
 | `fish-network-snapshot-000200.pkl` — earlier checkpoint | [Download](https://drive.google.com/file/d/1fUyo5Ob9T-Q1Tg5kXNGfkFbX-De2qjd3/view) |
 | `marine-base-320kimg.pkl` — base GAN model (working in Autolume) | [Download](https://drive.google.com/file/d/11_4WG130pFDq5euT4M75dL2RBNSYA_0X/view) |
 
-**Arshia's guidance:** If no meaningful results by kimg 500, restart with different gamma. kimg 400 looks good — no restart needed.
+### Multi-species "dreaming model" = stretch track
 
-Darren will download the final checkpoint when it completes and put it on Drive.
+A single model where navigating the latent space IS navigating the ecosystem. Fish morph into invertebrates, anemones bloom into starfish. The north star vision: "each creature contains the whole."
+
+**Why single > separate:** Within one StyleGAN model you get smooth latent interpolation — species morph organically. Between separate models you only get pixel crossfades. The dreaming model is the cosmology; the fish model is the instrument.
+
+**Status:** Stretch track. Darren building CC-safe corpus (fish + intertidal invertebrates) starting March 22. Training if corpus is ready by March 24 (go/no-go gate). Even if not the live source for April, it contributes as pre-rendered loops, atmosphere layers, or transition plates in Resolume.
+
+**Note:** The old 320 kimg base model has a license problem (majority CC BY-NC) and cannot be used at the exhibition. The dreaming corpus must be built CC-safe from scratch.
+
+Darren will download the fish final checkpoint when it completes and put it on Drive.
 
 ---
 
