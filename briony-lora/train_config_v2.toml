@@ -1,0 +1,45 @@
+# Briony Penn Watercolor LoRA Training Config — v2
+# Base: SD 1.5 | Rank 32 | 54 images (all curated watercolors) | RTX 3090 24GB or TELUS H200
+# Trigger token: brionypenn
+# Changes from v1: rank 16→32, 22→54 images, 1000→2000 steps, improved captions
+
+[model]
+pretrained_model_name_or_path = "runwayml/stable-diffusion-v1-5"
+
+[dataset]
+resolution = 512
+batch_size = 2
+caption_extension = ".txt"
+enable_bucket = true              # Handle non-square images gracefully
+
+[[dataset.subsets]]
+image_dir = "./briony-lora"       # All 54 images + .txt captions in this dir
+num_repeats = 5                   # 54 images * 5 repeats = 270 images/epoch
+
+[training]
+output_dir = "./briony-lora/output-v2"
+output_name = "briony_watercolor_v2"
+save_model_as = "safetensors"
+save_every_n_steps = 400
+max_train_steps = 2000            # ~7.4 epochs of 270 images/batch2 = ~2000 steps
+seed = 42
+
+# LoRA parameters
+network_module = "networks.lora"
+network_dim = 32                  # Rank 32 — higher capacity for bold linework + vivid color
+network_alpha = 32                # alpha = rank (standard)
+
+# Optimizer
+optimizer_type = "AdamW8bit"
+learning_rate = 5e-5
+lr_scheduler = "cosine"
+lr_warmup_steps = 100
+
+# Precision & performance
+mixed_precision = "fp16"
+gradient_checkpointing = true     # Save VRAM
+xformers = true                   # Memory-efficient attention
+
+# Logging
+logging_dir = "./briony-lora/logs-v2"
+log_prefix = "briony_v2"
