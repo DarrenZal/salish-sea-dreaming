@@ -31,32 +31,35 @@ The goal: apply Briony Penn's watercolor aesthetic to any input — GAN fish, Da
 
 ---
 
-## Option A: Fast Neural Style Transfer (RECOMMENDED — try first)
+## Option A: LoRA + StreamDiffusion (PRIMARY)
 
-Moved to top priority. See Option C below for full details.
+**Status:** The LoRA works well at 30 steps on SD 1.5. The challenge is getting enough inference steps in StreamDiffusion for real-time. SD-Turbo (1-4 steps) is too few — try SD 1.5 at 8-20 steps, or SD-Turbo with txt2img mode (not yet fully tested).
 
----
+**What we know:**
+- SD 1.5 + LoRA at 30 steps = beautiful results ([evaluation page](https://darrenzal.github.io/salish-sea-dreaming/briony-lora/eval/compare-v2.html))
+- SD 1.5 + LoRA at 4 steps (StreamDiffusion) = too few steps, style barely visible
+- SD-Turbo + LoRA in img2img = doesn't work (blurry)
+- SD-Turbo + LoRA in **txt2img** = **not yet fully tested** — Prav noted we hadn't tried this before concluding SD-Turbo doesn't work. Worth retesting.
 
-## Previous Option A (demoted): LoRA + StreamDiffusion
-
-**Status:** SD-Turbo version DOES NOT WORK. SD 1.5 version partially works but produces "generic watercolor" not Briony's bold style. See Option C (LoRA retrain) for improvement path.
-
-**What happened:** Tested March 19 on Prav's RTX 3060. SD-Turbo + LoRA is blurry at weight 1.0, invisible at low weight. SD 1.5 + LoRA at 4 steps produces watercolor-ish results but misses Briony's bold ink outlines, vivid color saturation, and illustrative composition. See [evaluation page](https://darrenzal.github.io/salish-sea-dreaming/briony-lora/eval/compare-v2.html).
+**What to try next:**
+1. SD-Turbo + LoRA in **txt2img mode** in StreamDiffusion (quick test)
+2. SD 1.5 + LoRA at 8-20 steps in StreamDiffusion
+3. LCM-LoRA + Briony LoRA combo on SD 1.5 (4-8 steps with LCM scheduler)
 
 **Files:**
-- `briony_watercolor_v1.safetensors` (38 MB) — **SD 1.5 base, use this if testing LoRA**
-- `briony_watercolor_sdturbo.safetensors` (13 MB) — SD-Turbo base, skip (doesn't work)
+- `briony_watercolor_v1.safetensors` (38 MB) — **SD 1.5 base** ([Download](https://drive.google.com/file/d/1fIFBYGorHjfg76w82AwHOhyiiqptSBGu/view))
+- `briony_watercolor_sdturbo.safetensors` (13 MB) — SD-Turbo base (worth retesting in txt2img mode)
 - Training config: `briony-lora/train_config.toml`
 - Evaluation: `briony-lora/eval/compare-v2.html` ([live](https://darrenzal.github.io/salish-sea-dreaming/briony-lora/eval/compare-v2.html))
 
-**Pipeline (if using LoRA on SD 1.5):**
+**Pipeline:**
 ```
-Any input → StreamDiffusionTD (SD 1.5, img2img, LoRA loaded) → TD compositor → Resolume → Projection
+Any input or prompt → StreamDiffusionTD (LoRA loaded) → TD compositor → Resolume → Projection
 ```
 
 **Key settings:**
-- Base model: `sd-turbo`
-- Mode: **img2img** (not txt2img)
+- Base model: `runwayml/stable-diffusion-v1-5` (or `sd-turbo` for txt2img retest)
+- Mode: **both txt2img and img2img work** — txt2img for prompt-driven generation, img2img for styling input
 - Trigger token: `brionypenn`
 - Prompt: `brionypenn watercolor painting, soft edges, natural pigment, ecological illustration`
 - Strength: `0.45` (sweet spot — dial 0.35-0.55 to taste)
