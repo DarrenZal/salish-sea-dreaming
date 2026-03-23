@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>QC Review — Dreaming Model Corpus</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: system-ui, sans-serif; background: #111; color: #ddd; padding: 16px; }
+h1 { color: #8ecae6; margin-bottom: 8px; }
+.controls { display: flex; gap: 12px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+.controls select, .controls button, .controls input { padding: 6px 12px; border-radius: 4px; border: 1px solid #444; background: #222; color: #ddd; font-size: 14px; cursor: pointer; }
+.controls button { background: #2a4a2a; border-color: #3a6a3a; }
+.controls button:hover { background: #3a6a3a; }
+.controls button.export { background: #4a2a6a; border-color: #6a3a8a; }
+.controls button.danger { background: #6a2a2a; border-color: #8a3a3a; }
+.stats { color: #888; font-size: 13px; margin-bottom: 12px; }
+.stats span { margin-right: 16px; }
+.stats .kept { color: #6c6; }
+.stats .rejected { color: #c66; }
+
+.grid { display: flex; flex-wrap: wrap; gap: 6px; }
+.card {
+  width: 180px; position: relative; cursor: pointer;
+  border: 3px solid transparent; border-radius: 6px; overflow: hidden;
+  transition: border-color 0.15s;
+}
+.card img { width: 100%; height: 140px; object-fit: cover; display: block; }
+.card .label { font-size: 10px; color: #888; padding: 3px 4px; background: #1a1a1a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card.kept { border-color: #2a5a2a; }
+.card.rejected { border-color: #8a2a2a; opacity: 0.5; }
+.card .badge { position: absolute; top: 4px; right: 4px; font-size: 10px; padding: 2px 6px; border-radius: 3px; font-weight: bold; }
+.card.rejected .badge { background: #8a2a2a; color: #faa; }
+.card .reason { position: absolute; bottom: 22px; left: 0; right: 0; font-size: 10px; text-align: center; color: #faa; background: rgba(100,20,20,0.8); padding: 2px; }
+
+/* Tag panel */
+.tag-panel { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #222; border: 1px solid #555; border-radius: 8px; padding: 16px; z-index: 100; min-width: 300px; }
+.tag-panel.active { display: block; }
+.tag-panel h3 { color: #8ecae6; margin-bottom: 12px; }
+.tag-panel .tag-row { margin-bottom: 8px; }
+.tag-panel .tag-row label { color: #ccc; font-size: 13px; margin-right: 8px; }
+.tag-panel .tag-row select { padding: 4px; background: #333; color: #ddd; border: 1px solid #555; border-radius: 3px; }
+.tag-panel button { margin-top: 12px; padding: 6px 16px; background: #2a4a2a; border: 1px solid #3a6a3a; color: #ddd; border-radius: 4px; cursor: pointer; }
+.overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 99; }
+.overlay.active { display: block; }
+
+/* Reason picker */
+.reason-picker { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #2a2a2a; border: 1px solid #555; border-radius: 6px; padding: 8px; z-index: 50; }
+.reason-picker.active { display: block; }
+.reason-picker button { display: block; width: 100%; padding: 4px 12px; margin: 2px 0; background: #3a2a2a; border: 1px solid #4a3a3a; color: #ddd; border-radius: 3px; cursor: pointer; font-size: 12px; text-align: left; }
+.reason-picker button:hover { background: #5a3a3a; }
+
+.mode-indicator { padding: 4px 12px; border-radius: 4px; font-size: 13px; font-weight: bold; }
+.mode-indicator.reject-mode { background: #2a4a2a; color: #8c8; }
+.mode-indicator.keep-mode { background: #4a2a2a; color: #c88; }
+</style>
+</head>
+<body>
+
+<h1>QC Review — Dreaming Model Corpus</h1>
+
+<div class="controls">
+  <label>Species: <select id="speciesSelect"><option value="__all__">All species</option></select></label>
+  <label>Show: <select id="filterSelect">
+    <option value="all">All</option>
+    <option value="kept">Kept only</option>
+    <option value="rejected">Rejected only</option>
+    <option value="unreviewed">Unreviewed</option>
+  </select></label>
+  <span class="mode-indicator" id="modeIndicator"></span>
+  <label>Mode: <select id="modeSelect">
+    <option value="reject">Reject mode (click to reject, default=keep)</option>
+    <option value="keep">Keep mode (click to keep, default=reject)</option>
+  </select></label>
+  <button class="export" onclick="exportCSV()">Export Rejects CSV</button>
+  <button class="export" onclick="exportTags()">Export Tags CSV</button>
+  <button onclick="loadImages()">Reload</button>
+  <label>Image dir: <input type="text" id="imageDirInput" value="/images/intertidal-raw" size="30"></label>
+</div>
+
+<div class="stats" id="stats"></div>
+<div class="grid" id="grid"></div>
+
+<div class="overlay" id="overlay" onclick="closeTagPanel()"></div>
+<div class="tag-panel" id="tagPanel">
+  <h3 id="tagTitle">Tag: image.jpg</h3>
+  <div class="tag-row"><label>Interface:</label><select id="tagInterface">
+    <option value="">—</option><option>underwater</option><option>intertidal</option>
+    <option>surface_split</option><option>wading</option><option>aerial_above_water</option>
+    <option>aerial_below_sky</option><option>terrestrial_near_water</option>
+  </select></div>
+  <div class="tag-row"><label>Composition:</label><select id="tagComposition">
+    <option value="">—</option><option>single_dominant</option><option>multi_subject</option><option>habitat_scene</option>
+  </select></div>
+  <div class="tag-row"><label>Bridge:</label><select id="tagBridge">
+    <option value="">—</option><option>predation</option><option>countershading</option><option>surface_transition</option>
+  </select></div>
+  <div class="tag-row"><label>Strength:</label><select id="tagStrength">
+    <option value="">—</option><option>hero</option><option>usable</option><option>borderline</option>
+  </select></div>
+  <button onclick="saveTag()">Save Tags</button>
+</div>
+
+<script>
+const REASONS = ['dead', 'human', 'surface', 'sky', 'small', 'ambiguous', 'captive', 'weak'];
+
+let images = {}; // filename -> { status: 'kept'|'rejected'|'unreviewed', reason: '', tags: {}, species: '' }
+let currentSpecies = '__all__';
+let mode = 'reject'; // 'reject' = click to reject (default keep), 'keep' = click to keep (default reject)
+let tagTarget = null;
+
+function getSpecies(filename) {
+  const parts = filename.replace(/\.[^.]+$/, '').split('_');
+  const numIdx = parts.findIndex(p => /^\d+$/.test(p));
+  return numIdx > 0 ? parts.slice(0, numIdx).join('_') : filename;
+}
+
+async function loadImages() {
+  const dir = document.getElementById('imageDirInput').value;
+  try {
+    // Load from filelist.txt (one filename per line)
+    // Generate with: find images/DIR -maxdepth 1 -type f \( -name "*.jpg" -o -name "*.jpeg" \) | sed 's/.*\///' | sort > images/DIR/filelist.txt
+    const resp = await fetch(dir + '/filelist.txt');
+    const text = await resp.text();
+    const filenames = text.trim().split('\n').filter(l => l.trim() && (l.endsWith('.jpg') || l.endsWith('.jpeg') || l.endsWith('.png')));
+
+    if (filenames.length === 0) {
+      alert('No images found in filelist.txt. Generate it with:\n  find ' + dir + ' -maxdepth 1 -type f \\( -name "*.jpg" -o -name "*.jpeg" \\) | sed \'s/.*\\///\' | sort > ' + dir + '/filelist.txt');
+      return;
+    }
+
+    // Initialize image states (preserve existing states on reload)
+    for (const f of filenames) {
+      if (!images[f]) {
+        const defaultStatus = mode === 'keep' ? 'rejected' : 'kept';
+        images[f] = { status: 'unreviewed', reason: '', tags: {}, species: getSpecies(f) };
+      }
+    }
+
+    // Populate species dropdown
+    const species = [...new Set(Object.values(images).map(i => i.species))].sort();
+    const sel = document.getElementById('speciesSelect');
+    sel.innerHTML = '<option value="__all__">All species (' + Object.keys(images).length + ')</option>';
+    for (const sp of species) {
+      const count = Object.values(images).filter(i => i.species === sp).length;
+      sel.innerHTML += `<option value="${sp}">${sp.replace(/_/g, ' ')} (${count})</option>`;
+    }
+
+    renderGrid();
+  } catch (e) {
+    alert('Error loading images: ' + e.message + '\n\nIf you see a credentials error, access the page WITHOUT credentials in the URL:\n  http://37.120.162.60:8090/tools/qc-review.html\n\nThe browser will show a login prompt. Enter: salishsea / dreaming2026');
+  }
+}
+
+function renderGrid() {
+  const grid = document.getElementById('grid');
+  const dir = document.getElementById('imageDirInput').value;
+  const filter = document.getElementById('filterSelect').value;
+  currentSpecies = document.getElementById('speciesSelect').value;
+  mode = document.getElementById('modeSelect').value;
+
+  const modeInd = document.getElementById('modeIndicator');
+  modeInd.textContent = mode === 'reject' ? 'Default: KEEP' : 'Default: REJECT';
+  modeInd.className = 'mode-indicator ' + (mode === 'reject' ? 'reject-mode' : 'keep-mode');
+
+  let entries = Object.entries(images);
+  if (currentSpecies !== '__all__') entries = entries.filter(([f, d]) => d.species === currentSpecies);
+  if (filter === 'kept') entries = entries.filter(([f, d]) => d.status === 'kept');
+  if (filter === 'rejected') entries = entries.filter(([f, d]) => d.status === 'rejected');
+  if (filter === 'unreviewed') entries = entries.filter(([f, d]) => d.status === 'unreviewed');
+
+  grid.innerHTML = '';
+  for (const [filename, data] of entries) {
+    const card = document.createElement('div');
+    card.className = 'card ' + (data.status === 'rejected' ? 'rejected' : data.status === 'kept' ? 'kept' : '');
+    card.innerHTML = `
+      <img src="${dir}/${filename}" loading="lazy" alt="${filename}">
+      ${data.status === 'rejected' ? '<span class="badge">REJ</span>' : ''}
+      ${data.reason ? `<span class="reason">${data.reason}</span>` : ''}
+      <div class="label" title="${filename}">${filename}</div>
+    `;
+    card.onclick = (e) => handleClick(filename, e);
+    card.oncontextmenu = (e) => { e.preventDefault(); openTagPanel(filename); };
+    grid.appendChild(card);
+  }
+
+  updateStats();
+}
+
+function handleClick(filename, e) {
+  const data = images[filename];
+
+  if (data.status === 'rejected') {
+    // Clicking a rejected image un-rejects it
+    data.status = 'kept';
+    data.reason = '';
+  } else {
+    // In reject mode: clicking keeps → reject (show reason picker)
+    // In keep mode: clicking rejected → keep (already handled above)
+    if (mode === 'reject') {
+      showReasonPicker(filename, e);
+      return;
+    } else {
+      data.status = 'kept';
+    }
+  }
+  renderGrid();
+}
+
+function showReasonPicker(filename, e) {
+  // Quick inline reason picker
+  const existing = document.querySelector('.reason-picker.active');
+  if (existing) existing.remove();
+
+  const picker = document.createElement('div');
+  picker.className = 'reason-picker active';
+  picker.style.position = 'fixed';
+  picker.style.left = e.clientX + 'px';
+  picker.style.top = e.clientY + 'px';
+  picker.style.transform = 'none';
+
+  for (const reason of REASONS) {
+    const btn = document.createElement('button');
+    btn.textContent = reason;
+    btn.onclick = (ev) => {
+      ev.stopPropagation();
+      images[filename].status = 'rejected';
+      images[filename].reason = reason;
+      picker.remove();
+      renderGrid();
+    };
+    picker.appendChild(btn);
+  }
+
+  // "Other" option with editable text input
+  const otherRow = document.createElement('div');
+  otherRow.style.cssText = 'display:flex; gap:4px; margin-top:4px;';
+  const otherInput = document.createElement('input');
+  otherInput.type = 'text';
+  otherInput.value = 'other';
+  otherInput.style.cssText = 'flex:1; padding:4px 8px; background:#2a2a2a; border:1px solid #555; color:#ddd; border-radius:3px; font-size:12px;';
+  otherInput.onclick = (ev) => { ev.stopPropagation(); otherInput.select(); };
+  const otherBtn = document.createElement('button');
+  otherBtn.textContent = '✓';
+  otherBtn.style.cssText = 'padding:4px 8px;';
+  otherBtn.onclick = (ev) => {
+    ev.stopPropagation();
+    images[filename].status = 'rejected';
+    images[filename].reason = otherInput.value.trim() || 'other';
+    picker.remove();
+    renderGrid();
+  };
+  otherRow.appendChild(otherInput);
+  otherRow.appendChild(otherBtn);
+  picker.appendChild(otherRow);
+
+  document.body.appendChild(picker);
+  setTimeout(() => {
+    document.addEventListener('click', function handler() {
+      picker.remove();
+      document.removeEventListener('click', handler);
+    }, { once: true });
+  }, 100);
+}
+
+function openTagPanel(filename) {
+  tagTarget = filename;
+  const data = images[filename];
+  document.getElementById('tagTitle').textContent = 'Tag: ' + filename;
+  document.getElementById('tagInterface').value = data.tags.interface || '';
+  document.getElementById('tagComposition').value = data.tags.composition || '';
+  document.getElementById('tagBridge').value = data.tags.bridge || '';
+  document.getElementById('tagStrength').value = data.tags.strength || '';
+  document.getElementById('tagPanel').classList.add('active');
+  document.getElementById('overlay').classList.add('active');
+}
+
+function closeTagPanel() {
+  document.getElementById('tagPanel').classList.remove('active');
+  document.getElementById('overlay').classList.remove('active');
+}
+
+function saveTag() {
+  if (!tagTarget) return;
+  images[tagTarget].tags = {
+    interface: document.getElementById('tagInterface').value,
+    composition: document.getElementById('tagComposition').value,
+    bridge: document.getElementById('tagBridge').value,
+    strength: document.getElementById('tagStrength').value,
+  };
+  closeTagPanel();
+  renderGrid();
+}
+
+function updateStats() {
+  const all = Object.values(images);
+  const filtered = currentSpecies === '__all__' ? all : all.filter(i => i.species === currentSpecies);
+  const kept = filtered.filter(i => i.status === 'kept').length;
+  const rejected = filtered.filter(i => i.status === 'rejected').length;
+  const unreviewed = filtered.filter(i => i.status === 'unreviewed').length;
+  document.getElementById('stats').innerHTML = `
+    <span>Total: ${filtered.length}</span>
+    <span class="kept">Kept: ${kept}</span>
+    <span class="rejected">Rejected: ${rejected}</span>
+    <span>Unreviewed: ${unreviewed}</span>
+    <span>Pass rate: ${filtered.length > 0 ? Math.round(kept / (kept + rejected) * 100) || 0 : 0}%</span>
+  `;
+}
+
+function exportCSV() {
+  const dir = document.getElementById('imageDirInput').value;
+  let csv = 'source_file,reason\n';
+  for (const [filename, data] of Object.entries(images)) {
+    if (data.status === 'rejected') {
+      csv += `${dir}/${filename},${data.reason || 'rejected-qc'}\n`;
+    }
+  }
+  downloadFile(csv, 'rejects-intertidal-dreaming.csv', 'text/csv');
+}
+
+function exportTags() {
+  let csv = 'filename,status,species,interface,composition,bridge,strength\n';
+  for (const [filename, data] of Object.entries(images)) {
+    if (data.status === 'kept' && Object.values(data.tags).some(v => v)) {
+      csv += `${filename},${data.status},${data.species},${data.tags.interface || ''},${data.tags.composition || ''},${data.tags.bridge || ''},${data.tags.strength || ''}\n`;
+    }
+  }
+  downloadFile(csv, 'corpus-tags.csv', 'text/csv');
+}
+
+function downloadFile(content, filename, type) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// Auto-load on page ready
+document.getElementById('speciesSelect').onchange = renderGrid;
+document.getElementById('filterSelect').onchange = renderGrid;
+document.getElementById('modeSelect').onchange = () => {
+  mode = document.getElementById('modeSelect').value;
+  renderGrid();
+};
+
+// Keyboard shortcuts
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeTagPanel();
+});
+
+loadImages();
+</script>
+
+</body>
+</html>

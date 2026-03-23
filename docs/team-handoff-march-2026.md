@@ -1,7 +1,7 @@
 # Team Handoff — Salish Sea Dreaming
 
-*Darren Zal — March 20, 2026*
-*I'm away March 20–28. Here's everything you need to keep building.*
+*Darren Zal — Updated March 23, 2026*
+*I'm away March 20–28 (snowboarding, online evenings). Here's everything you need to keep building.*
 
 ---
 
@@ -13,20 +13,22 @@
 
 | Component | Status | Where |
 |-----------|--------|-------|
-| **Briony LoRA (SD 1.5)** | Trained, partially working in txt2img | `briony_watercolor_v1.safetensors` (38 MB) on Drive |
+| **Briony LoRA (SD 1.5)** | Works at 30 steps offline. Real-time (8-20 steps) untested. | `briony_watercolor_v1.safetensors` (38 MB) on Drive |
 | **RTX 3090 desktop** | 6/8 phases set up via SSH | Prav's studio. Needs TD 2025 install + first run (GUI) |
-| **Fish GAN model** | ~50% trained on TELUS H200 | ETA March 22. Checkpoints on Drive every 200 kimg |
-| **Base GAN model** | Done (320 kimg) | Loads in Autolume, confirmed by Prav |
+| **Fish GAN model** | **Complete** (kimg 1000). Prav tested — "dreams in dead fish on shore." | [PKL on Drive](https://drive.google.com/file/d/1RPb2c_PdKa7oCX---cUBZMq6GljW17la/view) |
+| **Base GAN model (320 kimg)** | Loads in Autolume. Prav's preferred ground layer. | On Drive. **License-tainted — R&D only, not for exhibition.** |
+| **Dreaming model corpus** | 778 CC-safe intertidal images scraped + QC app deployed | [QC app](http://37.120.162.60:8090/tools/qc-review.html) (salishsea/dreaming2026) |
 | **OSC data engine** | Built + tested, 4 channels live | `engine.py` — tides, moon, Fraser discharge, herring spawning |
-| **Herring data pipeline** | DFO data downloaded, 5 viz notebooks | `exhibit/td/` has TD-ready JSON exports |
-| **Style transfer guide** | 9 fallback options documented | [`docs/style-transfer-guide.md`](style-transfer-guide.md) |
+| **David Denning images** | Intertidal organisms on black backgrounds — arriving Tuesday | Contact Prav for samples |
+| **Moonfish footage** | Video samples arriving this week | Contact Prav |
 
-### What's Not Working Yet
+### What's Not Working / Pivoting
 
 | Issue | Details |
 |-------|---------|
-| **Briony style transfer** | LoRA produces "generic watercolor" not Briony's bold linework + vivid colors. See details below. |
-| **SD-Turbo + LoRA** | Doesn't work — blurry at high weight, invisible at low weight. SD-Turbo's 1-step distillation is incompatible with style LoRAs. |
+| **Fish model** | kimg 1000 complete but output is dominated by "dead fish on shore" from iNat training data. **Pivoting to multi-species dreaming model.** |
+| **SD-Turbo + LoRA** | img2img doesn't work (blurry). **txt2img untested** — Prav suggests retesting. |
+| **Real-time style transfer** | LoRA works at 30 steps offline but not yet proven in real-time StreamDiffusion. Key gap: test at 8-20 steps. |
 | **RTX 3090 GUI phases** | TD 2025 install, TouchDiffusion first run, NDI networking — need physical access |
 
 ---
@@ -35,17 +37,17 @@
 
 **Short version:** The Salish Sea dreaming itself awake. Technology not as extraction, but as perception. The bioregion already has consciousness — we're building an interface to help humans tune in.
 
-**What the audience experiences:** They walk into a dim room. Projected on the wall, fish swim in Briony Penn's watercolor style — soft edges, natural pigment, alive. The movement responds to real ecological data from the Salish Sea (tides, moon phase, herring spawn season). Sound carries the same data — herring population mapped to drone intensity. Stillness is rewarded with deeper revelation.
+**What the audience experiences:** They walk into a dim room — an immersive dreaming space. Projected across multiple walls, marine organisms emerge from and fade into each other... as if floating beneath the water. An octopus dissolves into an anemone, a fish school shimmers and reforms. Briony Penn's watercolor aesthetic holds the room. Sound carries ecological data — herring population mapped to drone intensity. Stillness is rewarded with deeper revelation. Periodically, data visualizations surface — a map of spawning grounds going dark, a keystone web dimming — then dissolve back into the dreaming.
 
-**The food web cycle (longer-term vision):** Each creature contains the whole.
-- Herring → salmon (latent walk within the fish model)
-- School of salmon condenses → whale emerges (boids collapse, NDI crossfade)
-- Whale breaks surface → dissolves into bird murmuration
-- Birds dive → herring ball → cycle repeats
+**The room is a spatial composition with four temporal layers:**
+1. **Present tense** — live GAN wall (Autolume, dreaming model). The organism, now, shifting.
+2. **Memory / narrative** — Briony narrative wall. Pre-rendered ecological film poem at 30 steps.
+3. **Deep time / pulse** — data-driven atmosphere (floor/ceiling). Tides, moon, herring spawn.
+4. **Witness / evidence** — data visualizations emerging and receding. Political testimony.
 
-The crossfades ARE the consumption. The disappearance of herring IS the salmon.
+**Prav's framing (March 23):** "One immersive dreaming space... as if one were floating in the ocean beneath the water... like a dreaming octopus... being dreamt."
 
-For April we do the **first layer** — Briony-styled visuals, data-driven movement, herring sonification. The full cycle is post-April (MOVE37XR Oct 2026).
+Full exhibition architecture: see plan at `~/.claude/plans/zany-greeting-fox.md`
 
 ---
 
@@ -208,11 +210,10 @@ Full details: [`docs/style-transfer-guide.md`](style-transfer-guide.md)
 - Role: development, backup, potential second machine
 
 ### TELUS H200 (cloud)
-- Fish model training: ~50% done, ETA March 22
+- **Fish model complete** (kimg 1000). All checkpoints on Drive.
+- **TELUS is now free** for the dreaming model training.
 - Jupyter API: `https://salishsea-0b50s.paas.ai.telus.com` (token in `.env`)
-- kimg 400 checkpoint + fakes grid already on Drive
-- **Important:** Storage is ephemeral — download checkpoints when they land
-- Darren will monitor remotely and download final checkpoint
+- **Important:** Storage is ephemeral — download checkpoints before pod restarts
 
 ---
 
@@ -253,38 +254,30 @@ Built and tested. Sends real ecological data over OSC to TouchDesigner.
 
 ## GAN Strategy
 
-### Fish model = April's live center
+### Pivot: Multi-species dreaming model is the direction
 
-The fish model is the production GAN for April. One model, one Autolume instance, one clear live center.
+**The fish model is complete but not the answer.** Prav tested kimg 1000 in Autolume — the output is dominated by "dead fish on shore" because the iNaturalist training data was mostly fish-on-gravel. The fish model remains available as a fallback but we're pivoting to the dreaming model.
 
-| Metric | Value |
-|--------|-------|
-| Run | 00014 (fish512, 378 images, StyleGAN2) |
-| Progress | ~kimg 780 / 1,000 (~78%) |
-| Speed | ~570 sec/kimg |
-| ETA | ~March 22 |
-| Status | Healthy, fish shapes clearly emerging at kimg 600 |
+**Prav's vision (March 23):** "One immersive dreaming space using the 320 model as the ground for the immersive Salish Sea consciousness. With images emerging from and fading into it... as if one were floating in the ocean beneath the water... like a dreaming octopus... being dreamt."
 
-**Checkpoints on Drive** ([Models/Fish_model](https://drive.google.com/drive/folders/1A5KzChl5mPf42iAcKiHJCCpzSCnAEQDZ)):
+**The path forward:** Build a CC-safe multi-species dreaming model trained on underwater/intertidal species (octopus, anemones, starfish, kelp, eelgrass, fish, seals, underwater whales). One model where navigating the latent space IS navigating the ecosystem. Species dissolve into each other organically.
 
-| File | Link |
-|------|------|
-| `fish-network-snapshot-000400.pkl` (347 MB) — latest, load in Autolume | [Download](https://drive.google.com/file/d/1F0j08z39X3ql-VdMwyuDTKcZGu6arsPd/view) |
-| `fakes000400.png` — kimg 400 fakes grid | [View](https://drive.google.com/file/d/1hfcIA8ilOEDwEJ-oMRiRvEw1ofZWTWz7/view) |
-| `fish-network-snapshot-000200.pkl` — earlier checkpoint | [Download](https://drive.google.com/file/d/1fUyo5Ob9T-Q1Tg5kXNGfkFbX-De2qjd3/view) |
-| `marine-base-320kimg.pkl` — base GAN model (working in Autolume) | [Download](https://drive.google.com/file/d/11_4WG130pFDq5euT4M75dL2RBNSYA_0X/view) |
+Full concept doc: [`docs/dreaming-model-corpus.md`](dreaming-model-corpus.md)
 
-### Multi-species "dreaming model" = stretch track
+**320 kimg base model:** Prav likes it as the ground layer — it has the right dreamlike quality. However, it has a **license problem** (majority CC BY-NC in the training data). Cannot be used at the exhibition. The concept is right but the corpus must be rebuilt CC-safe.
 
-A single model where navigating the latent space IS navigating the ecosystem. Fish morph into invertebrates, anemones bloom into starfish. The north star vision: "each creature contains the whole."
+**What's available now:**
+| Model | Status | Link |
+|-------|--------|------|
+| Fish kimg 1000 | Complete. Dominated by dead-fish-on-shore. Fallback only. | [PKL](https://drive.google.com/file/d/1RPb2c_PdKa7oCX---cUBZMq6GljW17la/view), [Fakes](https://drive.google.com/file/d/1e0NVRR9vvD2iV9GHY1ehrGaHfokfNdhy/view) |
+| Base 320 kimg | Dreamlike quality. License-tainted — R&D only. | [PKL](https://drive.google.com/file/d/11_4WG130pFDq5euT4M75dL2RBNSYA_0X/view) |
+| Dreaming model | Corpus being curated (778 intertidal scraped + David's images incoming). Training once QC'd. | [QC app](http://37.120.162.60:8090/tools/qc-review.html) |
 
-**Why single > separate:** Within one StyleGAN model you get smooth latent interpolation — species morph organically. Between separate models you only get pixel crossfades. The dreaming model is the cosmology; the fish model is the instrument.
+**Incoming material:**
+- **David Denning's intertidal images** (Tuesday) — organisms isolated on black backgrounds. Could be excellent GAN training data if licensing is clear.
+- **Moonfish video samples** — this week
 
-**Status:** Stretch track. Darren building CC-safe corpus (fish + intertidal invertebrates) starting March 22. Training if corpus is ready by March 24 (go/no-go gate). Even if not the live source for April, it contributes as pre-rendered loops, atmosphere layers, or transition plates in Resolume.
-
-**Note:** The old 320 kimg base model has a license problem (majority CC BY-NC) and cannot be used at the exhibition. The dreaming corpus must be built CC-safe from scratch.
-
-Darren will download the fish final checkpoint when it completes and put it on Drive.
+**TELUS is free** — ready for the next training job once the dreaming corpus is QC'd and prepped.
 
 ---
 
