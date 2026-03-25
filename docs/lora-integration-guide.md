@@ -15,28 +15,26 @@ From the [shared project folder](https://drive.google.com/drive/folders/1UvJ6G65
 
 | File | Size | What it is |
 |------|------|------------|
-| `briony_watercolor_sdturbo.safetensors` | 13 MB | **Use this one.** Briony LoRA trained on SD-Turbo — matches StreamDiffusionTD base model. |
+| `briony_watercolor_v1.safetensors` | 38 MB | **Use this one.** Briony LoRA trained on SD 1.5. [Download](https://drive.google.com/file/d/1fIFBYGorHjfg76w82AwHOhyiiqptSBGu/view) |
 
 From **Models → Fish_model** (optional, for img2img with GAN):
 
 | File | Size | What it is |
 |------|------|------------|
-| `fish-network-snapshot-000400.pkl` | 347 MB | Latest fish GAN checkpoint (kimg 400) for Autolume. |
-| `fish-network-snapshot-000200.pkl` | 347 MB | Earlier fish checkpoint (kimg 200). |
+| `fish-network-snapshot-001000.pkl` | 347 MB | Fish GAN checkpoint (kimg 1000, final). [Download](https://drive.google.com/file/d/1RPb2c_PdKa7oCX---cUBZMq6GljW17la/view) |
 
-**Note on the old LoRA:** `briony_watercolor_v1.safetensors` (38 MB) was trained on SD 1.5 and **won't work** with SD-Turbo — you'll get an "Architecture mismatch" error. Use the `sdturbo` version.
-
-**Note on the RTX 3090 desktop:** The LoRA is already merged into the SD-Turbo base model on this machine (128 layers fused during setup). You may not need to load the .safetensors separately — test if the trigger token `brionypenn` already works in the prompt.
+**Note:** The SD-Turbo LoRA variants (`briony_watercolor_sdturbo.safetensors`) do NOT work — SD-Turbo's 1-step distillation is incompatible with style LoRAs. Use SD 1.5 as the base model.
 
 ---
 
 ## Step 2: Load the LoRA in StreamDiffusionTD
 
-1. Drop `briony_watercolor_sdturbo.safetensors` into your StreamDiffusionTD LoRA models folder (same place you'd put any LoRA).
+1. Drop `briony_watercolor_v1.safetensors` into your StreamDiffusionTD LoRA models folder (same place you'd put any LoRA).
 
 2. In your StreamDiffusion component inside TouchDesigner:
-   - **Base model:** `sd-turbo` — the LoRA is trained on this base.
-   - **LoRA:** Select `briony_watercolor_sdturbo.safetensors`, weight `1.0`.
+   - **Base model:** `runwayml/stable-diffusion-v1-5` (NOT sd-turbo)
+   - **LoRA:** Select `briony_watercolor_v1.safetensors`, weight `1.0`.
+   - **Steps:** 8-20 (the LoRA needs more steps than SD-Turbo's 1-4 to express the style)
    - **Prompt:** `brionypenn watercolor painting, soft edges, natural pigment, ecological illustration`
 
 ### About the trigger token
@@ -70,7 +68,7 @@ Prompt ──> StreamDiffusion (LoRA, txt2img) ──> TD ──> Resolume ─�
 
 The GAN provides organic, unpredictable fish forms. The LoRA paints them in Briony's style.
 
-1. Load `fish-network-snapshot-000400.pkl` in Autolume
+1. Load `fish-network-snapshot-001000.pkl` in Autolume (or the dreaming model when available)
 2. Set Autolume to output via NDI
 3. Set StreamDiffusion to **img2img mode**
 4. Route Autolume's NDI output into StreamDiffusion's img2img input
@@ -133,7 +131,7 @@ Controls how much the output differs from the input image:
 
 ## Performance
 
-- **RTX 3060 (Prav's laptop):** ~6 fps with SD-Turbo. LoRA shouldn't slow it down much.
+- **RTX 3060 (Prav's laptop):** fps depends on step count — 8 steps ~1.5fps, 15 steps ~0.8fps. Even <1 fps works for autonomous installation mode.
 - **RTX 3090 (desktop):** Should be faster, especially with TensorRT compiled.
 - **Temporal coherence** is stable — no shimmer or flicker between frames. Safe for exhibition.
 

@@ -67,7 +67,7 @@ Any input or prompt → StreamDiffusionTD (LoRA loaded) → TD compositor → Re
 
 **Performance:** 6 fps on RTX 3060, potentially 10-15 fps on RTX 3090 with TensorRT.
 
-**Detailed setup:** See `docs/prav-lora-integration-guide.md`
+**Detailed setup:** See `docs/lora-integration-guide.md`
 
 **Risks:**
 - TensorRT build fails on the RTX 3090
@@ -501,7 +501,7 @@ Need real-time style transfer?
 - [x] LoRA merged into TouchDiffusion on RTX 3090
 - [x] img2img tested: 20 GAN frames × 5 strengths, sweet spot 0.45
 - [x] Temporal coherence confirmed stable
-- [x] Integration guide written for Prav: `docs/prav-lora-integration-guide.md`
+- [x] Integration guide written for Prav: `docs/lora-integration-guide.md`
 - [ ] TensorRT build on RTX 3090 (needs GUI — Phase 7)
 - [ ] Live projector test at exhibition scale
 
