@@ -113,8 +113,8 @@ def main():
         status = row.get("approved_for_training", "").strip().lower()
         source_file = row.get("source_file", "").strip()
 
-        # Only touch iNaturalist + pending rows
-        if source != "iNaturalist" or status != "pending":
+        # Only touch iNaturalist/Openverse + pending rows
+        if source not in ("iNaturalist", "Openverse") or status != "pending":
             skipped += 1
             continue
         # Scope to corpus if specified

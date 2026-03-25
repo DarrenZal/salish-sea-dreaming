@@ -47,23 +47,27 @@ Each step is visually similar enough for StyleGAN to interpolate smoothly. But e
 
 ## Corpus Strategy: v1 (April) and v2 (Post-April)
 
-### v1 — Water-Dominant (April 2026)
+### v1 — Ecological Interfaces (April 2026)
 
-Keep the model in one strong visual grammar: **underwater and intertidal**. One domain that converges well in StyleGAN.
+Water-anchored but not water-only. Birds and bears are included at ecological interfaces — the food web connections that make the latent space meaningful. Birds against sky are included because countershading (light belly against sky) creates latent bridges to fish from below.
 
-| Source | Species | Images | Status |
-|--------|---------|--------|--------|
-| Fish corpus | Herring, salmon (5 sp), anchovy, sand lance, eulachon, lingcod, cabezon, rockfish | 378 | CC-safe, QC'd |
-| Intertidal invertebrates | Octopus, starfish (2 sp), sea urchin (2 sp), anemone (2 sp), nudibranch, jellyfish, crab (2 sp), chiton, plumose anemone | ~677 | Scraping, needs QC |
-| Eelgrass | Eelgrass (Zostera marina) | ~50 | To scrape |
-| Underwater whale/orca | Orca, humpback — **underwater shots only** | ~50-100 | QC from existing 731 whale images |
-| Underwater seal | Harbor seal — **underwater only** | ~30-50 | To scrape |
-| Bull kelp | Already in intertidal scrape | Included | — |
+| Source | Species | Raw images | QC approach |
+|--------|---------|-----------|-------------|
+| Fish (iNat) | 13 bony fish | 378 approved | Done |
+| Intertidal (iNat + Openverse) | 16 invertebrates + kelp + eelgrass + seal | ~1,570 | Agent pre-filter + user verify |
+| Whale (iNat) | 6 cetaceans | 731 | Underwater only (keep-mode QC) |
+| Birds (iNat + Openverse) | 10 seabirds | ~2,031 | Strict ecological interface QC |
+| Bear (iNat + Openverse) | Black bear | 150 | Strict in-water QC |
 
-**v1 target:** 600-900 images, water-dominant, all CC-safe.
-**Excluded from v1:** Birds, bears, sky-dominant, land-dominant, surface-split. These fracture the visual grammar.
+**QC criteria per group:**
+- **Intertidal:** In habitat (underwater or exposed at low tide). Reject dead/beached/held.
+- **Whale:** Underwater only. Reject surface/sky/breaching.
+- **Birds:** At ecological interfaces — diving, floating, wading, from-below (countershading), catching fish. Reject perched-in-tree-no-water, head shots, captive.
+- **Bear:** In or near water only. Reject forest/meadow/road.
 
-### v2 — Full Ecological Interface (Post-April, target MOVE37XR Oct 2026)
+**v1 target:** ~1,000-1,200 images, all CC-safe. Balance: no single species group >35%.
+
+### v2 — Expanded Ecological Interface (Post-April, target MOVE37XR Oct 2026)
 
 Expand into surface, aerial, and terrestrial interfaces. Each addition should be tested for latent space coherence before committing.
 
@@ -181,6 +185,30 @@ For the Briony narrative wall:
 
 The narrative transition chain (bear → salmon → bird → countershading) becomes a **sequence of authored prompts**, each rendered at 30 steps, composited in Resolume with dissolves and rhythm.
 
+### Animation Techniques for the Briony Narrative Wall
+
+Instead of batch-rendering static frames, use **animated generation** for temporal coherence and smooth ecological transitions. All run in ComfyUI on the RTX 3090 or TELUS.
+
+1. **Prompt Travel + Briony LoRA** — Smoothly interpolate between prompts over time. The food web becomes continuous animation:
+   - `"brionypenn watercolor, herring in kelp"` → `"brionypenn watercolor, salmon chasing herring"` → `"brionypenn watercolor, bear catching salmon"` → `"brionypenn watercolor, eagle diving"`
+   - Tools: Deforum or ComfyUI prompt scheduling nodes
+
+2. **AnimateDiff + Briony LoRA** — Generates temporally coherent video clips (not frame-by-frame). Fish swim, kelp sways, water flows — all in watercolor. 16-frame batches at 8fps = 2-second clips.
+
+3. **ControlNet + Moonfish Footage** — Real underwater footage as structural backbone (depth/canny maps), Briony LoRA applies watercolor on top. Natural motion preserved, Briony style applied.
+
+4. **Image-to-Image Interpolation** — Morph between hero keyframes (octopus → anemone) through latent space in Briony's style. Each transition = 5-10 second sequence.
+
+5. **Infinite Zoom** — Zoom into underwater scene endlessly, each level revealing a new ecosystem layer.
+
+**Pipeline:**
+```
+ComfyUI (SD 1.5 + Briony LoRA + AnimateDiff + prompt travel + ControlNet)
+  → pre-rendered video sequences
+    → Resolume (compositing, timing, data triggers)
+      → Projection
+```
+
 ## Files
 
 | File | Purpose |
@@ -188,6 +216,9 @@ The narrative transition chain (bear → salmon → bird → countershading) bec
 | `tools/species-fish.tsv` | 13 fish species with taxon IDs |
 | `tools/species-intertidal.tsv` | 14 intertidal invertebrate species with taxon IDs |
 | `tools/species-whales.tsv` | 6 cetacean species (QC for underwater-only for v1) |
+| `tools/species-birds.tsv` | 10 seabird species with taxon IDs |
+| `tools/species-bears.tsv` | Black bear with taxon ID |
+| `tools/scrape_openverse.py` | Openverse CC-commercial image scraper |
 | `training-data/provenance.csv` | License + source tracking for all scraped images |
 | `tools/scrape_inaturalist_guide.py` | Scraper with `--license-filter`, `--corpus`, `--species-list` |
 | `tools/qc_approve.py` | Batch approve/reject with `--corpus`, `--rejects-file` |

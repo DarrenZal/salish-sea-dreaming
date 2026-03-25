@@ -73,9 +73,11 @@ h1 { color: #8ecae6; margin-bottom: 8px; }
   </select></label>
   <button class="export" onclick="exportCSV()">Export Rejects CSV</button>
   <button class="export" onclick="exportTags()">Export Tags CSV</button>
+  <button onclick="markSpeciesDone()" id="markDoneBtn" style="background:#2a6b2a;">Mark species done</button>
   <button onclick="loadImages()">Reload</button>
   <label>Image dir: <input type="text" id="imageDirInput" value="/images/intertidal-raw" size="30"></label>
 </div>
+<div class="stats" id="progressBar" style="margin-top:4px;"></div>
 
 <div class="stats" id="stats"></div>
 <div class="grid" id="grid"></div>
@@ -108,6 +110,106 @@ let currentSpecies = '__all__';
 let mode = 'reject'; // 'reject' = click to reject (default keep), 'keep' = click to keep (default reject)
 let tagTarget = null;
 
+// --- Server-side persistence ---
+let reviewedSpecies = {}; // species -> true if marked done
+let saveTimer = null;
+
+function stateKey() {
+  const dir = document.getElementById('imageDirInput').value;
+  return dir.replace(/^\/images\//, '').replace(/[^a-z0-9]/gi, '-');
+}
+
+function saveState() {
+  // Debounce: save 500ms after last change to avoid hammering server
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(_doSave, 500);
+}
+
+function _doSave() {
+  const key = stateKey();
+  const payload = JSON.stringify({ images, reviewedSpecies });
+  fetch('/state/' + key, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: payload
+  }).then(r => r.json()).then(d => {
+    console.log('[QC] Saved', d.size, 'bytes');
+  }).catch(e => console.error('[QC] Save failed:', e));
+}
+
+async function loadState() {
+  const key = stateKey();
+  try {
+    const resp = await fetch('/state/' + key);
+    const data = await resp.json();
+    if (data.images && Object.keys(data.images).length > 0) {
+      images = data.images;
+      reviewedSpecies = data.reviewedSpecies || {};
+      console.log('[QC] Loaded state:', Object.keys(images).length, 'images');
+      return true;
+    }
+  } catch(e) {
+    console.error('[QC] Load failed:', e);
+  }
+  return false;
+}
+
+function markSpeciesDone() {
+  if (currentSpecies === '__all__') { alert('Select a species first'); return; }
+  const wasDone = reviewedSpecies[currentSpecies];
+  reviewedSpecies[currentSpecies] = !wasDone;
+  // When marking done, flip all unreviewed images in this species to 'kept'
+  if (!wasDone) {
+    for (const [fn, data] of Object.entries(images)) {
+      if (data.species === currentSpecies && data.status === 'unreviewed') {
+        data.status = 'kept';
+      }
+    }
+  }
+  saveState();
+  refreshSpeciesDropdown();
+  updateProgress();
+  renderGrid();
+}
+
+function refreshSpeciesDropdown() {
+  const species = [...new Set(Object.values(images).map(i => i.species))].sort();
+  const sel = document.getElementById('speciesSelect');
+  const current = sel.value;
+  sel.innerHTML = '<option value="__all__">All species (' + Object.keys(images).length + ')</option>';
+  for (const sp of species) {
+    const count = Object.values(images).filter(i => i.species === sp).length;
+    const done = reviewedSpecies[sp] ? ' \u2705' : '';
+    const opt = document.createElement('option');
+    opt.value = sp;
+    opt.textContent = sp.replace(/_/g, ' ') + ' (' + count + ')' + done;
+    sel.appendChild(opt);
+  }
+  sel.value = current;
+  // Update button text
+  const btn = document.getElementById('markDoneBtn');
+  if (currentSpecies !== '__all__' && reviewedSpecies[currentSpecies]) {
+    btn.textContent = 'Unmark species done';
+    btn.style.background = '#6b2a2a';
+  } else {
+    btn.textContent = 'Mark species done';
+    btn.style.background = '#2a6b2a';
+  }
+}
+
+function updateProgress() {
+  const species = [...new Set(Object.values(images).map(i => i.species))].sort();
+  const total = species.length;
+  const done = species.filter(sp => reviewedSpecies[sp]).length;
+  const bar = document.getElementById('progressBar');
+  const pct = total > 0 ? Math.round(done / total * 100) : 0;
+  bar.innerHTML = `<strong>Review progress:</strong> ${done}/${total} species done (${pct}%) &mdash; ` +
+    species.map(sp => reviewedSpecies[sp]
+      ? `<span style="color:#4a4">${sp.replace(/_/g,' ')} \u2705</span>`
+      : `<span style="color:#888">${sp.replace(/_/g,' ')}</span>`
+    ).join(' | ');
+}
+
 function getSpecies(filename) {
   const parts = filename.replace(/\.[^.]+$/, '').split('_');
   const numIdx = parts.findIndex(p => /^\d+$/.test(p));
@@ -128,23 +230,19 @@ async function loadImages() {
       return;
     }
 
-    // Initialize image states (preserve existing states on reload)
+    // Restore saved state from server, then fill in any new images
+    const hadSaved = await loadState();
     for (const f of filenames) {
       if (!images[f]) {
-        const defaultStatus = mode === 'keep' ? 'rejected' : 'kept';
         images[f] = { status: 'unreviewed', reason: '', tags: {}, species: getSpecies(f) };
+      } else if (!images[f].species) {
+        images[f].species = getSpecies(f);
       }
     }
 
-    // Populate species dropdown
-    const species = [...new Set(Object.values(images).map(i => i.species))].sort();
-    const sel = document.getElementById('speciesSelect');
-    sel.innerHTML = '<option value="__all__">All species (' + Object.keys(images).length + ')</option>';
-    for (const sp of species) {
-      const count = Object.values(images).filter(i => i.species === sp).length;
-      sel.innerHTML += `<option value="${sp}">${sp.replace(/_/g, ' ')} (${count})</option>`;
-    }
-
+    // Populate species dropdown with review status
+    refreshSpeciesDropdown();
+    updateProgress();
     renderGrid();
   } catch (e) {
     alert('Error loading images: ' + e.message + '\n\nIf you see a credentials error, access the page WITHOUT credentials in the URL:\n  http://37.120.162.60:8090/tools/qc-review.html\n\nThe browser will show a login prompt. Enter: salishsea / dreaming2026');
@@ -157,6 +255,16 @@ function renderGrid() {
   const filter = document.getElementById('filterSelect').value;
   currentSpecies = document.getElementById('speciesSelect').value;
   mode = document.getElementById('modeSelect').value;
+
+  // Update mark-done button for current species
+  const btn = document.getElementById('markDoneBtn');
+  if (currentSpecies !== '__all__' && reviewedSpecies[currentSpecies]) {
+    btn.textContent = 'Unmark species done';
+    btn.style.background = '#6b2a2a';
+  } else {
+    btn.textContent = 'Mark species done';
+    btn.style.background = '#2a6b2a';
+  }
 
   const modeInd = document.getElementById('modeIndicator');
   modeInd.textContent = mode === 'reject' ? 'Default: KEEP' : 'Default: REJECT';
@@ -203,6 +311,7 @@ function handleClick(filename, e) {
       data.status = 'kept';
     }
   }
+  saveState();
   renderGrid();
 }
 
@@ -226,6 +335,7 @@ function showReasonPicker(filename, e) {
       images[filename].status = 'rejected';
       images[filename].reason = reason;
       picker.remove();
+      saveState();
       renderGrid();
     };
     picker.appendChild(btn);
@@ -247,6 +357,7 @@ function showReasonPicker(filename, e) {
     images[filename].status = 'rejected';
     images[filename].reason = otherInput.value.trim() || 'other';
     picker.remove();
+    saveState();
     renderGrid();
   };
   otherRow.appendChild(otherInput);
@@ -287,6 +398,7 @@ function saveTag() {
     bridge: document.getElementById('tagBridge').value,
     strength: document.getElementById('tagStrength').value,
   };
+  saveState();
   closeTagPanel();
   renderGrid();
 }
@@ -310,11 +422,13 @@ function exportCSV() {
   const dir = document.getElementById('imageDirInput').value;
   let csv = 'source_file,reason\n';
   for (const [filename, data] of Object.entries(images)) {
-    if (data.status === 'rejected') {
+    // In keep mode, unreviewed images are also rejects (only explicitly kept images survive)
+    if (data.status === 'rejected' || (mode === 'keep' && data.status === 'unreviewed')) {
       csv += `${dir}/${filename},${data.reason || 'rejected-qc'}\n`;
     }
   }
-  downloadFile(csv, 'rejects-intertidal-dreaming.csv', 'text/csv');
+  const dirName = dir.replace(/^\/images\//, '').replace(/[^a-z0-9-]/gi, '-');
+  downloadFile(csv, `rejects-${dirName}.csv`, 'text/csv');
 }
 
 function exportTags() {
@@ -351,6 +465,7 @@ document.addEventListener('keydown', (e) => {
 });
 
 loadImages();
+console.log('[QC v4] server-side persistence active');
 </script>
 
 </body>
