@@ -22,6 +22,16 @@ assets/reference/
 tmp/
 .env
 
+# Collaborator source media and local extracts (large, not committed)
+media/collaborators/
+media/hero-subclips/
+media/sequences/
+images/moonfish-frames/
+images/moonfish-preview/
+images/denning-ppt-raw/
+images/denning-ppt-preview/
+images/denning-curated/
+
 # Training zip archives (for TELUS upload, not committed)
 *.zip
 

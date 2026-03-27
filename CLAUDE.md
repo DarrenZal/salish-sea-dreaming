@@ -8,41 +8,28 @@ Interactive AI art installation exploring the Salish Sea ecosystem. The vision: 
 
 ## Current Status
 
-**Date:** 2026-03-19
-**Status:** RTX 3090 desktop 6/8 phases set up via SSH. Fish model at kimg 376/1000 on TELUS (37.6%, ETA March 22-23). Briony LoRA + SD-Turbo merged and ready for TouchDiffusion. Creative jam today/tomorrow with Prav, Shawn, Eve.
+**Date:** 2026-03-27
+**Status:** Moonfish video + Denning photos integrated. Exhibition strategy pivoted — Briony-styled Moonfish footage is now the narrative center, GAN training is ambient/background. 8 hero subclips trimmed, shotlist complete, first render packet ready for Prav. Lock target: Wednesday April 1.
 
-**License Policy:** COMMERCIAL USE — CC0, CC BY, CC BY-SA only. Artist fee at exhibition = commercial under CC terms. CC BY-NC excluded.
+**License Policy:** COMMERCIAL USE — CC0, CC BY, CC BY-SA only. Artist fee at exhibition = commercial under CC terms. CC BY-NC excluded. Collaborator materials (Moonfish, Denning) under `collaborator permission` — see `training-data/licenses-collaborators.md`.
 
 **What's Done:**
-- Base model v1 (200 kimg) + resume (320 kimg) — **PKL loads in Autolume CONFIRMED** (Prav tested, NDI→TD working)
-- Team pivot (2026-03-13): three focused species models (Fish, Whales, Birds) as separate Autolume instances mixed via NDI in TouchDesigner
-- Multi-corpus pipeline: `scraper` (`--corpus`, `--license-filter`, 30s download timeout), `qc_approve` (`--corpus`, `--rejects-file`), `prep_training_data` (`--corpus`). `scripts/backfill_licenses.py` for retroactive license auditing.
-- Species TSVs: `tools/species-fish.tsv` (13 bony fish), `tools/species-whales.tsv` (6 cetaceans), `tools/species-birds.tsv` (10 seabirds). All taxon_ids populated.
-- **All three CC-safe corpora scraped** (2026-03-15): Fish 911 (13 sp), Whale 731 (6 sp), Bird 1729 (10 sp). All provenance tracked.
-- **Fish QC complete** (2026-03-16): 378 approved, 507 rejected (dead fish, blurry, wrong species). Herring eggs (15), fish schools (12), birds-in-fish (5) separated to own folders for future training.
-- **Fish model training** (run 00014): started March 17 03:32 UTC, kimg=1000, snap=50 (→ checkpoint every 200 kimg). At **kimg 376** as of March 19 ~19:00 UTC (~573 sec/kimg). kimg 200 checkpoint + fakes grid downloaded — fish shapes emerging, training healthy. ETA completion: **March 22-23**. **Arshia: if no meaningful results by kimg 500, restart with different gamma.**
-- TELUS training artifacts saved locally: `telus/` (logs, training_options, stats from runs 00009+00012), `scripts/telus-training-setup.sh` (reproducible bootstrap)
-- **TELUS Jupyter API:** `https://salishsea-0b50s.paas.ai.telus.com` — token in `.env` (`Jupyter_REST_API`). Check run status: `GET /api/contents/stylegan3/results/00014-stylegan2-fish512-gpus1-batch8-gamma20?token=<token>`
-- All datasets + QC'd zips uploaded to [Drive](https://drive.google.com/drive/folders/17QVEYgmEZDYupWI4vGF2QicXSVKWfk_6)
-- Arshia feedback: fish + bird datasets look best; whale last (shapes unclear). Training order: Fish → Bird → Whale.
-- **Holonic morphing vision** documented in `docs/autolume-integration.md` — food web as fractal cycle, boids system, recursive instancing, cross-model transitions via NDI crossfades
-- `docs/` reorganized: 11 dated/sent docs archived to `docs/archive/`
-- **RTX 3090 desktop purchased + 6/8 phases set up** (2026-03-19): Ryzen 7700X + Gigabyte RTX 3090 24GB + 32GB DDR5 + 1TB NVMe + 1000W PSU — CA$1,950. Setup via SSH: GPU verified (24GB, 61 MiB idle), VS 2022 Build Tools (MSVC 14.44), Miniconda3 (conda 26.1.1), Autolume env (Python 3.10, PyTorch 2.8.0+cu128, ndi-python, python-osc), TouchDiffusion repo cloned + Briony LoRA merged into SD-Turbo (128 layers fused, saved as diffusers + UNet safetensors). **Remaining (needs GUI):** TD 2025 install, TouchDiffusion first run (webui.bat → venv + TensorRT build ~10 min), NDI networking test, integration burn-in. **Autolume: only 1 instance per machine** (Arshia, March 17).
-
-- **Briony LoRA trained + evaluated** (2026-03-18): LoRA v1 trained on 22 Briony Penn watercolors (rank 16, 1000 steps, SD 1.5 base) on Windows RTX 3090. 18 eval images confirm style generalizes across marine, land, and atmospheric subjects. Checkpoint: `briony_watercolor_v1.safetensors` on Windows desktop.
-- **LoRA img2img integration tested** (2026-03-18): Successfully applied LoRA as post-processing "Briony filter" on StyleGAN fish output. 20 GAN frames tested at 5 strength levels (0.25–0.65). **Sweet spot: s0.35–0.45** — watercolor aesthetic visible while preserving GAN composition. Avg latency: 0.97s/frame on RTX 3090 (~1 fps, viable for pre-rendered pipeline). Temporal coherence test shows stable style across frames. Results: `briony-lora/eval/img2img_compare.html`.
-- **SD-Turbo LoRA variant** (2026-03-18): Retrained LoRA on SD-Turbo base to match Prav's StreamDiffusionTD setup. `briony_watercolor_sdturbo.safetensors` (13 MB). Merged into TouchDiffusion on RTX 3090 desktop — 128 layers fused into base model. Integration guide: `docs/prav-lora-integration-guide.md`. Trigger token: `brionypenn`.
+- **Moonfish + Denning integration** (March 26-27): 13 Moonfish videos (4.7 GB) and David Denning PPT photos received via Prav. Files organized into `media/collaborators/`. 8 hero segments identified, subclips trimmed. 14 Denning high-res photos curated. Exhibition strategy rewritten: video as primary exhibition material with four roles (witness, structure, translation, dream). Shotlist: `docs/moonfish-shotlist.md`. Plan: `~/.claude/plans/steady-splashing-avalanche.md`.
+- **Track B corpus work** (March 27): 416 underwater frames extracted at 2s intervals, 102 drone frames at 5s. Generic contact sheet script (`scripts/contact_sheet.py`), frame extraction script (`scripts/extract_video_frames.py`). Permissions recorded in `training-data/licenses-collaborators.md`.
+- **Corpus QC'd and finalized** (March 25): 1,254 images, 50 species. Supplement scrape added 132 images for thin species. All rejects tracked in `training-data/review/rejects-*.csv`.
+- **QC review app** deployed at `http://37.120.162.60:8090/tools/qc-review.html?v=final` (salishsea/dreaming2026).
+- **Fish model kimg 1000 complete** (March 23): Fallback only — "dreams in dead fish." TELUS free.
+- **Multi-wall spatial composition** (March 22): AnimateDiff + prompt travel for Briony narrative wall.
+- Prior work: RTX 3090 desktop (6/8 phases), Briony LoRA v1 (22 images, rank 16), LoRA v2 config ready, holonic morphing vision, all datasets on Drive.
 
 **What's Left:**
-1. **Creative jam** (March 19-20) with Prav, Shawn, Eve — lock proof-of-experience scope, test LoRA on projector, define minimum viable build
-2. **RTX 3090 remaining setup** (needs GUI): TD 2025 install, TouchDiffusion first run (webui.bat → TensorRT ~10 min), NDI networking, integration burn-in. Fish PKL → `C:\Users\user\autolume\models\`
-3. **Download fish kimg 400 checkpoint** — due ~March 19-20, test in Autolume on RTX 3090
-4. **QC whale + bird corpora** — review in Finder, create rejects CSVs, run `qc_approve`, `prep_training_data`
-5. **Kick off bird training** on TELUS after fish completes (~March 22-23)
-6. **Contact Moonfish Media** for herring footage permission
-7. **Herring data + biosonification** — Eve/Shawn herring datasets, Ableton + Manifest plugin, OSC→boids reactivity
-8. Darren away March 20–28
-9. **Post-jam:** Whale training (last), multi-instance burn-in, full integration test
+1. **Send Prav render packet** — `docs/comms/2026-03-27-prav-render-packet.md` ready. Contains Deirdre request + 3 hero clips for Round 1 micro-render tests (H1, H2, H5).
+2. **Round 1 micro-render results** — Prav tests img2img + Briony LoRA on 3060. Results determine technique lock.
+3. **Round 2 ControlNet + LoRA** — on 3090 (if readiness gate passes) or 3060. Pre-render hero sequences.
+4. **Technique pruning gate** — lock 2 primary + 1 fallback techniques. Drop the rest.
+5. **Lock 3-5 exhibition sequences** by April 1 — Resolume-ready exports.
+6. **Track B (parallel):** QC underwater frames, build materialize_corpus.py, start TELUS training (~1,500 images, 6-7 days).
+7. **RTX 3090 remaining setup** (needs GUI): TD 2025 install, TouchDiffusion first run, NDI networking
 
 ## Project Vision
 
@@ -243,3 +230,7 @@ curl http://localhost:8351/health  # check if KOI backend running
 | — | 2026-03-18 | Briony LoRA | LoRA trained (22 images, rank 16, 1000 steps), eval confirmed style transfer. img2img integration tested on 20 GAN frames × 5 strengths — sweet spot s0.35–0.45, avg 0.97s/frame. Temporal coherence stable. HTML comparison viewer created. |
 | — | 2026-03-18–19 | RTX 3090 setup | Desktop purchased ($1,950 CAD). 6/8 phases via SSH: GPU verified, VS Build Tools, Miniconda3, Autolume env (PyTorch 2.8+cu128), TouchDiffusion cloned + Briony LoRA merged into SD-Turbo. Remaining: TD 2025 GUI install, webui.bat first run, NDI networking, integration test. |
 | — | 2026-03-19 | Training monitor + overview | Fish model at kimg 376/1000 (37.6%), kimg 200 fakes grid shows healthy fish shape emergence. PKL downloaded. Comprehensive project overview synthesized for creative jam. |
+| `c2152579` | 2026-03-19–22 | Exhibition strategy + corpus | Multi-wall spatial composition, ecological interface corpus design, 778 intertidal scraped, QC review app deployed, LoRA v2 prep. Fish model kimg 200→944. |
+| `c2152579` | 2026-03-24–25 | Dreaming corpus assembly | Assembled 1,600-image corpus (57 species) from iNat + Openverse. Built Openverse scraper. Agent QC pipeline (pre-filter → user verify). Expanded v1: birds + bears + orca video frames. Balance script (interface-weighted). Server-side QC persistence. Animation techniques (AnimateDiff, prompt travel). Signal update sent. Corpus in team review. |
+| `5d61ad00` | 2026-03-25 | QC + finalization | Manual QC of all 50 species (1,600→1,254 images, 478 rejects). Fixed QC app species parsing bug (hex/UUID IDs). Supplement scrape for 4 thin species (+132 images: GPO, herring spawn, murrelet, orca). Corpus finalized and synced. Signal update drafted for team review + David/Moonfish image ask. |
+| — | 2026-03-26–27 | Moonfish + Denning integration | Strategic pivot: video as primary exhibition material, not just corpus input. 13 Moonfish videos + 47 Denning photos ingested. 8 hero segments identified and subclipped. 416 underwater frames extracted for Track B. Shotlist created with technique decisions. Render packet drafted for Prav (H1, H2, H5). Two-track plan: Track A (exhibition lock by April 1) + Track B (TELUS training, subordinate). New scripts: extract_video_frames.py, contact_sheet.py. |
