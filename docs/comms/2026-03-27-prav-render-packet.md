@@ -25,15 +25,15 @@ Full shotlist with all timecodes and technique notes here: [docs/moonfish-shotli
 
 ## Part 2: First Render Packet
 
-I've trimmed 3 hero subclips for your first Briony LoRA tests. These are in the repo at `media/hero-subclips/` (gitignored, too large for GitHub) — I can upload to Drive if easier.
+I've trimmed 3 hero subclips for your first Briony LoRA tests. They're on the shared Drive:
 
 **Test these three:**
 
-1. **H1_salmon_school.mp4** (60s, 199 MB) — Dense salmon school, dramatic green light. The strongest motion candidate. Test at img2img strength 0.45.
+1. [**H1_salmon_school.mp4**](https://drive.google.com/file/d/1l2Iy5zCzWm4FtSOAHcir-G6WCw92LdnZ/view) (60s, 199 MB) — Dense salmon school, dramatic green light. The strongest motion candidate. Test at img2img strength 0.45.
 
-2. **H2_herring_in_kelp.mp4** (65s, 211 MB) — Herring through golden kelp. Beautiful natural composition. The golden kelp vs silver fish is a good test of whether the LoRA preserves color relationships. Strength 0.45.
+2. [**H2_herring_in_kelp.mp4**](https://drive.google.com/file/d/1b0ME3ln0zyV2fGlZzOKvTKAVn_ry0Fvz/view) (65s, 211 MB) — Herring through golden kelp. Beautiful natural composition. The golden kelp vs silver fish is a good test of whether the LoRA preserves color relationships. Strength 0.45.
 
-3. **H5_reef_garden.mp4** (19s, 63 MB) — Colorful intertidal reef — reds, oranges, pinks on dark background. Only 19 seconds so it's fast. This stress-tests whether the LoRA handles vivid non-green color. Try strength 0.55 on this one (it wants more transformation).
+3. [**H5_reef_garden.mp4**](https://drive.google.com/file/d/1IxAbKg8z7Hpleeq5HUEZG3B0DEEQut1i/view) (19s, 63 MB) — Colorful intertidal reef — reds, oranges, pinks on dark background. Only 19 seconds so it's fast. This stress-tests whether the LoRA handles vivid non-green color. Try strength 0.55 on this one (it wants more transformation).
 
 **What to do:**
 - Extract 2 seconds (120 frames at 60fps) from the most interesting moment of each clip
