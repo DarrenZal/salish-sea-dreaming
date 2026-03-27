@@ -1,3 +1,11 @@
+---
+doc_id: ssd.dreaming-model-corpus
+doc_kind: research
+status: active
+depends_on:
+  - ssd.project-vision
+---
+
 # The Dreaming Model — Corpus Design & Ecological Interface Atlas
 
 *Salish Sea Dreaming — March 2026*

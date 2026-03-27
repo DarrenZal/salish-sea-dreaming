@@ -1,3 +1,11 @@
+---
+doc_id: ssd.style-transfer-guide
+doc_kind: spec
+status: active
+depends_on:
+  - ssd.project-vision
+---
+
 # Briony Style Transfer — Options & Fallback Guide
 
 *Salish Sea Dreaming — March 2026*

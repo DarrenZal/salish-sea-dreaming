@@ -1,3 +1,11 @@
+---
+doc_id: ssd.autolume-integration
+doc_kind: architecture
+status: active
+depends_on:
+  - ssd.project-vision
+---
+
 # Autolume + TELUS GPU + TouchDesigner Integration
 *Technical architecture for Salish Sea Dreaming live visual generation*
 *Darren Zal — March 2026*
