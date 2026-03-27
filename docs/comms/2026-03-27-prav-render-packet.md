@@ -1,8 +1,10 @@
 # Signal Message to Prav — March 27, 2026
 
-## Part 1: Deirdre Request
+## Part 1: Deirdre Request (for your review first)
 
-Can you pass this to Deirdre? We've reviewed all the footage and it's incredible. Here's what we'd love in higher quality:
+I've gone through all the footage and picked out the strongest segments for the exhibition. Before we send anything to Deirdre, can you review these selections and make sure they match what you're envisioning? Adjust timecodes or swap clips as needed — you know the creative direction better than me.
+
+Once you're happy with the list, here's what we'd ask Deirdre for:
 
 **Priority clips (mezzanine/ProRes 422 or high-bitrate H.264, with a few seconds of handles):**
 
@@ -19,9 +21,11 @@ For the salmon school segment (P1099653 1:35–2:35): RAW if she's willing — i
 
 Also still hoping for the bird murmuration/flocking footage she mentioned!
 
+Full shotlist with all timecodes and technique notes here: [docs/moonfish-shotlist.md](https://github.com/DarrenZal/salish-sea-dreaming/blob/main/docs/moonfish-shotlist.md)
+
 ## Part 2: First Render Packet
 
-I've trimmed 3 hero subclips for your first Briony LoRA tests. These are in the repo at `media/hero-subclips/` — I can also upload to Drive if easier.
+I've trimmed 3 hero subclips for your first Briony LoRA tests. These are in the repo at `media/hero-subclips/` (gitignored, too large for GitHub) — I can upload to Drive if easier.
 
 **Test these three:**
 
@@ -37,6 +41,9 @@ I've trimmed 3 hero subclips for your first Briony LoRA tests. These are in the 
 - Reassemble as video and send back
 - We're looking for: does the watercolor work in motion? Too heavy? Too light? Does schooling motion survive?
 
+LoRA setup details: [docs/lora-integration-guide.md](https://github.com/DarrenZal/salish-sea-dreaming/blob/main/docs/lora-integration-guide.md)
+Style transfer options and ControlNet pipeline: [docs/style-transfer-guide.md](https://github.com/DarrenZal/salish-sea-dreaming/blob/main/docs/style-transfer-guide.md)
+
 This is Round 1 — fast look-dev on the 3060. If any of these look promising, Round 2 is ControlNet + LoRA on the 3090 (once it passes readiness).
 
 ## Part 3: Where We Are
@@ -44,6 +51,7 @@ This is Round 1 — fast look-dev on the 3060. If any of these look promising, R
 - 8 hero segments identified and trimmed from the footage
 - 416 underwater frames extracted for GAN training corpus (Track B)
 - 14 David Denning high-res photos curated (the macro marine shots — ideal for ControlNet reveals)
-- Shotlist with technique decisions: `docs/moonfish-shotlist.md`
+- Shotlist with technique decisions: [docs/moonfish-shotlist.md](https://github.com/DarrenZal/salish-sea-dreaming/blob/main/docs/moonfish-shotlist.md)
+- Collaborator permissions documented: [training-data/licenses-collaborators.md](https://github.com/DarrenZal/salish-sea-dreaming/blob/main/training-data/licenses-collaborators.md)
 
 Lock target is still Wednesday. The micro-render results from these 3 clips will tell us which techniques to commit to for production.
