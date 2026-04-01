@@ -14,32 +14,43 @@ depends_on:
 
 The goal: apply Briony Penn's watercolor aesthetic to any input — GAN fish, David's photos, Moonfish footage, live camera. This doc covers every viable approach, ranked by readiness.
 
-> **Status update (March 21):**
-> - **SD-Turbo + LoRA:** Does NOT work (blurry at weight 1.0, invisible at low weight).
-> - **SD 1.5 + LoRA at 30 steps:** Actually looks decent — watercolor feel, some linework, natural palette. The LoRA works, the problem was the inference pipeline (SD-Turbo + 4 steps), not the LoRA itself.
-> - **SD 1.5 + LoRA at 4 steps (StreamDiffusion):** Too few steps for the LoRA to express. Need 8-20 steps minimum.
-> - **AdaIN:** Tested March 21 on GAN fish frames + Briony paintings. Transfers color palette but produces texture-pattern artifacts, no linework. The LoRA at 30 steps is actually better.
-> - **Key learning:** The LoRA IS the right approach — it just needs more inference steps. SD 1.5 + LoRA + LCM-LoRA (for speed) is the most promising path.
+> **Status update (March 31):**
+> - **Real-time TouchDesigner approach is deprioritized** for the April show. Frame-by-frame Python batch processing is now primary. Simpler, more controllable, runs on TELUS GPU overnight.
+> - **Frame continuity is the active hard problem.** Shawn tested 5–10 approaches; none fully solved inter-frame flickering. Per-frame SD generates each frame independently → instability. See [Frame Continuity Solutions](#frame-continuity-solutions) section — **EbSynth is the recommended fix.**
+> - **LoRA trigger token may not be engaging in TD.** If stills look good but real-time output doesn't show Briony's style, the issue is likely the prompt missing `brionypenn`, or the SD 1.5 LoRA loaded against an SD-Turbo base. See [LoRA Troubleshooting](#lora-troubleshooting) below.
+> - **Baking the LoRA into SD** is worth trying — eliminates trigger-token dependency, simplifies any pipeline. See [Baking LoRA Weights](#baking-lora-weights) below.
+> - **Priority clips:** `quadruple 1785` (1m30s pure kelp), `triple 7785` — process these first on TELUS GPU.
+>
+> **Previous findings (March 21):**
+> - SD-Turbo + LoRA does NOT work. SD 1.5 + LoRA at 30 steps = good results.
+> - SD 1.5 + LoRA at 4 steps (StreamDiffusion) = too few steps, style barely visible.
+> - AdaIN: color transfer only, no linework. Weaker than LoRA.
 
-## TL;DR — Priority Stack (Updated March 21)
+## TL;DR — Priority Stack (Updated March 31)
+
+> **April show approach:** Batch pre-render, not real-time. Run overnight on TELUS GPU. Fix temporal coherence with EbSynth.
 
 | Priority | Method | Setup Time | Real-time? | When to reach for it |
 |----------|--------|-----------|------------|---------------------|
-| **A** | LoRA + SD 1.5 (8-20 steps) | Done (retrain for better) | 1-6 fps | **Best results so far at 30 steps.** Need to find the right step count for real-time. |
-| **B** | LoRA + LCM-LoRA combo | Minutes (download LCM) | 3-8 fps (est.) | Speed up SD 1.5 inference to 4-8 steps without losing quality. |
-| **C** | LoRA retrain (54 images, rank 32) | 30-60 min | Same | More training data + higher rank → sharper Briony style. |
-| **D** | Fast Neural Style (Johnson) | 2-4 hours train | 30+ fps | If LoRA fps is too low for live performance. Purpose-built for real-time. |
-| **E** | AdaIN Arbitrary Style | Minutes (pretrained) | 20-40 fps | **Tested March 21 — color transfer OK but texture artifacts, no linework. Weaker than LoRA.** |
-| **F** | CycleGAN | 12-24 hours | 30 fps (trained) | Research bet. Deeper structural transformation. |
-| **G** | ControlNet + LoRA | Hours | No (pre-render) | Hero sequences from Moonfish footage. Batch overnight. |
-| **H** | Classic NST (Gatys) | Minutes | No (30-60s/img) | Guaranteed to work. Pre-render only. |
+| **A** | **ControlNet + LoRA (batch)** | Hours | No (pre-render) | **Primary for April show.** Highest quality. Process kelp + Moonfish clips overnight on TELUS. |
+| **B** | **EbSynth (temporal fix)** | Minutes | No | **Use this after A to fix frame continuity.** Style keyframes with SD, propagate across all frames. |
+| **C** | LoRA + SD 1.5 (30 steps, batch) | Done | No (batch) | Quick per-frame batch without ControlNet structure guidance. Good starting point. |
+| **D** | Baked LoRA model | 5 min to bake | Both | Merge LoRA into SD checkpoint — simplifies pipeline, eliminates trigger-token issues. |
+| **E** | LoRA + LCM-LoRA combo | Minutes (download LCM) | 3-8 fps | Speed up SD 1.5 to 4-8 steps for semi-real-time. |
+| **F** | Fast Neural Style (Johnson) | 2-4 hours train | 30+ fps | If need real-time with no diffusion. Purpose-built for real-time video. |
+| **G** | AdaIN Arbitrary Style | Minutes (pretrained) | 20-40 fps | **Tested March 21 — color transfer OK but texture artifacts, no linework. Weaker than LoRA.** |
+| **H** | CycleGAN | 12-24 hours | 30 fps (trained) | Research bet. Deeper structural transformation. |
+| **I** | Classic NST (Gatys) | Minutes | No (30-60s/img) | Guaranteed to work. Last resort pre-render. |
 
+> **Demoted:** Real-time TouchDesigner (for April show) — too many integration issues, frame continuity unsolved. Revisit for October Move 37.
 > **Demoted:** SD-Turbo + LoRA — SD-Turbo's 1-step distillation is incompatible with style LoRAs.
-> **Demoted:** AdaIN — tested, produces texture-pattern artifacts rather than Briony's painterly style. Better for color palette transfer than full style transfer.
+> **Demoted:** AdaIN — tested, produces texture-pattern artifacts. Better for color palette transfer than full style transfer.
 
 ---
 
-## Option A: LoRA + StreamDiffusion (PRIMARY)
+## Option A: LoRA + StreamDiffusion (real-time TD — deferred to October)
+
+> **For the April show, use the TELUS batch pipeline instead (ControlNet/img2img + RAFT). StreamDiffusion is saved for October Move 37.**
 
 **Status:** The LoRA works well at 30 steps on SD 1.5. The challenge is getting enough inference steps in StreamDiffusion for real-time. SD-Turbo (1-4 steps) is too few — try SD 1.5 at 8-20 steps, or SD-Turbo with txt2img mode (not yet fully tested).
 
@@ -487,37 +498,225 @@ accelerate launch train_dreambooth.py \
 
 ---
 
+---
+
+## Frame Continuity Solutions
+
+**The problem:** Per-frame SD generates each frame independently. No temporal context → flickering, jittering, inconsistent textures between adjacent frames. Shawn tested 5–10 approaches in March; none fully solved it.
+
+**Best solution for this project: EbSynth**
+
+EbSynth is purpose-built for exactly this: propagate the style of hand-crafted keyframes to a full video sequence using optical flow. Free, fast, and preserves your best SD output.
+
+**Workflow:**
+```
+1. Extract all frames from kelp clip (ffmpeg)
+2. Pick 3-5 keyframes (every 30-60 frames — less where motion is slow)
+3. Style each keyframe with SD at 30 steps (best quality, no speed constraint)
+4. Run EbSynth: give it original frames + styled keyframes
+5. EbSynth propagates style across all frames via optical flow
+6. Import resulting frames back into video
+```
+
+```bash
+# 1. Extract frames
+ffmpeg -i quadruple_1785.mp4 -vf fps=24 frames/frame_%04d.png
+
+# 2. Style keyframes with SD (use ComfyUI or Python, 30 steps, no rush)
+# → output: keys/0001.png, keys/0060.png, keys/0120.png, etc.
+
+# 3. Run EbSynth (GUI on Windows/Mac, or CLI)
+# https://ebsynth.com — free download
+# Input: original frames + styled keyframes
+# Output: temporally coherent styled video
+
+# 4. Reassemble
+ffmpeg -framerate 24 -i ebsynth_out/frame_%04d.png \
+    -c:v libx264 -pix_fmt yuv420p -crf 18 styled_kelp.mp4
+```
+
+**Why EbSynth works:** It uses optical flow to track pixel motion between frames, then warps + blends the styled keyframes to match. Result: the style follows the movement of the kelp, not just a per-frame overlay.
+
+**Alternative: temporal blending in Python**
+
+Quick hack — blend each styled frame with a weighted average of the previous output:
+```python
+alpha = 0.7  # 0.7 = 70% current frame, 30% previous
+blended = alpha * current_styled + (1 - alpha) * prev_output
+```
+Less precise than EbSynth but adds ~2 hours of compute. Good for quick tests.
+
+**Alternative: fixed seed across frames**
+
+When running img2img, lock the random seed to the same value for every frame. The noise pattern stays consistent, reducing frame-to-frame variation. Not perfect but easy.
+```python
+generator = torch.Generator(device="cuda").manual_seed(42)
+# Pass generator= to every pipe() call
+```
+
+---
+
+## LoRA Troubleshooting
+
+**Symptom: stills are fine but Briony style not showing in batch output / TD**
+
+Check in this order:
+
+**1. Is `brionypenn` in the prompt?**
+The LoRA is a textual inversion — without the trigger token, the model has no signal to activate the style. Always include it:
+```
+brionypenn watercolor painting, soft edges, natural pigment, ecological illustration
+```
+
+**2. Is the LoRA loaded against the right base model?**
+- `briony_watercolor_v1.safetensors` → requires **SD 1.5** base (`runwayml/stable-diffusion-v1-5`)
+- `briony_watercolor_sdturbo.safetensors` → requires **SD-Turbo** base
+- Loading the SD 1.5 LoRA against an SD-Turbo pipeline = silent failure (style invisible)
+
+In ComfyUI: verify the `Load Checkpoint` node uses `sd-v1-5-pruned-emaonly.safetensors` (not `sd_turbo.safetensors`) when using the v1 LoRA.
+
+In Python:
+```python
+# Correct: SD 1.5 base + SD 1.5 LoRA
+pipe = StableDiffusionImg2ImgPipeline.from_pretrained(
+    "runwayml/stable-diffusion-v1-5", torch_dtype=torch.float16
+)
+pipe.load_lora_weights(".", weight_name="briony_watercolor_v1.safetensors")
+pipe.to("cuda")
+```
+
+**3. Is the LoRA weight high enough?**
+At `strength=0.45` img2img with `lora_scale=1.0` works. If using lower scale (e.g., 0.3), the style may be too subtle to see. Try `lora_scale=1.0` first.
+
+**4. Is img2img denoising strength high enough?**
+At `strength < 0.3`, img2img barely changes the input — the content image dominates and the style can't come through. For batch processing kelp footage, `strength=0.6–0.75` gives a stronger transformation.
+
+**5. In TouchDesigner specifically:**
+- StreamDiffusionTD passes the prompt as a parameter — check the TD node's `prompt` field directly in the network editor (don't assume it inherits from a text DAT)
+- After loading a new LoRA in StreamDiffusionTD, the pipeline must be **re-initialized** — toggling the active parameter or restarting TD is often required
+- Check the Python console for silent errors: `td.op('/base/streamdiffusion').cook(force=True)`
+
+---
+
+## Baking LoRA Weights
+
+**What it means:** Permanently merge the LoRA adapter matrices into the base SD checkpoint. The result is a single `.safetensors` file that already has Briony's style built in — no LoRA file needed, no trigger token needed.
+
+**When to bake:**
+- Pipeline keeps failing to load the LoRA correctly
+- Trigger token issues are persistent
+- Deploying to TELUS GPU where you want a dead-simple setup
+- Want to use the model in any standard SD tool without LoRA support
+
+**How to bake (diffusers method — runs on TELUS):**
+```python
+from diffusers import StableDiffusionPipeline
+import torch
+
+pipe = StableDiffusionPipeline.from_pretrained(
+    "runwayml/stable-diffusion-v1-5",
+    torch_dtype=torch.float16
+).to("cuda")
+
+# Load and bake the LoRA at 0.8 strength
+pipe.load_lora_weights(".", weight_name="briony_watercolor_v1.safetensors")
+pipe.fuse_lora(lora_scale=0.8)  # 0.8 = slightly softer than full 1.0
+
+# Save as a new checkpoint — no LoRA file needed from this point
+pipe.save_pretrained("./briony_sd15_baked_08/")
+```
+
+**How to bake (kohya_ss — standalone, doesn't need diffusers):**
+```bash
+cd ~/kohya_ss
+python networks/merge_lora.py \
+    --sd_model "models/sd_v1-5-pruned-emaonly.safetensors" \
+    --models "briony_watercolor_v1.safetensors" \
+    --ratios 0.8 \
+    --save_to "briony_sd15_baked_08.safetensors"
+```
+
+**Recommended:** Bake at `0.8` for installation use (strong style, not overwhelming). Keep the original LoRA file — you can always re-bake at a different strength.
+
+**After baking:** Use the merged model exactly like any SD checkpoint. No trigger token needed — the style is always on. You can still use a descriptive prompt (`watercolor painting, soft edges, kelp, marine`) for guidance.
+
+---
+
 ## Decision Tree
 
 ```
-Need real-time style transfer?
-├── Yes → Is StreamDiffusion working?
-│   ├── Yes → Option A (LoRA + StreamDiffusion) ✓
-│   └── No → Is PyTorch working on the GPU?
-│       ├── Yes → Option C (Fast Neural Style) — train 2-4 hrs, then 30+ fps
-│       └── No → Fix GPU setup first
+April show (pre-render)?
+├── Yes (primary approach)
+│   ├── Step 1: Batch ControlNet + Briony LoRA on TELUS (Option A)
+│   │         → if LoRA not engaging, bake it first (see above)
+│   ├── Step 2: Fix temporal coherence with EbSynth (Option B)
+│   └── Step 3: Play styled clips as layers in Resolume
 │
-└── No (pre-rendered is fine) →
-    ├── Want highest quality? → Option E (ControlNet + LoRA)
-    ├── Want quick test? → Option F (Classic NST) — works in 50 lines
-    └── Want structural transformation? → Option G (CycleGAN) — train overnight
+└── Need real-time (October / future)?
+    ├── SD 1.5 + LCM-LoRA (4-8 steps, ~3-8 fps) — option E
+    ├── Fast Neural Style (Johnson) — 30+ fps, train 2-4 hrs — option F
+    └── Fix StreamDiffusion + TD (re-enable after April show)
 ```
 
-## What's Currently Working
+## Production Status (as of March 31)
 
-- [x] LoRA trained (SD 1.5 + SD-Turbo variants)
-- [x] LoRA merged into TouchDiffusion on RTX 3090
-- [x] img2img tested: 20 GAN frames × 5 strengths, sweet spot 0.45
-- [x] Temporal coherence confirmed stable
-- [x] Integration guide written for Prav: `docs/lora-integration-guide.md`
-- [ ] TensorRT build on RTX 3090 (needs GUI — Phase 7)
+Hero footage rendered on TELUS H200 GPUs using `notebooks/style-transfer-video.ipynb`:
+
+| File | Duration | Technique | Status |
+|------|----------|-----------|--------|
+| `H1_salmon_school_production.mp4` | 60s | ControlNet + LoRA, 30fps | ✅ Done |
+| `H2_herring_in_kelp_production.mp4` | 65s | ControlNet + LoRA, 30fps | ✅ Done |
+| `H3_kelp_cathedral_production.mp4` | ~60s | img2img s=0.45, 30fps | ✅ Done |
+| `H5_reef_garden_production.mp4` | 19s | img2img s=0.45, 30fps | ✅ Done |
+| `H5_reef_garden_production_raft_smooth.mp4` | 19s | RAFT interpolated, 60fps | ✅ Done |
+| `H4_dense_school_production.mp4` | ~54s | ControlNet + LoRA | 🔄 Rendering |
+| `H6_kelp_floor_production.mp4` | ~50s | img2img + LoRA | 🔄 Rendering |
+| `H3_kelp_CN`, `H6_kelp_CN`, `P1000011_CN` | — | ControlNet variants of kelp | 🔄 Rendering |
+
+**Key discovery:** Technique depends on subject matter:
+- **ControlNet** — fish, salmon, herring schools (subjects with clear 3D form and depth)
+- **img2img** — reef, kelp canopy, complex textures (detail preserved better without edge guidance)
+
+Pravin's response on H1 salmon ControlNet: *"THESE ARE AMAZING!!! IT MEANS WE CAN SYNC the videos on two layers in Resolume"*
+
+**RAFT optical flow interpolation** applied to H5 for 60fps smooth motion — plan to apply to all production clips.
+
+## What's Working / What's Not
+
+- [x] LoRA trained: `briony_watercolor_v1.safetensors` (SD 1.5, 38MB) ← use this
+- [x] ControlNet + LoRA pipeline working on TELUS H200
+- [x] img2img + LoRA pipeline working on TELUS H200
+- [x] RAFT optical flow interpolation (30fps → 60fps smooth)
+- [x] Reference notebook: `notebooks/style-transfer-video.ipynb`
+- [x] LoRA integration guide for Prav: `docs/lora-integration-guide.md`
+- [ ] **Frame continuity for real-time TD** — still unsolved (Shawn tested 5–10 approaches)
+- [ ] **RAVE audio model** — Shawn has SSH tunnel to Darren's rig; needs Ethernet (Wi-Fi only currently)
+- [ ] **Merged/baked checkpoint** — `merge_lora.py` exists in `briony-lora/`, not yet run
+- [ ] **AnimateDiff prompt travel** — priority 4, after hero footage locked by Prav
 - [ ] Live projector test at exhibition scale
+
+**LoRA weights that exist:**
+| File | Base model | Works? |
+|------|-----------|--------|
+| `briony_watercolor_v1.safetensors` | SD 1.5 | ✅ Yes — use this |
+| `briony_watercolor_sdturbo.safetensors` | SD-Turbo | ❌ No — architecture incompatible |
+| `briony_watercolor_sdturbo_kohya.safetensors` | SD-Turbo (kohya fmt) | ❌ No — same issue |
+
+No SD 2.x LoRA exists. SD-Turbo ≠ SD 2 — it's a consistency-distilled model with different internals.
 
 ## References
 
+**This project's pipeline:**
+- `notebooks/style-transfer-video.ipynb` — **reference implementation** (ControlNet + img2img + RAFT on TELUS)
+- `briony-lora/merge_lora.py` — bake LoRA weights into SD checkpoint
+- `docs/lora-integration-guide.md` — TouchDesigner / StreamDiffusion integration
+
+**External:**
 - [StreamDiffusion](https://github.com/cumulo-autumn/StreamDiffusion) — real-time diffusion pipeline
 - [StreamDiffusion v2](https://streamdiffusionv2.github.io/) — next generation
 - [dotsimulate StreamDiffusionTD](https://dotsimulate.com/docs/streamdiffusiontd) — TouchDesigner integration
+- [EbSynth](https://ebsynth.com) — keyframe-based temporal style propagation (free)
+- [RAFT optical flow](https://github.com/princeton-vl/RAFT) — frame interpolation for smooth motion
 - [PyTorch Fast Neural Style](https://github.com/pytorch/examples/tree/main/fast_neural_style) — Johnson et al. implementation
 - [pytorch-AdaIN](https://github.com/naoto0804/pytorch-AdaIN) — Arbitrary style transfer
 - [CycleGAN](https://github.com/junyanz/pytorch-CycleGAN-and-pix2pix) — Unpaired image translation
