@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0a0f1e">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Salish Sea Dreaming</title>
+    <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --ocean-dark: #0a0f1e;
+            --ocean-mid: #0d1530;
+            --ocean-surface: #111e3a;
+            --cyan: #00d4ff;
+            --teal: #00a8a8;
+            --salmon: #e8a87c;
+            --text-primary: #c8dff0;
+            --text-muted: #5a7a99;
+            --text-dim: #3a5a78;
+            --border: rgba(0, 168, 168, 0.2);
+            --border-focus: rgba(0, 212, 255, 0.5);
+            --entry-bg: rgba(0, 168, 168, 0.06);
+            --entry-bg-new: rgba(0, 212, 255, 0.12);
+        }
+
+        html, body {
+            height: 100%;
+            background-color: var(--ocean-dark);
+            color: var(--text-primary);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+        }
+
+        body {
+            min-height: 100vh;
+            background-image:
+                radial-gradient(ellipse at 20% 0%, rgba(0, 212, 255, 0.04) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 100%, rgba(0, 168, 168, 0.04) 0%, transparent 60%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0 0 40px 0;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 400px;
+            padding: 0 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 40px 0 28px;
+        }
+
+        .title {
+            font-size: 1.3rem;
+            font-weight: 300;
+            letter-spacing: 0.18em;
+            color: var(--cyan);
+            text-shadow: 0 0 20px rgba(0, 212, 255, 0.4);
+        }
+
+        .subtitle {
+            margin-top: 10px;
+            font-size: 0.85rem;
+            font-style: italic;
+            color: var(--text-muted);
+            letter-spacing: 0.04em;
+            line-height: 1.5;
+        }
+
+        /* Input section */
+        .input-section {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .prompt-label {
+            font-size: 0.8rem;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--teal);
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 80px;
+            padding: 14px 16px;
+            background: var(--ocean-surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 1rem;
+            line-height: 1.5;
+            resize: none;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            -webkit-appearance: none;
+        }
+
+        textarea::placeholder {
+            color: var(--text-dim);
+            font-style: italic;
+        }
+
+        textarea:focus {
+            border-color: var(--border-focus);
+            box-shadow: 0 0 0 2px rgba(0, 212, 255, 0.08), inset 0 0 20px rgba(0, 212, 255, 0.03);
+        }
+
+        .char-counter {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-align: right;
+            transition: color 0.2s;
+        }
+
+        .char-counter.over-limit {
+            color: #e87c7c;
+        }
+
+        /* Buttons */
+        .button-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 2px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            min-height: 44px;
+            padding: 10px 18px;
+            border: none;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            touch-action: manipulation;
+            transition: opacity 0.15s, transform 0.1s, box-shadow 0.2s;
+            -webkit-appearance: none;
+        }
+
+        .btn:active {
+            transform: scale(0.97);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: default;
+            transform: none;
+        }
+
+        .btn-mic {
+            background: rgba(0, 168, 168, 0.15);
+            border: 1px solid rgba(0, 168, 168, 0.35);
+            color: var(--teal);
+            flex-shrink: 0;
+        }
+
+        .btn-mic:hover:not(:disabled) {
+            background: rgba(0, 168, 168, 0.25);
+            box-shadow: 0 0 12px rgba(0, 168, 168, 0.2);
+        }
+
+        .btn-send {
+            background: linear-gradient(135deg, rgba(0, 168, 168, 0.9), rgba(0, 212, 255, 0.7));
+            color: var(--ocean-dark);
+            font-weight: 600;
+            flex: 1;
+            box-shadow: 0 2px 12px rgba(0, 212, 255, 0.15);
+        }
+
+        .btn-send:hover:not(:disabled) {
+            box-shadow: 0 4px 20px rgba(0, 212, 255, 0.3);
+            opacity: 0.92;
+        }
+
+        /* Status message */
+        .status-message {
+            min-height: 22px;
+            text-align: center;
+            font-size: 0.82rem;
+            font-style: italic;
+            color: var(--salmon);
+            opacity: 0;
+            transition: opacity 0.3s;
+            margin-top: 4px;
+        }
+
+        .status-message.visible {
+            opacity: 1;
+        }
+
+        /* Divider */
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 28px 0 18px;
+            color: var(--text-dim);
+            font-size: 0.75rem;
+            letter-spacing: 0.1em;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        /* Live indicator */
+        .feed-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .feed-label {
+            font-size: 0.72rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--text-dim);
+        }
+
+        .live-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.7rem;
+            color: var(--text-dim);
+        }
+
+        .live-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background-color: #4caf50;
+            transition: background-color 0.4s;
+            flex-shrink: 0;
+        }
+
+        .live-dot.polling {
+            background-color: #e8a87c;
+        }
+
+        /* Voice feed */
+        .voice-feed {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-height: 40px;
+        }
+
+        .voice-entry {
+            background: var(--entry-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            color: var(--text-primary);
+            opacity: 0;
+            transform: translateY(6px);
+            transition: opacity 0.4s ease, transform 0.4s ease, background 0.6s ease;
+        }
+
+        .voice-entry.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .voice-entry.new-entry {
+            background: var(--entry-bg-new);
+            border-color: rgba(0, 212, 255, 0.3);
+        }
+
+        .voice-entry .entry-text {
+            color: var(--text-primary);
+        }
+
+        .voice-entry .entry-text::before {
+            content: '\201C';
+            color: var(--teal);
+            margin-right: 2px;
+        }
+
+        .voice-entry .entry-text::after {
+            content: '\201D';
+            color: var(--teal);
+            margin-left: 2px;
+        }
+
+        .feed-empty {
+            color: var(--text-dim);
+            font-size: 0.82rem;
+            font-style: italic;
+            text-align: center;
+            padding: 16px 0;
+        }
+
+        /* Footer notice */
+        .notice {
+            margin-top: 32px;
+            font-size: 0.72rem;
+            color: var(--text-dim);
+            text-align: center;
+            line-height: 1.6;
+            padding: 0 4px;
+        }
+
+        /* Subtle bioluminescent shimmer on title */
+        @keyframes shimmer {
+            0%, 100% { text-shadow: 0 0 20px rgba(0, 212, 255, 0.35); }
+            50% { text-shadow: 0 0 32px rgba(0, 212, 255, 0.6), 0 0 60px rgba(0, 212, 255, 0.15); }
+        }
+
+        .title {
+            animation: shimmer 4s ease-in-out infinite;
+        }
+
+        @keyframes dotPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        .live-dot {
+            animation: dotPulse 2.5s ease-in-out infinite;
+        }
+
+        .live-dot.polling {
+            animation: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+
+        <!-- Header -->
+        <header class="header">
+            <h1 class="title">~ Salish Sea Dreaming ~</h1>
+            <p class="subtitle">"We are the sea, dreaming itself awake"</p>
+        </header>
+
+        <!-- Input section -->
+        <section class="input-section">
+            <label class="prompt-label" for="offering-input">What do you care for?</label>
+            <textarea
+                id="offering-input"
+                rows="3"
+                maxlength="200"
+                placeholder="type your offering..."
+                autocomplete="off"
+                autocorrect="on"
+                spellcheck="true"
+            ></textarea>
+            <div class="char-counter" id="char-counter" aria-live="polite">0/150</div>
+            <div class="button-row">
+                <button class="btn btn-mic" id="mic-btn" aria-label="Speak your offering" style="display:none;">
+                    🎤 Speak
+                </button>
+                <button class="btn btn-send" id="send-btn" aria-label="Send your offering">
+                    Send →
+                </button>
+            </div>
+            <div class="status-message" id="status-message" role="status" aria-live="polite"></div>
+        </section>
+
+        <!-- Divider -->
+        <div class="divider">Recent voices</div>
+
+        <!-- Feed header -->
+        <div class="feed-header">
+            <span class="feed-label">From the dream</span>
+            <div class="live-indicator" id="live-indicator">
+                <div class="live-dot" id="live-dot"></div>
+                <span id="live-label">live</span>
+            </div>
+        </div>
+
+        <!-- Voice feed -->
+        <div class="voice-feed" id="voice-feed">
+            <div class="feed-empty" id="feed-empty">Waiting for voices…</div>
+        </div>
+
+        <!-- Footer -->
+        <p class="notice">Your words will shape the dream. Submissions are stored for post-exhibition reflection.</p>
+
+    </div>
+
+    <script>
+        (function () {
+            'use strict';
+
+            // --- DOM refs ---
+            const textarea     = document.getElementById('offering-input');
+            const charCounter  = document.getElementById('char-counter');
+            const micBtn       = document.getElementById('mic-btn');
+            const sendBtn      = document.getElementById('send-btn');
+            const statusMsg    = document.getElementById('status-message');
+            const liveDot      = document.getElementById('live-dot');
+            const liveLabel    = document.getElementById('live-label');
+            const voiceFeed    = document.getElementById('voice-feed');
+            const feedEmpty    = document.getElementById('feed-empty');
+
+            const MAX_CHARS    = 150;
+            const WARN_CHARS   = 140;
+            const MAX_ENTRIES  = 5;
+            const POLL_INTERVAL = 15000;
+
+            let pollingInterval = null;
+            let statusTimeout   = null;
+            let feedEntries     = [];   // array of display_text strings, newest first
+
+            // --- Character counter ---
+            function updateCharCounter() {
+                const len = textarea.value.length;
+                charCounter.textContent = len + '/150';
+                if (len > WARN_CHARS) {
+                    charCounter.classList.add('over-limit');
+                } else {
+                    charCounter.classList.remove('over-limit');
+                }
+            }
+
+            textarea.addEventListener('input', updateCharCounter);
+
+            // --- Status messages ---
+            function showStatus(msg) {
+                if (statusTimeout) clearTimeout(statusTimeout);
+                statusMsg.textContent = msg;
+                statusMsg.classList.add('visible');
+            }
+
+            function hideStatus() {
+                statusMsg.classList.remove('visible');
+                statusTimeout = null;
+            }
+
+            // --- Feed rendering ---
+            function renderFeed(entries) {
+                // entries: array of display_text strings, newest first, up to MAX_ENTRIES
+                feedEntries = entries.slice(0, MAX_ENTRIES);
+
+                // Remove all existing entries (keep feedEmpty node)
+                const existing = voiceFeed.querySelectorAll('.voice-entry');
+                existing.forEach(el => el.remove());
+
+                if (feedEntries.length === 0) {
+                    feedEmpty.style.display = '';
+                    return;
+                }
+
+                feedEmpty.style.display = 'none';
+
+                feedEntries.forEach(function (text, i) {
+                    const div = document.createElement('div');
+                    div.className = 'voice-entry';
+
+                    const span = document.createElement('span');
+                    span.className = 'entry-text';
+                    span.textContent = text;
+
+                    div.appendChild(span);
+                    voiceFeed.appendChild(div);
+
+                    // Stagger fade-in
+                    requestAnimationFrame(function () {
+                        setTimeout(function () {
+                            div.classList.add('visible');
+                        }, i * 60);
+                    });
+                });
+            }
+
+            function addToFeed(displayText) {
+                if (!displayText) return;
+
+                // Build new list: prepend newest, keep up to MAX_ENTRIES
+                const updated = [displayText].concat(feedEntries).slice(0, MAX_ENTRIES);
+
+                // Rebuild DOM
+                const existing = voiceFeed.querySelectorAll('.voice-entry');
+                existing.forEach(el => el.remove());
+                feedEmpty.style.display = 'none';
+
+                updated.forEach(function (text, i) {
+                    const div = document.createElement('div');
+                    div.className = 'voice-entry' + (i === 0 ? ' new-entry' : '');
+
+                    const span = document.createElement('span');
+                    span.className = 'entry-text';
+                    span.textContent = text;
+
+                    div.appendChild(span);
+                    voiceFeed.appendChild(div);
+
+                    requestAnimationFrame(function () {
+                        setTimeout(function () {
+                            div.classList.add('visible');
+                            // Fade the new-entry highlight back
+                            if (i === 0) {
+                                setTimeout(function () {
+                                    div.classList.remove('new-entry');
+                                }, 1800);
+                            }
+                        }, i * 60);
+                    });
+                });
+
+                feedEntries = updated;
+            }
+
+            // --- Polling fallback ---
+            function startPolling() {
+                if (pollingInterval) return;
+                liveDot.classList.add('polling');
+                liveLabel.textContent = 'polling';
+
+                pollingInterval = setInterval(async function () {
+                    try {
+                        const res = await fetch('/prompts?limit=5');
+                        if (!res.ok) return;
+                        const data = await res.json();
+                        // API returns array of objects with display_text
+                        const texts = Array.isArray(data)
+                            ? data.map(function (d) { return d.display_text || d.text || ''; }).filter(Boolean)
+                            : [];
+                        renderFeed(texts);
+                    } catch (e) {
+                        // silently ignore network errors during polling
+                    }
+                }, POLL_INTERVAL);
+            }
+
+            // --- SSE connection ---
+            function connectSSE() {
+                const evtSource = new EventSource('/prompts/stream');
+
+                evtSource.onopen = function () {
+                    liveDot.classList.remove('polling');
+                    liveLabel.textContent = 'live';
+                    // Cancel polling if it was running
+                    if (pollingInterval) {
+                        clearInterval(pollingInterval);
+                        pollingInterval = null;
+                    }
+                };
+
+                evtSource.addEventListener('bootstrap', function (e) {
+                    // Bootstrap event carries recent entries for initial render
+                    try {
+                        const data = JSON.parse(e.data);
+                        const items = Array.isArray(data) ? data : (data.entries || []);
+                        const texts = items
+                            .map(function (d) {
+                                return typeof d === 'string' ? d : (d.display_text || d.text || '');
+                            })
+                            .filter(Boolean);
+                        renderFeed(texts);
+                    } catch (err) {
+                        // ignore parse errors
+                    }
+                });
+
+                evtSource.onmessage = function (e) {
+                    // Default message events are new entries
+                    try {
+                        const data = JSON.parse(e.data);
+                        const text = data.display_text || data.text || '';
+                        if (text) addToFeed(text);
+                    } catch (err) {
+                        // ignore parse errors
+                    }
+                };
+
+                evtSource.onerror = function () {
+                    evtSource.close();
+                    liveDot.classList.add('polling');
+                    liveLabel.textContent = 'reconnecting…';
+                    startPolling();
+                    // Attempt SSE reconnect after 30s
+                    setTimeout(connectSSE, 30000);
+                };
+            }
+
+            // --- Submit ---
+            async function submitPrompt(source) {
+                const raw = textarea.value.trim();
+                if (!raw) return;
+
+                const text = raw.slice(0, MAX_CHARS);
+
+                sendBtn.disabled = true;
+
+                try {
+                    const res = await fetch('/prompt', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ text: text, source: source })
+                    });
+
+                    if (res.ok) {
+                        showStatus('your offering is joining the dream');
+                        textarea.value = '';
+                        updateCharCounter();
+                        statusTimeout = setTimeout(hideStatus, 2000);
+                    } else if (res.status === 429) {
+                        showStatus('please wait a moment before sending again');
+                        statusTimeout = setTimeout(hideStatus, 3000);
+                    } else {
+                        showStatus('something went wrong, please try again');
+                        statusTimeout = setTimeout(hideStatus, 3000);
+                    }
+                } catch (err) {
+                    showStatus('something went wrong, please try again');
+                    statusTimeout = setTimeout(hideStatus, 3000);
+                } finally {
+                    sendBtn.disabled = false;
+                }
+            }
+
+            sendBtn.addEventListener('click', function () {
+                submitPrompt('text');
+            });
+
+            textarea.addEventListener('keydown', function (e) {
+                // Ctrl/Cmd + Enter to submit
+                if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                    e.preventDefault();
+                    submitPrompt('text');
+                }
+            });
+
+            // --- Web Speech API ---
+            var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            var recognition = null;
+
+            if (SpeechRecognition) {
+                micBtn.style.display = 'inline-flex';
+
+                micBtn.addEventListener('click', function () {
+                    if (recognition) {
+                        recognition.stop();
+                        return;
+                    }
+
+                    recognition = new SpeechRecognition();
+                    recognition.lang = 'en-US';
+                    recognition.interimResults = false;
+                    recognition.maxAlternatives = 1;
+
+                    micBtn.textContent = '🎤 listening…';
+                    micBtn.disabled = true;
+
+                    recognition.start();
+
+                    recognition.onresult = function (e) {
+                        const transcript = e.results[0][0].transcript;
+                        textarea.value = transcript;
+                        updateCharCounter();
+                        micBtn.textContent = '🎤 Speak';
+                        micBtn.disabled = false;
+                        recognition = null;
+                    };
+
+                    recognition.onerror = function () {
+                        micBtn.textContent = '🎤 Speak';
+                        micBtn.disabled = false;
+                        recognition = null;
+                    };
+
+                    recognition.onend = function () {
+                        micBtn.textContent = '🎤 Speak';
+                        micBtn.disabled = false;
+                        recognition = null;
+                    };
+                });
+            } else {
+                micBtn.style.display = 'none';
+            }
+
+            // --- Init ---
+            connectSSE();
+
+        })();
+    </script>
+</body>
+</html>
