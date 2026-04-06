@@ -76,21 +76,7 @@ def frameStart(frame):
     queue = op("/project1/visitor_queue")
     osc_in = op("/project1/ssd_osc_in")
 
-    # --- CHECK OSC ---
-    # Track last row content not row count — OSC In DAT rolls at ~11 rows
-    # so numRows never grows past the cap and count-based detection breaks.
-    if osc_in and osc_in.numRows > 1:
-        last_content = str(osc_in[osc_in.numRows - 1, 0].val)
-        if last_content != _last_osc_content:
-            _last_osc_content = last_content
-            try:
-                if last_content.startswith("/salish/prompt/visitor"):
-                    prompt_text = last_content.replace("/salish/prompt/visitor", "").strip().strip('"')
-                    if prompt_text and queue:
-                        queue.appendRow([prompt_text, str(absTime.seconds)])
-                        print(f"[SSD] Queued: {prompt_text[:60]}")
-            except Exception:
-                pass
+    # --- CHECK OSC --- handled by ssd_osc_in_callbacks.onReceiveOSC
 
     # --- INIT ---
     if "start_time" not in _state:
