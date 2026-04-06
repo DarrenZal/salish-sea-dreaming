@@ -1,7 +1,12 @@
 """
 td_relay.py — runs on TD machine (Windows 3090).
-Pulls enriched prompts from gallery server via SSE, sends each as OSC to TouchDesigner.
-Auto-reconnects on disconnect. Singleton via PID file — exits if another instance runs.
+Polls gallery server for new visitor prompts, sends each as OSC to TouchDesigner.
+
+Uses HTTP polling (/td/next?after=N) instead of SSE streaming — SSE via
+requests.iter_content() dies silently on Windows after 1-2 events due to
+socket buffering differences.
+
+Singleton via PID file — exits if another instance is already running.
 Run: python td_relay.py
 """
 import atexit
@@ -37,6 +42,7 @@ sys.stderr.reconfigure(line_buffering=True)
 GALLERY_URL = os.getenv("GALLERY_URL", "http://37.27.48.12:9000")
 TD_HOST = os.getenv("TD_HOST", "127.0.0.1")
 TD_PORT = int(os.getenv("TD_PORT", "7000"))
+POLL_INTERVAL = float(os.getenv("POLL_INTERVAL", "2.0"))  # seconds between polls
 
 # PID file lives next to this script to prevent duplicate instances
 PID_FILE = Path(__file__).with_suffix(".pid")
@@ -53,12 +59,11 @@ def _acquire_singleton():
         except (ValueError, OSError):
             old_pid = None
         if old_pid and old_pid != my_pid:
-            # Check if that PID is actually still alive
             import subprocess
             try:
                 r = subprocess.run(
                     ["tasklist", "/FI", f"PID eq {old_pid}", "/NH"],
-                    capture_output=True, text=True, timeout=5
+                    capture_output=True, text=True, timeout=5,
                 )
                 if "python" in r.stdout.lower():
                     log.error(
@@ -80,39 +85,44 @@ _acquire_singleton()
 
 osc = udp_client.SimpleUDPClient(TD_HOST, TD_PORT)
 log.info(f"OSC target: {TD_HOST}:{TD_PORT}")
-log.info(f"Gallery SSE: {GALLERY_URL}/td/stream")
+log.info(f"Gallery poll: {GALLERY_URL}/td/next  interval={POLL_INTERVAL}s")
 
 # ---------------------------------------------------------------------------
-# Main reconnect loop
+# Main polling loop
 # ---------------------------------------------------------------------------
+
+session = requests.Session()
+last_seq = 0
+consecutive_errors = 0
 
 while True:
     try:
-        log.info(f"Connecting to {GALLERY_URL}/td/stream ...")
-        with requests.get(
-            f"{GALLERY_URL}/td/stream",
-            stream=True,
-            timeout=(10, None),  # 10s connect timeout, no read timeout (SSE is infinite)
-            headers={"Accept": "text/event-stream", "Cache-Control": "no-cache"},
-        ) as r:
-            r.raise_for_status()
-            log.info("Connected — waiting for visitor prompts")
-            buf = ""
-            for chunk in r.iter_content(chunk_size=None, decode_unicode=True):
-                if not chunk:
-                    continue
-                buf += chunk
-                while "\n" in buf:
-                    line, buf = buf.split("\n", 1)
-                    line = line.rstrip("\r")
-                    if line.startswith("data:"):
-                        prompt = line[5:].strip()
-                        if prompt and prompt != "ping":
-                            osc.send_message("/salish/prompt/visitor", prompt)
-                            log.info(f"\u2192 OSC: {prompt[:80]}")
+        resp = session.get(
+            f"{GALLERY_URL}/td/next",
+            params={"after": last_seq},
+            timeout=10,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        consecutive_errors = 0  # reset on success
+
+        server_seq = data.get("seq", 0)
+        prompt = data.get("prompt")
+
+        if prompt is not None and server_seq > last_seq:
+            last_seq = server_seq
+            osc.send_message("/salish/prompt/visitor", prompt)
+            log.info(f"→ OSC seq={last_seq}: {prompt[:80]}")
+        else:
+            log.debug(f"poll seq={server_seq} (no change)")
+
+        time.sleep(POLL_INTERVAL)
+
     except KeyboardInterrupt:
         log.info("Stopped by user (Ctrl+C).")
         break
     except Exception as e:
-        log.warning(f"Disconnected: {e}. Reconnecting in 5s...")
-        time.sleep(5)
+        consecutive_errors += 1
+        backoff = min(5 * consecutive_errors, 60)
+        log.warning(f"Poll error ({consecutive_errors}): {e}. Retrying in {backoff}s...")
+        time.sleep(backoff)

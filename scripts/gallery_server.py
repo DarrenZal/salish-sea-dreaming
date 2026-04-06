@@ -24,7 +24,21 @@ from typing import List, Optional
 import aiosqlite
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
+from starlette.types import Send
+
+
+class DirectStreamingResponse(StreamingResponse):
+    """StreamingResponse subclass that bypasses Starlette 1.0.0's anyio task_group
+    disconnect detection. The task_group runs listen_for_disconnect(receive) concurrently
+    and cancels the stream ~8s after a GET request connects (on_message_complete fires
+    immediately for bodyless requests, causing receive() to return http.disconnect).
+    This override calls stream_response directly — the generator runs until the client
+    genuinely drops (send() raises OSError) or the server closes it.
+    """
+
+    async def __call__(self, scope, receive, send: Send) -> None:  # type: ignore[override]
+        await self.stream_response(send)
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -83,10 +97,7 @@ BLOCKED_WORDS = [
 # Prompt enrichment
 # ---------------------------------------------------------------------------
 
-BASE_PREFIX = (
-    "brionypenn watercolor painting, soft wet edges, natural pigment washes, "
-    "ecological illustration, "
-)
+BASE_PREFIX = ""
 ECOLOGICAL_SUFFIX = ", Salish Sea, Pacific Northwest, marine ecosystem"
 MAX_VISITOR_CHARS = 150
 
@@ -147,8 +158,15 @@ rate_limit_map: dict[str, datetime] = {}
 # SSE subscriber queues
 sse_subscribers: List[asyncio.Queue] = []
 
-# TD relay subscriber queues (SSE feed for td_relay.py on the TD machine)
-td_subscribers: set = set()
+# Single active TD relay queue (only one relay runs at a time).
+# Replaced atomically on each new /td/stream connection.
+active_td_relay_q: Optional[asyncio.Queue] = None
+
+# Polling state for /td/next endpoint (replaces SSE relay on Windows).
+# Monotonically increasing seq; td_relay.py polls ?after=N and gets the prompt
+# when seq > N.  Thread-safe for asyncio (single event-loop).
+td_prompt_seq: int = 0
+td_last_prompt: Optional[str] = None
 
 # ---------------------------------------------------------------------------
 # Database helpers
@@ -237,21 +255,27 @@ async def broadcast_sse(item: PromptItem) -> None:
 # ---------------------------------------------------------------------------
 
 async def advance() -> None:
-    global current, dwell_elapsed
+    global current, dwell_elapsed, td_prompt_seq, td_last_prompt
     current = queue.popleft()
     send_osc("/salish/prompt/visitor", current.enriched_text)
     send_osc("/salish/prompt/weight", 1.0)
     send_osc("/salish/queue/count", len(queue))
     dwell_elapsed = 0
-    logger.info(f"Queue advance → prompt id={current.id} source={current.source}")
+    logger.info(f"Queue advance → prompt id={current.id} source={current.source} relay={'yes' if active_td_relay_q else 'no'}")
     await update_sent_at(current.id)
 
-    # Notify td_relay.py subscribers via SSE
-    for sub_q in list(td_subscribers):
+    # Update polling state for /td/next (Windows-compatible relay)
+    td_prompt_seq += 1
+    td_last_prompt = current.enriched_text
+    logger.info(f"td_next: seq={td_prompt_seq}")
+
+    # Also notify SSE relay if connected (legacy / non-Windows)
+    if active_td_relay_q is not None:
         try:
-            sub_q.put_nowait(current.enriched_text)
+            active_td_relay_q.put_nowait(current.enriched_text)
+            logger.info("td_stream: pushed to relay queue")
         except asyncio.QueueFull:
-            pass
+            logger.warning("td_stream: relay queue full, dropped")
 
 
 def restore_base() -> None:
@@ -468,22 +492,55 @@ async def stream_prompts(request: Request):
 
 @app.get("/td/stream")
 async def td_stream(request: Request):
-    """SSE stream of enriched prompts for td_relay.py on the TD machine."""
-    async def generator():
-        q: asyncio.Queue = asyncio.Queue(maxsize=10)
-        td_subscribers.add(q)
+    """SSE stream of enriched prompts for td_relay.py on the TD machine.
+    Uses raw StreamingResponse to avoid sse_starlette's internal is_disconnected()
+    check which falsely fires through reverse proxies (Caddy) and closes the stream.
+
+    Single active relay slot: on each new connection, this becomes the active relay.
+    Old relay's generator keeps running (sending pings) but advance() ignores it.
+    """
+    global active_td_relay_q
+    q: asyncio.Queue = asyncio.Queue(maxsize=10)
+    active_td_relay_q = q  # atomically replace — old relay misses future events
+    logger.info("td_stream: relay connected (now active)")
+
+    async def stream():
         try:
+            yield "data: ping\n\n"  # immediate keepalive so proxy sees response body has started
             while True:
-                if await request.is_disconnected():
-                    break
                 try:
-                    prompt = await asyncio.wait_for(q.get(), timeout=25)
-                    yield {"data": prompt}
+                    prompt = await asyncio.wait_for(q.get(), timeout=5)
+                    logger.info("td_stream: sending event to relay")
+                    yield f"data: {prompt}\n\n"
                 except asyncio.TimeoutError:
-                    yield {"data": "ping"}
+                    yield "data: ping\n\n"
         finally:
-            td_subscribers.discard(q)
-    return EventSourceResponse(generator())
+            # Only clear active_td_relay_q if we are still the active relay
+            if active_td_relay_q is q:
+                active_td_relay_q = None
+            logger.info("td_stream: relay disconnected")
+
+    return DirectStreamingResponse(
+        stream(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+
+@app.get("/td/next")
+async def td_next(after: int = 0):
+    """Polling endpoint for td_relay.py on Windows.
+
+    Returns the latest enriched prompt when seq > after, otherwise returns
+    the current seq with no prompt (relay knows nothing changed).
+
+    Usage: GET /td/next?after=0
+    Response: {"seq": 3, "prompt": "brionypenn watercolor ..."}  # new prompt
+              {"seq": 3, "prompt": null}                          # no change
+    """
+    if td_prompt_seq > after:
+        return {"seq": td_prompt_seq, "prompt": td_last_prompt}
+    return {"seq": td_prompt_seq, "prompt": None}
 
 
 @app.get("/health")
