@@ -108,10 +108,13 @@ def enrich_prompt(visitor_text: str) -> str:
 # OSC client
 # ---------------------------------------------------------------------------
 
-osc_client = udp_client.SimpleUDPClient(TD_HOST, TD_OSC_PORT)
+osc_client = udp_client.SimpleUDPClient(TD_HOST, TD_OSC_PORT) if TD_HOST else None
 
 
 def send_osc(address: str, value) -> None:
+    if osc_client is None:
+        logger.debug(f"OSC skipped (no TD_HOST) {address} : {value!r}")
+        return
     try:
         osc_client.send_message(address, value)
         logger.info(f"OSC → {address} : {value!r}")
@@ -143,6 +146,9 @@ rate_limit_map: dict[str, datetime] = {}
 
 # SSE subscriber queues
 sse_subscribers: List[asyncio.Queue] = []
+
+# TD relay subscriber queues (SSE feed for td_relay.py on the TD machine)
+td_subscribers: set = set()
 
 # ---------------------------------------------------------------------------
 # Database helpers
@@ -239,6 +245,13 @@ async def advance() -> None:
     dwell_elapsed = 0
     logger.info(f"Queue advance → prompt id={current.id} source={current.source}")
     await update_sent_at(current.id)
+
+    # Notify td_relay.py subscribers via SSE
+    for sub_q in list(td_subscribers):
+        try:
+            sub_q.put_nowait(current.enriched_text)
+        except asyncio.QueueFull:
+            pass
 
 
 def restore_base() -> None:
@@ -451,6 +464,26 @@ async def stream_prompts(request: Request):
                 pass
 
     return EventSourceResponse(event_generator())
+
+
+@app.get("/td/stream")
+async def td_stream(request: Request):
+    """SSE stream of enriched prompts for td_relay.py on the TD machine."""
+    async def generator():
+        q: asyncio.Queue = asyncio.Queue(maxsize=10)
+        td_subscribers.add(q)
+        try:
+            while True:
+                if await request.is_disconnected():
+                    break
+                try:
+                    prompt = await asyncio.wait_for(q.get(), timeout=25)
+                    yield {"data": prompt}
+                except asyncio.TimeoutError:
+                    yield {"data": "ping"}
+        finally:
+            td_subscribers.discard(q)
+    return EventSourceResponse(generator())
 
 
 @app.get("/health")
