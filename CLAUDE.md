@@ -8,31 +8,32 @@ Interactive AI art installation exploring the Salish Sea ecosystem. The vision: 
 
 ## Current Status
 
-**Date:** 2026-03-31
-**Status:** 10 days to exhibition opening. StreamDiffusion working at 30fps in TD 2025 (Leo session March 28). Shawn posted 16 style-transfer files (video 48 = curator hero). Curator needs to see production quality for space allocation. Briony LoRA expression in StreamDiffusion unverified — trigger token `brionypenn` may not be in use. Moonfish high-res from Deirdre expected imminently. Prav available Fri-Sun at studio for production push.
+**Date:** 2026-04-06
+**Status:** 4 days to exhibition opening. Visitor prompt pipeline end-to-end verified. Production hardening complete. v5 LoRA training running on TELUS. Setup day April 9 at Prav's studio.
 
 **License Policy:** COMMERCIAL USE — CC0, CC BY, CC BY-SA only. Artist fee at exhibition = commercial under CC terms. CC BY-NC excluded. Collaborator materials (Moonfish, Denning) under `collaborator permission` — see `training-data/licenses-collaborators.md`. Full credits: `docs/credits-attribution.md`.
 
 **What's Done:**
-- **StreamDiffusion 30fps in TD** (March 28): Leo + Prav session — real-time style transfer working. Prompt A/B blending system designed (crossfade weights via Python + CHOP). Poetry DATs drafted for prompt-driven dreaming. StreamDiffusionTD_0.3.0.tox shared.
-- **Shawn's ComfyUI/RAVE handoff** (March 30): 16 files on shared Drive (7 stills, 8 videos). Video 48 = hero for curator demo. ComfyUI pipeline warm on Legion. Ready to process Moonfish high-res on arrival.
-- **Moonfish + Denning integration** (March 26-27): 13 Moonfish videos (4.7 GB) and David Denning PPT photos received via Prav. 8 hero segments identified, subclips trimmed. 14 Denning high-res photos curated. Exhibition strategy: video as primary exhibition material. Shotlist: `docs/moonfish-shotlist.md`.
-- **Intent field concept** (March 30): `docs/intent-field-installation.md` — visitors voice their care, voices become herring via Boids algorithm, collective intent forms schools over 16 exhibition days. Connects to Prav's vision of visitors becoming part of the dreaming.
-- **Render packet sent** (March 27): 3 hero subclips (H1, H2, H5) on Drive for Briony LoRA tests. Deirdre request with timecodes for high-res clips.
-- **Corpus QC'd and finalized** (March 25): 1,254 images, 50 species. All rejects tracked in `training-data/review/rejects-*.csv`.
-- **Fish model kimg 1000 complete** (March 23): Fallback only. TELUS free for dreaming model.
-- Prior work: RTX 3090 desktop (6/8 phases), Briony LoRA v1 (22 images, rank 16), LoRA v2 config ready, all datasets on Drive.
+- **Production hardening** (April 6): td_relay.py hardened (singleton PID lock, timestamps, auto-reconnect). NSSM service setup script (`scripts/setup_nssm.bat`) — registers ssd-server, ssd-relay, ssd-audio, ssd-tunnel with auto-restart. PowerShell watchdog fallback (`scripts/relay_watchdog.ps1`). `start_gallery.bat` now launches relay too.
+- **End-to-end prompt pipeline verified** (April 6): Web app → FastAPI → SSE relay → OSC → TouchDesigner slot 22 confirmed working. Atomic relay replacement prevents duplicate instances on server side. Relay PID lock prevents duplicate instances on client side.
+- **v5 LoRA training** (April 6): Fixed syntax error in train_v5.py (unterminated f-string line 131) and relaunched on TELUS H200. Rank 64, 5000 steps, text encoder included. Check: `curl https://model-deployment-0b50s.paas.ai.telus.com/api/contents/train_v5.log?token=8f6ceea09691892cf2d19dc7466669ea`
+- **Visitor web app + prompt pipeline** (April 5): QR code → browser → text/voice → FastAPI → OSC → StreamDiffusion. Commit 2750cd6. Files: `scripts/gallery_server.py`, `web/visitor.html`, `scripts/gallery_audio.py`, `scripts/start_gallery.sh/.bat`, `tools/qr_generate.py`.
+- **StreamDiffusion 30fps in TD** (March 28): Leo + Prav session — real-time style transfer working. StreamDiffusionTD_0.3.0.tox shared.
+- **Shawn's ComfyUI/RAVE handoff** (March 30): 16 files on shared Drive (7 stills, 8 videos). Video 48 = hero for curator demo.
+- **Moonfish + Denning integration** (March 26-27): 13 Moonfish videos (4.7 GB). 8 hero segments subclipped. 14 Denning high-res photos curated.
+- **Intent field concept** (March 30): `docs/intent-field-installation.md` — Boids + visitor voices.
+- **Corpus QC'd and finalized** (March 25): 1,254 images, 50 species.
 
-**What's Left:**
-1. **Verify Briony LoRA in StreamDiffusion** — A/B test with `brionypenn` trigger token. If no difference, LoRA isn't loading or needs more steps.
-2. **Curator projection test** — Prav planning for Tuesday or Saturday. Video 48 as hero demo.
-3. **Moonfish high-res from Deirdre** — process through ComfyUI/RAVE pipeline on arrival.
-4. **Technique lock** — Real-time: StreamDiffusion + LoRA. Pre-rendered: ComfyUI + LoRA. Fallback: raw Moonfish footage.
-5. **OSC → TD integration** — Shawn built engine, needs walkthrough with Prav. Poetry DATs + ecological data driving the dream field.
-6. **Credits/attribution confirmations** — Written permission needed from Moonfish Media and David Denning. See `docs/credits-attribution.md`.
-7. **Weekend production push** (Fri-Sun at Prav's studio) — lock exhibition-ready sequences.
-8. **Track B (parallel):** TELUS dreaming model training (~1,500 images, 6-7 days).
-9. **Website** — Landing page at SalishSeaDreaming.MOVE37XR.org (or standalone). Phase 1 = landing page, future = interactive voice/image input.
+**What's Left (Setup Day April 9):**
+1. `pip install sounddevice numpy "qrcode[pil]"` on Prav's Windows machine
+2. `python scripts/gallery_audio.py --list-devices` → set `AUDIO_DEVICE_INDEX` in `.env`
+3. Set `ADMIN_PASSWORD` in `.env`
+4. `cloudflared tunnel create ssd-gallery` → set `TUNNEL_URL` in `.env` → print QR code
+5. Add **OSC In DAT** (port 7000) + **Execute DAT** in TD `.toe` for prompt routing
+6. Run `scripts\setup_nssm.bat` as Administrator → registers ssd-server, ssd-relay, ssd-audio, ssd-tunnel
+7. Verify Briony LoRA trigger token `brionypenn` active in StreamDiffusion; test v5 model if TELUS training done
+8. Cellular + WiFi test of full visitor loop before opening
+9. **Credits/attribution confirmations** — Written permission needed from Moonfish Media and David Denning. See `docs/credits-attribution.md`.
 
 ## Project Vision
 

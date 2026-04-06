@@ -27,6 +27,9 @@ start /B "" python -m uvicorn scripts.gallery_server:app --host 127.0.0.1 --port
 echo Starting audio monitor (logs\audio.log)...
 start /B "" python scripts\gallery_audio.py >> logs\audio.log 2>&1
 
+echo Starting SSE relay (logs\relay.log)...
+start /B "" python scripts\td_relay.py >> logs\relay.log 2>&1
+
 echo.
 REM Show local IP for LAN fallback
 for /f "tokens=2 delims=:" %%a in ('ipconfig ^| findstr /C:"IPv4"') do (
