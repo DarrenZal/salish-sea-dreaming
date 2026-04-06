@@ -23,17 +23,28 @@ from pythonosc import udp_client
 # Logging — timestamps in every line
 # ---------------------------------------------------------------------------
 
+LOG_FILE = Path(__file__).with_name("td_relay.log")
+
+handlers = [logging.FileHandler(LOG_FILE, encoding="utf-8")]
+if sys.stdout is not None:
+    handlers.append(logging.StreamHandler(sys.stdout))
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
-    handlers=[logging.StreamHandler(sys.stdout)],
+    handlers=handlers,
 )
 log = logging.getLogger("td_relay")
 
-# Force line-buffering so output appears in log files immediately
-sys.stdout.reconfigure(line_buffering=True)
-sys.stderr.reconfigure(line_buffering=True)
+# Line-buffering only works when stdout is a real stream (not None / windowless)
+try:
+    if sys.stdout is not None:
+        sys.stdout.reconfigure(line_buffering=True)
+    if sys.stderr is not None:
+        sys.stderr.reconfigure(line_buffering=True)
+except Exception:
+    pass
 
 # ---------------------------------------------------------------------------
 # Config
