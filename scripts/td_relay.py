@@ -112,7 +112,7 @@ while True:
         if prompt is not None and server_seq > last_seq:
             last_seq = server_seq
             osc.send_message("/salish/prompt/visitor", prompt)
-            log.info(f"→ OSC seq={last_seq}: {prompt[:80]}")
+            log.info(f"-> OSC seq={last_seq}: {prompt[:80]}")
         else:
             log.debug(f"poll seq={server_seq} (no change)")
 
