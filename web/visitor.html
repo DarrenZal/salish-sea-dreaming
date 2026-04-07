@@ -181,6 +181,79 @@
             box-shadow: 0 0 12px rgba(0, 168, 168, 0.2);
         }
 
+        .btn-camera {
+            background: rgba(232, 168, 124, 0.12);
+            border: 1px solid rgba(232, 168, 124, 0.3);
+            color: var(--salmon);
+            flex-shrink: 0;
+        }
+
+        .btn-camera:hover:not(:disabled) {
+            background: rgba(232, 168, 124, 0.22);
+            box-shadow: 0 0 12px rgba(232, 168, 124, 0.2);
+        }
+
+        .btn-camera.has-photo {
+            background: rgba(232, 168, 124, 0.25);
+            border-color: rgba(232, 168, 124, 0.6);
+        }
+
+        /* Camera modal */
+        .camera-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(5, 8, 20, 0.95);
+            z-index: 100;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            padding: 20px;
+        }
+
+        .camera-modal.open {
+            display: flex;
+        }
+
+        .camera-preview {
+            width: 100%;
+            max-width: 360px;
+            aspect-ratio: 1;
+            object-fit: cover;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: #000;
+        }
+
+        .camera-canvas {
+            display: none;
+        }
+
+        .camera-captured {
+            display: none;
+            width: 100%;
+            max-width: 360px;
+            aspect-ratio: 1;
+            object-fit: cover;
+            border-radius: 12px;
+            border: 2px solid var(--salmon);
+        }
+
+        .camera-actions {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+            max-width: 360px;
+        }
+
+        .camera-hint {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-style: italic;
+            text-align: center;
+        }
+
         .btn-send {
             background: linear-gradient(135deg, rgba(0, 168, 168, 0.9), rgba(0, 212, 255, 0.7));
             color: var(--ocean-dark);
@@ -380,6 +453,9 @@
                 <button class="btn btn-mic" id="mic-btn" aria-label="Speak your offering" style="display:none;">
                     🎤 Speak
                 </button>
+                <button class="btn btn-camera" id="camera-btn" aria-label="Add your photo" style="display:none;">
+                    📷
+                </button>
                 <button class="btn btn-send" id="send-btn" aria-label="Send your offering">
                     Send →
                 </button>
@@ -404,8 +480,27 @@
             <div class="feed-empty" id="feed-empty">Waiting for voices…</div>
         </div>
 
+        <!-- Camera modal -->
+        <div class="camera-modal" id="camera-modal">
+            <p class="camera-hint" id="camera-hint">Position yourself in frame</p>
+            <video class="camera-preview" id="camera-video" autoplay playsinline muted></video>
+            <img class="camera-captured" id="camera-captured" alt="Your captured photo" />
+            <canvas class="camera-canvas" id="camera-canvas" width="512" height="512"></canvas>
+            <div class="camera-actions">
+                <button class="btn btn-camera" id="camera-retake" style="display:none; flex:1;">↩ Retake</button>
+                <button class="btn btn-mic" id="camera-snap" style="flex:1;">📷 Capture</button>
+                <button class="btn btn-send" id="camera-use" style="display:none; flex:1;">Use Photo →</button>
+                <button class="btn" id="camera-cancel" style="background:rgba(255,255,255,0.05); color:var(--text-muted); flex-shrink:0;">✕</button>
+            </div>
+        </div>
+
         <!-- Footer -->
         <p class="notice">Your words will shape the dream. Submissions are stored for post-exhibition reflection.</p>
+        <p style="margin-top:1rem;text-align:center;">
+            <a href="/graph" target="_blank" style="color:var(--teal);font-size:0.85rem;text-decoration:none;">
+                explore the knowledge graph &rarr;
+            </a>
+        </p>
 
     </div>
 
@@ -417,12 +512,24 @@
             const textarea     = document.getElementById('offering-input');
             const charCounter  = document.getElementById('char-counter');
             const micBtn       = document.getElementById('mic-btn');
+            const cameraBtn    = document.getElementById('camera-btn');
             const sendBtn      = document.getElementById('send-btn');
             const statusMsg    = document.getElementById('status-message');
             const liveDot      = document.getElementById('live-dot');
             const liveLabel    = document.getElementById('live-label');
             const voiceFeed    = document.getElementById('voice-feed');
             const feedEmpty    = document.getElementById('feed-empty');
+
+            // Camera refs
+            const cameraModal   = document.getElementById('camera-modal');
+            const cameraVideo   = document.getElementById('camera-video');
+            const cameraCanvas  = document.getElementById('camera-canvas');
+            const cameraCaptured = document.getElementById('camera-captured');
+            const cameraSnap    = document.getElementById('camera-snap');
+            const cameraRetake  = document.getElementById('camera-retake');
+            const cameraUse     = document.getElementById('camera-use');
+            const cameraCancel  = document.getElementById('camera-cancel');
+            const cameraHint    = document.getElementById('camera-hint');
 
             const MAX_CHARS    = 150;
             const WARN_CHARS   = 140;
@@ -432,6 +539,8 @@
             let pollingInterval = null;
             let statusTimeout   = null;
             let feedEntries     = [];   // array of display_text strings, newest first
+            let capturedPhotoData = null;  // base64 JPEG from camera
+            let cameraStream    = null;
 
             // --- Character counter ---
             function updateCharCounter() {
@@ -605,6 +714,78 @@
                 };
             }
 
+            // --- Camera ---
+            function stopCameraStream() {
+                if (cameraStream) {
+                    cameraStream.getTracks().forEach(t => t.stop());
+                    cameraStream = null;
+                }
+            }
+
+            function closeCameraModal() {
+                stopCameraStream();
+                cameraModal.classList.remove('open');
+                cameraVideo.style.display = 'block';
+                cameraCaptured.style.display = 'none';
+                cameraSnap.style.display = '';
+                cameraRetake.style.display = 'none';
+                cameraUse.style.display = 'none';
+            }
+
+            async function openCamera() {
+                capturedPhotoData = null;
+                cameraVideo.style.display = 'block';
+                cameraCaptured.style.display = 'none';
+                cameraSnap.style.display = '';
+                cameraRetake.style.display = 'none';
+                cameraUse.style.display = 'none';
+                cameraHint.textContent = 'Position yourself in frame';
+                cameraModal.classList.add('open');
+                try {
+                    cameraStream = await navigator.mediaDevices.getUserMedia({
+                        video: { facingMode: 'user', width: { ideal: 512 }, height: { ideal: 512 } }
+                    });
+                    cameraVideo.srcObject = cameraStream;
+                } catch (err) {
+                    cameraHint.textContent = 'Camera not available — ' + err.message;
+                    cameraSnap.disabled = true;
+                }
+            }
+
+            function capturePhoto() {
+                const ctx = cameraCanvas.getContext('2d');
+                // Draw video frame scaled to 512x512
+                ctx.drawImage(cameraVideo, 0, 0, 512, 512);
+                capturedPhotoData = cameraCanvas.toDataURL('image/jpeg', 0.85);
+                // Show captured image
+                cameraCaptured.src = capturedPhotoData;
+                cameraVideo.style.display = 'none';
+                cameraCaptured.style.display = 'block';
+                cameraSnap.style.display = 'none';
+                cameraRetake.style.display = '';
+                cameraUse.style.display = '';
+                cameraHint.textContent = 'Your image will dissolve into the sea';
+                stopCameraStream();
+            }
+
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                cameraBtn.style.display = 'inline-flex';
+                cameraBtn.addEventListener('click', openCamera);
+            }
+
+            cameraSnap.addEventListener('click', capturePhoto);
+            cameraRetake.addEventListener('click', openCamera);
+            cameraCancel.addEventListener('click', function () {
+                capturedPhotoData = null;
+                cameraBtn.classList.remove('has-photo');
+                closeCameraModal();
+            });
+            cameraUse.addEventListener('click', function () {
+                cameraBtn.classList.add('has-photo');
+                cameraBtn.textContent = '📷 ✓';
+                closeCameraModal();
+            });
+
             // --- Submit ---
             async function submitPrompt(source) {
                 const raw = textarea.value.trim();
@@ -615,16 +796,25 @@
                 sendBtn.disabled = true;
 
                 try {
+                    const body = { text: text, source: source };
+                    if (capturedPhotoData) body.photo_data = capturedPhotoData;
+
                     const res = await fetch('/prompt', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ text: text, source: source })
+                        body: JSON.stringify(body)
                     });
 
                     if (res.ok) {
-                        showStatus('your offering is joining the dream');
+                        const msg = capturedPhotoData
+                            ? 'your image is dissolving into the sea'
+                            : 'your offering is joining the dream';
+                        showStatus(msg);
                         textarea.value = '';
                         updateCharCounter();
+                        capturedPhotoData = null;
+                        cameraBtn.classList.remove('has-photo');
+                        cameraBtn.textContent = '📷';
                         statusTimeout = setTimeout(hideStatus, 2000);
                     } else if (res.status === 429) {
                         showStatus('please wait a moment before sending again');
@@ -642,14 +832,14 @@
             }
 
             sendBtn.addEventListener('click', function () {
-                submitPrompt('text');
+                submitPrompt('typed');
             });
 
             textarea.addEventListener('keydown', function (e) {
                 // Ctrl/Cmd + Enter to submit
                 if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
                     e.preventDefault();
-                    submitPrompt('text');
+                    submitPrompt('typed');
                 }
             });
 
@@ -670,31 +860,42 @@
                     recognition.lang = 'en-US';
                     recognition.interimResults = false;
                     recognition.maxAlternatives = 1;
+                    recognition.continuous = false;
 
                     micBtn.textContent = '🎤 listening…';
-                    micBtn.disabled = true;
+                    micBtn.disabled = false; // keep tappable so user can cancel
+
+                    var gotResult = false;
 
                     recognition.start();
 
                     recognition.onresult = function (e) {
+                        gotResult = true;
                         const transcript = e.results[0][0].transcript;
                         textarea.value = transcript;
                         updateCharCounter();
                         micBtn.textContent = '🎤 Speak';
-                        micBtn.disabled = false;
                         recognition = null;
                     };
 
-                    recognition.onerror = function () {
+                    recognition.onerror = function (e) {
                         micBtn.textContent = '🎤 Speak';
-                        micBtn.disabled = false;
                         recognition = null;
+                        if (e.error === 'not-allowed') {
+                            showStatus('Mic access denied — allow microphone in browser settings.');
+                        } else if (e.error === 'no-speech') {
+                            showStatus('No speech detected — try again.');
+                        } else {
+                            showStatus('Mic error: ' + e.error + '. Try again.');
+                        }
                     };
 
                     recognition.onend = function () {
                         micBtn.textContent = '🎤 Speak';
-                        micBtn.disabled = false;
                         recognition = null;
+                        if (!gotResult) {
+                            showStatus('Nothing heard — tap Speak and try again.');
+                        }
                     };
                 });
             } else {

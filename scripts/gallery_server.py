@@ -169,6 +169,11 @@ active_td_relay_q: Optional[asyncio.Queue] = None
 td_prompt_seq: int = 0
 td_last_prompt: Optional[str] = None
 
+# Visitor photo polling state
+photo_seq: int = 0
+PHOTO_DIR = BASE_DIR / "visitor_photos"
+PHOTO_DIR.mkdir(exist_ok=True)
+
 # SSE broadcast for knowledge graph viewers (multiple simultaneous)
 graph_subscribers: List[asyncio.Queue] = []
 
@@ -395,6 +400,7 @@ def require_admin(credentials: HTTPBasicCredentials = Depends(security)) -> None
 class PromptRequest(BaseModel):
     text: str
     source: str = "typed"
+    photo_data: Optional[str] = None  # base64 JPEG from visitor camera
 
 
 # ---------------------------------------------------------------------------
@@ -444,6 +450,10 @@ async def post_prompt(body: PromptRequest, request: Request):
     )
     queue.append(item)
     logger.info(f"Queued prompt id={prompt_id} source={body.source} queue_size={len(queue)}")
+
+    # Handle visitor photo
+    if body.photo_data:
+        await _save_visitor_photo(prompt_id, body.photo_data)
 
     # Broadcast SSE to all listeners
     await broadcast_sse(item)
@@ -566,6 +576,42 @@ async def td_next(after: int = 0):
     if td_prompt_seq > after:
         return {"seq": td_prompt_seq, "prompt": td_last_prompt}
     return {"seq": td_prompt_seq, "prompt": None}
+
+
+async def _save_visitor_photo(prompt_id: int, photo_data: str) -> None:
+    """Decode base64 JPEG and save as latest visitor photo."""
+    global photo_seq
+    import base64
+    try:
+        # Strip data URI prefix if present
+        if "," in photo_data:
+            photo_data = photo_data.split(",", 1)[1]
+        img_bytes = base64.b64decode(photo_data)
+        latest = PHOTO_DIR / "latest.jpg"
+        archive = PHOTO_DIR / f"{prompt_id}.jpg"
+        latest.write_bytes(img_bytes)
+        archive.write_bytes(img_bytes)
+        photo_seq += 1
+        logger.info(f"Visitor photo saved ({len(img_bytes)} bytes), photo_seq={photo_seq}")
+    except Exception as e:
+        logger.warning(f"Failed to save visitor photo: {e}")
+
+
+@app.get("/visitor-photo/next")
+async def visitor_photo_next(after: int = 0):
+    """Polling endpoint for relay. Returns seq + URL when a new photo is available."""
+    if photo_seq > after:
+        return {"seq": photo_seq, "available": True}
+    return {"seq": photo_seq, "available": False}
+
+
+@app.get("/visitor-photo/latest.jpg")
+async def visitor_photo_latest():
+    from fastapi.responses import FileResponse
+    latest = PHOTO_DIR / "latest.jpg"
+    if not latest.exists():
+        raise HTTPException(status_code=404, detail="No visitor photo yet")
+    return FileResponse(latest, media_type="image/jpeg")
 
 
 @app.get("/graph", include_in_schema=False)
