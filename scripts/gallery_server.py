@@ -12,6 +12,7 @@ Usage:
 
 import asyncio
 import dataclasses
+import json
 import logging
 import os
 import secrets
@@ -168,6 +169,9 @@ active_td_relay_q: Optional[asyncio.Queue] = None
 td_prompt_seq: int = 0
 td_last_prompt: Optional[str] = None
 
+# SSE broadcast for knowledge graph viewers (multiple simultaneous)
+graph_subscribers: List[asyncio.Queue] = []
+
 # ---------------------------------------------------------------------------
 # Database helpers
 # ---------------------------------------------------------------------------
@@ -276,6 +280,27 @@ async def advance() -> None:
             logger.info("td_stream: pushed to relay queue")
         except asyncio.QueueFull:
             logger.warning("td_stream: relay queue full, dropped")
+
+    # Broadcast to knowledge graph visualization viewers
+    if graph_subscribers:
+        event = json.dumps({
+            "type": "visitor",
+            "id": current.id,
+            "text": current.display_text,
+            "source": current.source,
+            "ts": current.submitted_at.isoformat(),
+        })
+        dead = []
+        for gq in graph_subscribers:
+            try:
+                gq.put_nowait(event)
+            except asyncio.QueueFull:
+                dead.append(gq)
+        for gq in dead:
+            try:
+                graph_subscribers.remove(gq)
+            except ValueError:
+                pass
 
 
 def restore_base() -> None:
@@ -543,6 +568,41 @@ async def td_next(after: int = 0):
     return {"seq": td_prompt_seq, "prompt": None}
 
 
+@app.get("/graph", include_in_schema=False)
+async def graph_redirect():
+    return RedirectResponse("/graph-assets/ssd-data-map.html")
+
+
+@app.get("/graph/stream")
+async def graph_stream(request: Request):
+    """SSE broadcast of visitor prompt events for the knowledge graph visualization."""
+    q: asyncio.Queue = asyncio.Queue(maxsize=20)
+    graph_subscribers.append(q)
+    logger.info(f"graph/stream: viewer connected ({len(graph_subscribers)} total)")
+
+    async def stream():
+        try:
+            yield "data: ping\n\n"
+            while True:
+                try:
+                    event = await asyncio.wait_for(q.get(), timeout=15)
+                    yield f"data: {event}\n\n"
+                except asyncio.TimeoutError:
+                    yield "data: ping\n\n"
+        finally:
+            try:
+                graph_subscribers.remove(q)
+            except ValueError:
+                pass
+            logger.info(f"graph/stream: viewer disconnected ({len(graph_subscribers)} remaining)")
+
+    return DirectStreamingResponse(
+        stream(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+
 @app.get("/health")
 async def health():
     current_text = current.enriched_text if current else BASE_PROMPT
@@ -653,6 +713,12 @@ async def visitor_redirect():
 # ---------------------------------------------------------------------------
 # Static files (LAST — after all API routes)
 # ---------------------------------------------------------------------------
+
+_graph_dir = BASE_DIR / "static"
+if _graph_dir.exists():
+    app.mount("/graph-assets", StaticFiles(directory=str(_graph_dir)), name="graph-assets")
+else:
+    logger.warning("static/ dir not found — /graph will not be served")
 
 _web_dir = BASE_DIR / "web"
 if _web_dir.exists():

@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Salish Sea Dreaming — Data Map</title>
+    <script src="/graph-assets/d3.v7.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #050a12;
+            color: #8ba4c4;
+            overflow: hidden;
+        }
+        #graph { width: 100vw; height: 100vh; }
+
+        .title {
+            position: fixed; top: 20px; left: 20px; z-index: 10;
+            pointer-events: none;
+        }
+        .title h1 { font-size: 17px; font-weight: 300; color: #7aa8c8; letter-spacing: 0.1em; }
+        .title p { font-size: 10px; color: #2a4a5a; margin-top: 3px; }
+
+        .legend {
+            position: fixed; bottom: 16px; left: 16px; z-index: 10;
+            display: flex; flex-direction: column; gap: 3px;
+            background: rgba(5,10,18,0.85); padding: 10px; border-radius: 6px;
+            border: 1px solid #1a2a3a; max-height: 50vh; overflow-y: auto;
+        }
+        .legend h3 {
+            font-size: 8px; letter-spacing: 0.12em; text-transform: uppercase;
+            color: #3a5a6a; margin: 6px 0 3px;
+        }
+        .legend h3:first-child { margin-top: 0; }
+        .legend-item {
+            display: flex; align-items: center; gap: 5px;
+            font-size: 8px; color: #4a6a7a; cursor: pointer;
+        }
+        .legend-item:hover { color: #8ab0d0; }
+        .legend-dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            flex-shrink: 0; opacity: 0.8;
+        }
+        .legend-ring {
+            width: 8px; height: 8px; border-radius: 50%;
+            flex-shrink: 0; border: 2px solid; background: transparent;
+        }
+
+        .detail {
+            position: fixed; top: 0; right: 0; width: 320px; height: 100vh;
+            background: linear-gradient(to right, transparent 0%, #080e18 20%);
+            padding: 32px 20px 32px 50px; z-index: 20;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.3s, transform 0.3s;
+            transform: translateX(20px);
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: #1a2a3a transparent;
+        }
+        .detail.active { opacity: 1; pointer-events: auto; transform: translateX(0); }
+        .detail-header {
+            display: flex; justify-content: space-between; align-items: flex-start;
+            margin-bottom: 4px;
+        }
+        .detail-close {
+            background: none; border: none; color: #3a5a6a;
+            font-size: 16px; cursor: pointer; padding: 4px 0 4px 8px;
+            flex-shrink: 0;
+        }
+        .detail-close:hover { color: #8ba4c4; }
+        .detail-title {
+            font-size: 16px; font-weight: 300; color: #a0c0e0;
+            line-height: 1.3; word-break: break-word;
+        }
+        .detail-badges {
+            display: flex; gap: 5px; flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+        .detail-badge {
+            font-size: 8px; padding: 2px 8px; border-radius: 10px;
+            color: #050a12; letter-spacing: 0.04em;
+        }
+        .detail-img {
+            max-width: 100%; border-radius: 6px;
+            margin-bottom: 12px;
+            border: 1px solid #1a2a3a;
+            display: none;
+            image-rendering: auto;
+            cursor: zoom-in;
+        }
+        .lightbox {
+            position: fixed; inset: 0; z-index: 100;
+            background: rgba(0,0,0,0.92);
+            display: flex; align-items: center; justify-content: center;
+            cursor: zoom-out;
+            opacity: 0; transition: opacity 0.2s;
+            pointer-events: none;
+        }
+        .lightbox.active { opacity: 1; pointer-events: auto; }
+        .lightbox img {
+            max-width: 95vw; max-height: 95vh;
+            object-fit: contain; border-radius: 4px;
+        }
+        .detail-artist {
+            font-size: 10px; color: #5a8a6a; font-weight: 300;
+            margin-bottom: 8px; letter-spacing: 0.04em;
+        }
+        .detail-body {
+            font-size: 11px; color: #6a8aaa; font-weight: 300;
+            line-height: 1.6; margin-bottom: 12px;
+        }
+        .detail-species { margin-bottom: 12px; }
+        .detail-species-label {
+            font-size: 8px; letter-spacing: 0.1em; text-transform: uppercase;
+            color: #3a5a6a; margin-bottom: 6px;
+        }
+        .detail-species-list { display: flex; gap: 4px; flex-wrap: wrap; }
+        .detail-species-pill {
+            font-size: 8px; padding: 2px 8px; border-radius: 10px;
+            background: #1a3a2a; color: #4aaa6a; letter-spacing: 0.02em;
+        }
+        .detail-connections {
+            margin-bottom: 12px;
+            padding-top: 10px; border-top: 1px solid #1a2a3a;
+        }
+        .detail-connections-label {
+            font-size: 8px; letter-spacing: 0.1em; text-transform: uppercase;
+            color: #3a5a6a; margin-bottom: 6px;
+        }
+        .detail-conn-item {
+            font-size: 10px; color: #5a7a9a; font-weight: 300; padding: 2px 0;
+        }
+        .detail-footer { padding-top: 10px; border-top: 1px solid #1a2a3a; }
+        .detail-meta { font-size: 9px; color: #3a5a6a; margin-bottom: 3px; }
+        .detail-path {
+            font-size: 8px; color: #2a4a5a; font-family: monospace;
+            word-break: break-all; line-height: 1.4;
+        }
+
+        @media (max-width: 768px) {
+            .legend { display: none; }
+            .detail {
+                top: auto; bottom: 0; right: 0; left: 0;
+                width: 100vw; height: 55vh;
+                border-radius: 12px 12px 0 0;
+                background: rgba(8,14,24,0.97);
+                transform: translateY(20px);
+                padding: 20px 16px;
+                overscroll-behavior: contain;
+            }
+            .detail.active { transform: translateY(0); }
+        }
+
+        .stats {
+            position: fixed; top: 20px; right: 20px; z-index: 10;
+            font-size: 10px; color: #3a5a6a; text-align: right;
+        }
+
+        .mini-card {
+            position: fixed; z-index: 30;
+            background: rgba(8,14,24,0.95);
+            border: 1px solid #1a2a3a; border-radius: 6px;
+            padding: 10px; max-width: 220px;
+            pointer-events: none;
+            opacity: 0; transition: opacity 0.15s;
+        }
+        .mini-card.visible { opacity: 1; }
+        .mini-card-title {
+            font-size: 11px; font-weight: 300; color: #a0c0e0;
+            margin-bottom: 4px; line-height: 1.3;
+        }
+        .mini-card-badges {
+            display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 4px;
+        }
+        .mini-card-badge {
+            font-size: 7px; padding: 1px 6px; border-radius: 8px;
+            color: #050a12; letter-spacing: 0.04em;
+        }
+        .mini-card-body {
+            font-size: 9px; color: #5a7a9a; font-weight: 300;
+            line-height: 1.4; margin-bottom: 4px;
+            display: -webkit-box; -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical; overflow: hidden;
+        }
+        .mini-card-size { font-size: 8px; color: #3a5a6a; }
+        .mini-card-img {
+            width: 100%; max-height: 120px; object-fit: cover;
+            border-radius: 4px; margin-top: 6px;
+            display: none;
+        }
+        .mini-card-img.loaded { display: block; }
+
+        /* Visitor nodes (live injection from SSE) */
+        .visitor-ring {
+            fill: none;
+            stroke: #7fffb2;
+            stroke-width: 2;
+            opacity: 0.8;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="title">
+        <h1>salish sea dreaming — data map</h1>
+        <p id="subtitle">loading...</p>
+    </div>
+    <div class="stats" id="stats"></div>
+    <div class="legend" id="legend"></div>
+    <div class="detail" id="detail">
+        <div class="detail-header">
+            <div class="detail-title" id="detail-title"></div>
+            <button class="detail-close" id="detail-close" aria-label="Close detail panel">&times;</button>
+        </div>
+        <div class="detail-badges" id="detail-badges"></div>
+        <img class="detail-img" id="detail-img" alt="" loading="lazy">
+        <div class="detail-artist" id="detail-artist"></div>
+        <div class="detail-body" id="detail-body"></div>
+        <div class="detail-species" id="detail-species" style="display:none">
+            <div class="detail-species-label">species depicted</div>
+            <div class="detail-species-list" id="detail-species-list"></div>
+        </div>
+        <div class="detail-connections" id="detail-connections">
+            <div class="detail-connections-label">connected to</div>
+            <div id="detail-conn-list"></div>
+        </div>
+        <div class="detail-footer">
+            <div class="detail-meta" id="detail-meta"></div>
+            <div class="detail-path" id="detail-path"></div>
+        </div>
+    </div>
+    <div class="mini-card" id="mini-card">
+        <div class="mini-card-title" id="mc-title"></div>
+        <div class="mini-card-badges" id="mc-badges"></div>
+        <div class="mini-card-body" id="mc-body"></div>
+        <div class="mini-card-size" id="mc-size"></div>
+        <img class="mini-card-img" id="mc-img" alt="" loading="lazy">
+    </div>
+    <div class="lightbox" id="lightbox"><img id="lightbox-img" alt=""></div>
+    <div id="graph"></div>
+
+    <script>
+    (async function() {
+        // ── Load graph data ────────────────────────────────────
+        let resp;
+        try { resp = await fetch('ssd-data-map.json'); }
+        catch (e) {
+            document.getElementById('subtitle').textContent = 'network error \u2014 tap to reload';
+            document.getElementById('subtitle').style.cursor = 'pointer';
+            document.getElementById('subtitle').addEventListener('click', () => location.reload());
+            return;
+        }
+        if (!resp.ok) {
+            document.getElementById('subtitle').textContent = 'failed to load \u2014 tap to reload';
+            document.getElementById('subtitle').style.cursor = 'pointer';
+            document.getElementById('subtitle').addEventListener('click', () => location.reload());
+            return;
+        }
+        const data = await resp.json();
+        const themeColors = data.theme_colors;
+        const extColors = data.ext_colors;
+        themeColors['visitor'] = '#7fffb2';
+
+        // ── Stats ──────────────────────────────────────────────
+        const fileNodes = data.nodes.filter(n => n.type === 'file');
+        const totalSize = fileNodes.reduce((s, n) => s + n.size, 0);
+        document.getElementById('subtitle').textContent =
+            data.nodes.length + ' nodes \u00b7 ' + fileNodes.length + ' files \u00b7 ' +
+            (totalSize / 1024 / 1024).toFixed(0) + ' MB';
+        document.getElementById('stats').textContent =
+            data.meta.sources.length + ' sources \u00b7 ' + Object.keys(themeColors).length + ' themes';
+
+        // ── Card data (async, non-blocking) ────────────────────
+        let cardData = {};
+        let speciesData = {};
+        let detailImageMap = {}; // node_id → high-res file path
+        const thumbNodes = new Set();
+
+        fetch('ssd-cards.json')
+            .then(r => r.ok ? r.json() : null)
+            .then(d => {
+                if (!d) return;
+                cardData = d.cards || {};
+                speciesData = d.species || {};
+                applyThumbnails();
+            })
+            .catch(() => {
+                document.getElementById('subtitle').textContent += ' · card data unavailable';
+            });
+
+        // High-res detail images (individual files, loaded on demand)
+        fetch('ssd-detail-map.json')
+            .then(r => r.ok ? r.json() : {})
+            .then(d => { detailImageMap = d; })
+            .catch(() => {});
+
+        // ── Precomputed lookups ────────────────────────────────
+        const nodeById = {};
+        data.nodes.forEach(n => { nodeById[n.id] = n; });
+
+        // Adjacency built before D3 resolves link objects
+        const adjacency = {};
+        data.links.forEach(l => {
+            const s = l.source, t = l.target;
+            if (!adjacency[s]) adjacency[s] = [];
+            if (!adjacency[t]) adjacency[t] = [];
+            adjacency[s].push(t);
+            adjacency[t].push(s);
+        });
+
+        // ── Visitor hub node ───────────────────────────────
+        if (!data.nodes.find(n => n.id === 'hub:visitor-voices')) {
+            const hubNode = {
+                id: 'hub:visitor-voices',
+                name: 'Visitor Voices',
+                type: 'hub',
+                theme: 'visitor',
+                size: 500,
+                isDir: true,
+                depth: 1,
+            };
+            data.nodes.push(hubNode);
+            nodeById['hub:visitor-voices'] = hubNode;
+        }
+
+        // ── Legend ─────────────────────────────────────────────
+        const legendEl = document.getElementById('legend');
+        const h3e = document.createElement('h3'); h3e.textContent = 'file type (fill)';
+        legendEl.append(h3e);
+        for (const [group, ext] of [['image','.png'],['video','.mp4'],['audio','.m4a'],
+            ['code','.py'],['data','.json'],['docs','.md'],['model','.safetensors'],['archive','.zip']]) {
+            const item = document.createElement('div'); item.className = 'legend-item';
+            const dot = document.createElement('div'); dot.className = 'legend-dot';
+            dot.style.background = extColors[ext] || '#555';
+            const label = document.createElement('span'); label.textContent = group;
+            item.append(dot, label); legendEl.append(item);
+        }
+        const h3t = document.createElement('h3'); h3t.textContent = 'theme (border)';
+        legendEl.append(h3t);
+        for (const [theme, color] of Object.entries(themeColors).sort()) {
+            const item = document.createElement('div'); item.className = 'legend-item';
+            item.dataset.theme = theme;
+            const ring = document.createElement('div'); ring.className = 'legend-ring';
+            ring.style.borderColor = color;
+            const label = document.createElement('span');
+            label.textContent = theme.replace(/-/g, ' ');
+            item.append(ring, label);
+            item.addEventListener('click', function() { highlightTheme(this.dataset.theme); });
+            legendEl.append(item);
+        }
+
+        // ── Helpers ────────────────────────────────────────────
+        // Precompute degree (connection count) for each node
+        const degree = {};
+        data.links.forEach(l => {
+            degree[l.source] = (degree[l.source] || 0) + 1;
+            degree[l.target] = (degree[l.target] || 0) + 1;
+        });
+        const maxDegree = Math.max(...Object.values(degree), 1);
+
+        // Sizing strategies — switch by changing sizeMode
+        // 'filesize' = original (log of bytes), 'degree' = connectivity
+        let sizeMode = 'filesize';
+        const sizeFns = {
+            filesize: d => {
+                if (d.type === 'source') return 12;
+                if (d.isDir) return 3;
+                if (d.size === 0) return 1.5;
+                return Math.max(1.5, Math.min(18, Math.log10(d.size + 1) * 1.8));
+            },
+            degree: d => {
+                if (d.type === 'source') return 12;
+                const deg = degree[d.id] || 1;
+                return Math.max(1.5, Math.min(18, Math.sqrt(deg / maxDegree) * 16 + 2));
+            },
+        };
+        function nodeR(d) { return sizeFns[sizeMode](d); }
+        function fillColor(d) { return extColors[d.ext] || themeColors[d.theme] || '#555'; }
+        function strokeColor(d) {
+            if (d.isDir) return d3.color(themeColors[d.theme] || '#555').darker(0.3);
+            return themeColors[d.theme] || '#444';
+        }
+        function formatSize(size) {
+            if (size > 1024 * 1024) return (size / 1024 / 1024).toFixed(1) + ' MB';
+            if (size > 1024) return (size / 1024).toFixed(0) + ' KB';
+            return size + ' bytes';
+        }
+        function defaultOpacity(d) {
+            return thumbNodes.has(d.id) ? 1 : d.isDir ? 0.3 : 0.7;
+        }
+        function defaultStrokeOpacity(d) {
+            return thumbNodes.has(d.id) ? 0.8 : d.isDir ? 0.3 : 0.6;
+        }
+
+        // ── Graph ──────────────────────────────────────────────
+        const w = window.innerWidth, h = window.innerHeight;
+        const svg = d3.select('#graph').append('svg')
+            .attr('width', w).attr('height', h)
+            .attr('role', 'img')
+            .attr('aria-label', 'Salish Sea Dreaming data map');
+        const gEl = svg.append('g');
+        svg.call(d3.zoom().scaleExtent([0.1, 8])
+            .on('zoom', e => gEl.attr('transform', e.transform)));
+
+        const simulation = d3.forceSimulation(data.nodes)
+            .force('link', d3.forceLink(data.links).id(d => d.id)
+                .distance(d => d.target.type === 'source' ? 80 : d.target.isDir ? 20 : 8)
+                .strength(d => d.target.type === 'source' ? 0.3 : 0.7))
+            .force('charge', d3.forceManyBody().strength(d =>
+                d.type === 'source' ? -300 : d.isDir ? -15 : -3))
+            .force('center', d3.forceCenter(w / 2, h / 2))
+            .force('collision', d3.forceCollide().radius(d => nodeR(d) + 1.5))
+            .alphaDecay(0.04);
+
+        const link = gEl.append('g').selectAll('line').data(data.links).join('line')
+            .attr('stroke', '#2a4a6a').attr('stroke-opacity', 0.5).attr('stroke-width', 0.7);
+
+        const nodeEl = gEl.append('g').selectAll('circle').data(data.nodes).join('circle')
+            .attr('r', d => nodeR(d))
+            .attr('fill', d => fillColor(d))
+            .attr('fill-opacity', d => d.isDir ? 0.3 : 0.7)
+            .attr('stroke', d => strokeColor(d))
+            .attr('stroke-width', d => d.type === 'source' ? 2 : d.isDir ? 0.5 : 1)
+            .attr('stroke-opacity', d => d.isDir ? 0.3 : 0.6)
+            .style('cursor', 'pointer');
+
+        const labels = gEl.append('g').selectAll('text')
+            .data(data.nodes.filter(n => n.type === 'source')).join('text')
+            .attr('font-size', '9px').attr('fill', '#4a7a9a')
+            .attr('text-anchor', 'middle').attr('dy', d => nodeR(d) + 12)
+            .attr('font-weight', '300').attr('pointer-events', 'none')
+            .text(d => d.name);
+
+        // ── Tick ───────────────────────────────────────────────
+        simulation.on('tick', () => {
+            link.attr('x1', d => d.source.x).attr('y1', d => d.source.y)
+                .attr('x2', d => d.target.x).attr('y2', d => d.target.y);
+            nodeEl.attr('cx', d => d.x).attr('cy', d => d.y);
+            labels.attr('x', d => d.x).attr('y', d => d.y);
+        });
+        simulation.on('end', () => {});
+
+        // ── Drag ───────────────────────────────────────────────
+        let isDragging = false;
+        nodeEl.call(d3.drag()
+            .on('start', (e, d) => {
+                isDragging = true; hideMiniCard();
+                if (!e.active) simulation.alphaTarget(0.1).restart();
+                d.fx = d.x; d.fy = d.y;
+            })
+            .on('drag', (e, d) => { d.fx = e.x; d.fy = e.y; })
+            .on('end', (e, d) => {
+                isDragging = false;
+                if (!e.active) simulation.alphaTarget(0);
+                d.fx = null; d.fy = null;
+            })
+        );
+
+        // ── Click / Touch ──────────────────────────────────────
+        let suppressClick = false;
+        nodeEl.on('click', (event, d) => {
+            if (suppressClick) { suppressClick = false; return; }
+            event.stopPropagation();
+            showDetail(d);
+        });
+        nodeEl.on('touchstart', () => { suppressClick = true; })
+              .on('touchend', (event, d) => { hideMiniCard(); showDetail(d); });
+        svg.on('click', resetHighlight);
+        // ── Lightbox ────────────────────────────────────────────
+        const lightbox = document.getElementById('lightbox');
+        const lightboxImg = document.getElementById('lightbox-img');
+        document.getElementById('detail-img').addEventListener('click', e => {
+            e.stopPropagation();
+            lightboxImg.src = e.target.src;
+            lightboxImg.alt = e.target.alt;
+            lightbox.classList.add('active');
+        });
+        lightbox.addEventListener('click', () => lightbox.classList.remove('active'));
+
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') {
+                if (lightbox.classList.contains('active')) lightbox.classList.remove('active');
+                else resetHighlight();
+            }
+            // S key toggles sizing mode
+            if (e.key === 's' && !e.ctrlKey && !e.metaKey && document.activeElement === document.body) {
+                const modes = Object.keys(sizeFns);
+                sizeMode = modes[(modes.indexOf(sizeMode) + 1) % modes.length];
+                nodeEl.transition().duration(400)
+                    .attr('r', d => thumbNodes.has(d.id) ? 14 : nodeR(d));
+                simulation.force('collision', d3.forceCollide().radius(d => nodeR(d) + 1.5));
+                simulation.alpha(0.05).restart();
+                document.getElementById('stats').textContent =
+                    data.meta.sources.length + ' sources · ' +
+                    Object.keys(themeColors).length + ' themes · size: ' + sizeMode;
+            }
+        });
+
+        // ── Hover mini-card ────────────────────────────────────
+        const mc = document.getElementById('mini-card');
+        const mcTitle = document.getElementById('mc-title');
+        const mcBadges = document.getElementById('mc-badges');
+        const mcBody = document.getElementById('mc-body');
+        const mcSize = document.getElementById('mc-size');
+        const mcImg = document.getElementById('mc-img');
+        const themeBadgeEl = document.createElement('span'); themeBadgeEl.className = 'mini-card-badge';
+        const extBadgeEl = document.createElement('span'); extBadgeEl.className = 'mini-card-badge';
+
+        function positionMiniCard(x, y) {
+            const pad = 12, mcW = 220, mcH = 200;
+            x = Math.min(Math.max(x + pad, pad), window.innerWidth - mcW - pad);
+            y = Math.min(Math.max(y + pad, pad), window.innerHeight - mcH - pad);
+            mc.style.left = x + 'px'; mc.style.top = y + 'px';
+        }
+
+        function showMiniCard(x, y, d) {
+            if (isDragging) return;
+            const card = cardData[d.id] || {};
+            mcTitle.textContent = card.title || d.name;
+            mcBadges.textContent = '';
+            themeBadgeEl.style.background = themeColors[d.theme] || '#555';
+            themeBadgeEl.textContent = d.theme.replace(/-/g, ' ');
+            mcBadges.append(themeBadgeEl);
+            if (d.ext) {
+                extBadgeEl.style.background = extColors[d.ext] || '#444';
+                extBadgeEl.textContent = d.ext;
+                mcBadges.append(extBadgeEl);
+            }
+            const body = card.body || '';
+            mcBody.textContent = body; mcBody.style.display = body ? 'block' : 'none';
+            mcSize.textContent = d.isDir ? 'directory' : formatSize(d.size);
+            const url = card.thumbnail_url || '';
+            mcImg.classList.remove('loaded');
+            if (url) {
+                mcImg.onload = function() { this.classList.add('loaded'); };
+                mcImg.onerror = function() { this.classList.remove('loaded'); };
+                mcImg.src = url;
+                if (mcImg.complete && mcImg.naturalWidth > 0) mcImg.classList.add('loaded');
+            } else { mcImg.removeAttribute('src'); }
+            positionMiniCard(x, y);
+            mc.classList.add('visible');
+        }
+
+        function hideMiniCard() { mc.classList.remove('visible'); }
+
+        nodeEl.on('mouseenter', (e, d) => showMiniCard(e.clientX, e.clientY, d))
+              .on('mouseleave', hideMiniCard)
+              .on('mousemove', e => { if (mc.classList.contains('visible')) positionMiniCard(e.clientX, e.clientY); });
+
+        // ── Detail panel ───────────────────────────────────────
+        let activeProbe = null;
+
+        function showDetail(d) {
+            hideMiniCard();
+            const card = cardData[d.id] || {};
+
+            document.getElementById('detail-title').textContent = card.title || d.name;
+
+            // Badges
+            const badgesEl = document.getElementById('detail-badges');
+            badgesEl.textContent = '';
+            function addBadge(text, bg) {
+                const b = document.createElement('span');
+                b.className = 'detail-badge'; b.style.background = bg; b.textContent = text;
+                badgesEl.append(b);
+            }
+            addBadge(d.theme.replace(/-/g, ' '), themeColors[d.theme] || '#555');
+            if (d.ext) addBadge(d.ext, extColors[d.ext] || '#444');
+            if (card.category) addBadge(card.category, '#3a5a6a');
+
+            // Image — prefer high-res file, fall back to base64/CDN thumbnail
+            const imgEl = document.getElementById('detail-img');
+            if (activeProbe) { activeProbe.onload = activeProbe.onerror = null; activeProbe = null; }
+            const detailFile = detailImageMap[d.id]; // high-res individual file
+            const rawUrl = card.thumbnail_url || '';
+            if (detailFile || rawUrl) {
+                imgEl.alt = card.title || d.name;
+                if (detailFile) {
+                    // Load high-res file, show thumbnail while loading
+                    if (rawUrl) imgEl.src = rawUrl;
+                    const probe = new Image(); activeProbe = probe;
+                    probe.onload = function() { imgEl.src = detailFile; };
+                    probe.src = detailFile;
+                    if (probe.complete && probe.naturalWidth > 0) imgEl.src = detailFile;
+                } else if (rawUrl.includes('squarespace-cdn')) {
+                    // CDN: use 500w (already cached from SVG patterns)
+                    const hiUrl = rawUrl.replace('format=200w', 'format=500w');
+                    imgEl.src = hiUrl;
+                } else {
+                    imgEl.src = rawUrl;
+                }
+                imgEl.style.display = 'block';
+            } else {
+                imgEl.style.display = 'none'; imgEl.removeAttribute('src');
+            }
+
+            // Artist
+            const artistEl = document.getElementById('detail-artist');
+            artistEl.textContent = card.artist || '';
+            artistEl.style.display = card.artist ? 'block' : 'none';
+
+            // Body
+            const bodyEl = document.getElementById('detail-body');
+            const fullText = [card.body, card.notes].filter(Boolean).join('\n\n');
+            bodyEl.textContent = fullText;
+            bodyEl.style.display = fullText ? 'block' : 'none';
+
+            // Species
+            const speciesEl = document.getElementById('detail-species');
+            const speciesList = document.getElementById('detail-species-list');
+            const speciesIds = card.species || [];
+            speciesList.textContent = '';
+            if (speciesIds.length > 0) {
+                for (const sid of speciesIds) {
+                    const sp = speciesData[sid];
+                    const pill = document.createElement('span');
+                    pill.className = 'detail-species-pill';
+                    pill.textContent = sp ? sp.title : sid.replace('species:', '');
+                    if (sp && sp.scientific_name) pill.title = sp.scientific_name;
+                    speciesList.append(pill);
+                }
+                speciesEl.style.display = 'block';
+            } else { speciesEl.style.display = 'none'; }
+
+            // Connections
+            const connList = document.getElementById('detail-conn-list');
+            connList.textContent = '';
+            const neighbors = adjacency[d.id] || [];
+            const connected = new Set([d.id, ...neighbors]);
+            for (const nid of neighbors.slice(0, 15)) {
+                const neighbor = nodeById[nid];
+                if (!neighbor) continue;
+                const item = document.createElement('div'); item.className = 'detail-conn-item';
+                item.textContent = (cardData[nid] || {}).title || neighbor.name;
+                connList.append(item);
+            }
+            if (neighbors.length > 15) {
+                const more = document.createElement('div');
+                more.className = 'detail-conn-item'; more.style.color = '#2a4a5a';
+                more.textContent = '+ ' + (neighbors.length - 15) + ' more';
+                connList.append(more);
+            }
+
+            // Footer
+            document.getElementById('detail-meta').textContent =
+                d.type + ' \u00b7 ' + d.theme.replace(/-/g, ' ') +
+                (d.ext ? ' \u00b7 ' + d.ext : '') + ' \u00b7 ' +
+                (d.isDir ? 'directory' : formatSize(d.size));
+            document.getElementById('detail-path').textContent =
+                d.id.replace(/^(repo|drive|favorites|handoff|src):/, '');
+
+            document.getElementById('detail').classList.add('active');
+
+            // Highlight
+            nodeEl.attr('fill-opacity', n => connected.has(n.id) ? (thumbNodes.has(n.id) ? 1 : 0.9) : 0.08)
+                  .attr('stroke-opacity', n => connected.has(n.id) ? 0.8 : 0.05);
+            link.attr('stroke-opacity', l => {
+                const s = l.source.id, t = l.target.id;
+                return (s === d.id || t === d.id) ? 0.6 : 0.03;
+            });
+        }
+
+        function resetHighlight() {
+            document.getElementById('detail').classList.remove('active');
+            nodeEl.attr('fill-opacity', defaultOpacity).attr('stroke-opacity', defaultStrokeOpacity);
+            link.attr('stroke-opacity', 0.3);
+        }
+
+        let highlightTimer = null;
+        function highlightTheme(theme) {
+            if (highlightTimer) clearTimeout(highlightTimer);
+            nodeEl.attr('fill-opacity', n => n.theme === theme ? (thumbNodes.has(n.id) ? 1 : 0.9) : (thumbNodes.has(n.id) ? 0.3 : 0.06))
+                  .attr('stroke-opacity', n => n.theme === theme ? 0.8 : 0.04);
+            link.attr('stroke-opacity', 0.03);
+            highlightTimer = setTimeout(resetHighlight, 4000);
+        }
+
+        document.getElementById('detail-close').addEventListener('click', e => {
+            e.stopPropagation(); resetHighlight();
+        });
+
+        // ── Thumbnail pattern fills (visual only, no simulation restart) ──
+        // Strategy: convert base64 data URIs to blob URLs first, then create
+        // SVG patterns from lightweight URLs. Raw base64 in SVG <pattern> <image>
+        // elements chokes the browser at 500+ patterns (4+ MB inline DOM data).
+        function applyThumbnails() {
+            const entries = []; // {url, blobUrl, index}
+            const seenUrls = new Map(); // original url → index
+
+            // Phase 1: collect unique URLs, convert base64 → blob
+            for (const node of data.nodes) {
+                const card = cardData[node.id];
+                if (!card || !card.thumbnail_url) continue;
+                const url = card.thumbnail_url;
+                if (!seenUrls.has(url)) {
+                    let href = url;
+                    if (url.startsWith('data:')) {
+                        // Convert base64 data URI to blob URL
+                        try {
+                            const [header, b64] = url.split(',');
+                            const mime = header.match(/data:([^;]+)/)?.[1] || 'image/jpeg';
+                            const bin = atob(b64);
+                            const arr = new Uint8Array(bin.length);
+                            for (let j = 0; j < bin.length; j++) arr[j] = bin.charCodeAt(j);
+                            href = URL.createObjectURL(new Blob([arr], { type: mime }));
+                        } catch (e) { href = url; } // fallback to raw data URI
+                    } else {
+                        href = url.replace('?format=200w', '?format=500w');
+                    }
+                    const idx = entries.length;
+                    seenUrls.set(url, idx);
+                    entries.push({ url, href, index: idx });
+                }
+                thumbNodes.add(node.id);
+            }
+            if (entries.length === 0) return;
+
+            // Phase 2: create SVG patterns using blob/CDN URLs (no inline base64)
+            const defs = svg.append('defs');
+            for (const entry of entries) {
+                const pat = defs.append('pattern')
+                    .attr('id', 'thumb-' + entry.index)
+                    .attr('width', 1).attr('height', 1)
+                    .attr('patternContentUnits', 'objectBoundingBox');
+                pat.append('image')
+                    .attr('href', entry.href)
+                    .attr('width', 1).attr('height', 1)
+                    .attr('preserveAspectRatio', 'xMidYMid slice');
+            }
+
+            // Phase 3: update node visuals
+            function patternFor(nodeId) {
+                const card = cardData[nodeId];
+                if (!card || !card.thumbnail_url) return -1;
+                return seenUrls.get(card.thumbnail_url) ?? -1;
+            }
+
+            nodeEl
+                .attr('r', d => thumbNodes.has(d.id) ? 14 : nodeR(d))
+                .attr('fill', d => { const p = patternFor(d.id); return p >= 0 ? 'url(#thumb-' + p + ')' : fillColor(d); })
+                .attr('fill-opacity', defaultOpacity)
+                .attr('stroke', d => thumbNodes.has(d.id) ? (themeColors[d.theme] || '#555') : strokeColor(d))
+                .attr('stroke-width', d => thumbNodes.has(d.id) ? 1.5 : d.type === 'source' ? 2 : d.isDir ? 0.5 : 1)
+                .attr('stroke-opacity', defaultStrokeOpacity);
+
+        }
+        // ── Live visitor prompt injection ─────────────────
+        const _visitorCircles = [];
+        const _visitorLabels = [];
+        const _visitorLinks = [];
+        const _linkGroup = d3.select(link.node().parentNode);
+        const _nodeGroup = d3.select(nodeEl.node().parentNode);
+        const _labelGroup = d3.select(labels.node().parentNode);
+
+        // Add hub label (hub is type 'hub', not 'source', so it missed the label binding)
+        const _hubNode = data.nodes.find(n => n.id === 'hub:visitor-voices');
+        if (_hubNode) {
+            _labelGroup.append('text')
+                .datum(_hubNode)
+                .attr('font-size', '9px').attr('fill', '#7fffb2')
+                .attr('text-anchor', 'middle').attr('dy', d => nodeR(d) + 12)
+                .attr('font-weight', '300').attr('pointer-events', 'none')
+                .text('Visitor Voices');
+        }
+
+        // Secondary tick handler for dynamically-added visitor elements
+        simulation.on('tick.visitor', () => {
+            for (const c of _visitorCircles) {
+                const d = c.datum();
+                c.attr('cx', d.x).attr('cy', d.y);
+            }
+            for (const l of _visitorLabels) {
+                const d = l.datum();
+                l.attr('x', d.x).attr('y', d.y);
+            }
+            for (const ln of _visitorLinks) {
+                const d = ln.datum();
+                ln.attr('x1', d.source.x).attr('y1', d.source.y)
+                  .attr('x2', d.target.x).attr('y2', d.target.y);
+            }
+            // Also update hub label position
+            if (_hubNode) {
+                _labelGroup.selectAll('text')
+                    .filter(d => d && d.id === 'hub:visitor-voices')
+                    .attr('x', _hubNode.x).attr('y', _hubNode.y);
+            }
+        });
+
+        function addVisitorNode(evt) {
+            const nodeId = 'visitor-' + evt.id;
+            if (data.nodes.find(n => n.id === nodeId)) return;
+
+            const newNode = {
+                id: nodeId,
+                name: evt.text.length > 40 ? evt.text.slice(0, 40) + '\u2026' : evt.text,
+                type: 'visitor',
+                theme: 'visitor',
+                size: 200,
+                ext: '',
+                isDir: false,
+                depth: 2,
+            };
+
+            // Position near hub
+            const hub = data.nodes.find(n => n.id === 'hub:visitor-voices');
+            if (hub) {
+                newNode.x = hub.x + (Math.random() - 0.5) * 80;
+                newNode.y = hub.y + (Math.random() - 0.5) * 80;
+            }
+
+            data.nodes.push(newNode);
+            nodeById[newNode.id] = newNode;
+            const newLinkData = { source: nodeId, target: 'hub:visitor-voices' };
+            data.links.push(newLinkData);
+
+            // Update adjacency
+            if (!adjacency[nodeId]) adjacency[nodeId] = [];
+            adjacency[nodeId].push('hub:visitor-voices');
+            if (!adjacency['hub:visitor-voices']) adjacency['hub:visitor-voices'] = [];
+            adjacency['hub:visitor-voices'].push(nodeId);
+
+            // Card data for detail panel
+            cardData[nodeId] = {
+                title: evt.text,
+                body: 'Visitor offering \u00b7 ' + evt.source,
+            };
+
+            // Add link line
+            const newLinkEl = _linkGroup.append('line')
+                .datum(newLinkData)
+                .attr('stroke', '#7fffb2').attr('stroke-opacity', 0.4).attr('stroke-width', 0.6);
+            _visitorLinks.push(newLinkEl);
+
+            // Add circle with entry animation
+            const newCircle = _nodeGroup.append('circle')
+                .datum(newNode)
+                .attr('r', 0)
+                .attr('cx', newNode.x || 0)
+                .attr('cy', newNode.y || 0)
+                .attr('fill', '#7fffb2')
+                .attr('fill-opacity', 0.9)
+                .attr('stroke', '#fff')
+                .attr('stroke-width', 2)
+                .style('cursor', 'pointer')
+                .style('filter', 'drop-shadow(0 0 8px #7fffb2)')
+                .on('mouseenter', (e, d) => showMiniCard(e.clientX, e.clientY, d))
+                .on('mouseleave', hideMiniCard)
+                .on('click', (event, d) => { event.stopPropagation(); showDetail(d); })
+                .call(d3.drag()
+                    .on('start', (e, d) => {
+                        isDragging = true; hideMiniCard();
+                        if (!e.active) simulation.alphaTarget(0.1).restart();
+                        d.fx = d.x; d.fy = d.y;
+                    })
+                    .on('drag', (e, d) => { d.fx = e.x; d.fy = e.y; })
+                    .on('end', (e, d) => {
+                        isDragging = false;
+                        if (!e.active) simulation.alphaTarget(0);
+                        d.fx = null; d.fy = null;
+                    })
+                );
+            _visitorCircles.push(newCircle);
+
+            newCircle.transition().duration(800)
+                .attr('r', 14)
+                .on('end', function() {
+                    d3.select(this).transition().duration(2000).attr('r', 10);
+                });
+
+            // Pulse ring
+            _nodeGroup.append('circle')
+                .attr('class', 'visitor-ring')
+                .attr('cx', newNode.x || 0).attr('cy', newNode.y || 0).attr('r', 14)
+                .transition().duration(1200).attr('r', 40).style('opacity', 0).remove();
+
+            // Add label
+            const newLabel = _labelGroup.append('text')
+                .datum(newNode)
+                .attr('font-size', '9px')
+                .attr('fill', '#7fffb2')
+                .attr('text-anchor', 'middle')
+                .attr('dy', 22)
+                .attr('font-weight', '300')
+                .attr('pointer-events', 'none')
+                .text(newNode.name);
+            _visitorLabels.push(newLabel);
+
+            // Restart simulation with new nodes/links
+            simulation.nodes(data.nodes);
+            simulation.force('link').links(data.links);
+            simulation.alpha(0.25).restart();
+        }
+
+        // Connect to /graph/stream SSE for live visitor prompts
+        (function connectGraphStream() {
+            const base = window.location.origin;
+            const es = new EventSource(base + '/graph/stream');
+            es.onmessage = function(e) {
+                if (!e.data || e.data === 'ping') return;
+                try {
+                    const d = JSON.parse(e.data);
+                    if (d.type === 'visitor') addVisitorNode(d);
+                } catch(err) {}
+            };
+            es.onerror = function() {
+                es.close();
+                setTimeout(connectGraphStream, 5000);
+            };
+        })();
+
+    })();
+    </script>
+</body>
+</html>
