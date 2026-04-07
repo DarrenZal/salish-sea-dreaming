@@ -6,6 +6,40 @@ Interactive AI art installation exploring the Salish Sea ecosystem. The vision: 
 
 **Target:** Salt Spring Spring Art Show — "Digital Ecologies: Bridging Nature and Technology" at Mahon Hall, April 10–26, 2026.
 
+## 3090 Remote Access (SSH)
+
+The 3090 at Prav's studio (108 Fraser Rd, Salt Spring) is accessible via SSH from anywhere using a reverse tunnel through poly.
+
+**From local network (same house):**
+```bash
+ssh windows-desktop          # direct, 10.0.0.81
+```
+
+**From anywhere (remote):**
+```bash
+ssh windows-desktop-remote   # via reverse tunnel through poly (37.27.48.12:2222)
+```
+
+**How it works:** The 3090 runs a persistent `SSD-SSH-Tunnel` Task Scheduler task that keeps an outbound SSH tunnel open to poly. The tunnel forwards `poly:2222 → 3090:22`. The Mac's `~/.ssh/config` has `windows-desktop-remote` configured with `ProxyCommand ssh -W 127.0.0.1:2222 poly@37.27.48.12`.
+
+**If the remote tunnel is down** (tunnel task not running after reboot before auto-login, etc.):
+- Connect via local network: `ssh windows-desktop`
+- Or restart the task: `schtasks /run /tn "SSD-SSH-Tunnel"`
+
+**Deploying updated scripts to 3090:**
+```bash
+# Scripts live at C:\Users\user\ (not a git repo — deploy via scp)
+scp scripts/td_relay.py windows-desktop:C:/Users/user/td_relay.py
+scp scripts/gallery_audio.py windows-desktop:C:/Users/user/gallery_audio.py
+```
+
+**Task Scheduler tasks on 3090** (all trigger on logon, run as admin):
+- `SSD-SSH-Tunnel` — reverse SSH tunnel to poly (remote access)
+- `SSD-TouchDesigner` — launches `SSD_gallery_2026-04-06_0321.13.toe` after 30s delay
+- `SSD-TD-Watchdog` — restarts TD if process dies (checks every 2 min)
+
+**Gallery server** runs on poly (`37.27.48.12:9000`), NOT on the 3090. The 3090's relay polls it.
+
 ## Current Status
 
 **Date:** 2026-04-06
@@ -32,9 +66,37 @@ Interactive AI art installation exploring the Salish Sea ecosystem. The vision: 
 4. `cloudflared tunnel create ssd-gallery` → set `TUNNEL_URL` in `.env` → print QR code
 5. Add **OSC In DAT** (port 7000) + **Execute DAT** in TD `.toe` for prompt routing
 6. Run `scripts\setup_nssm.bat` as Administrator → registers ssd-server, ssd-relay, ssd-audio, ssd-tunnel
-7. Verify Briony LoRA trigger token `brionypenn` active in StreamDiffusion; test v5 model if TELUS training done
+7. Resolve Briony style transfer for StreamDiffusion (see options below)
 8. Cellular + WiFi test of full visitor loop before opening
 9. **Credits/attribution confirmations** — Written permission needed from Moonfish Media and David Denning. See `docs/credits-attribution.md`.
+
+## Briony Style Transfer — Options for StreamDiffusion
+
+**Context:** SD-Turbo is architecturally incompatible with SD 1.5 LoRAs (confirmed GitHub issue #182). The `brionypenn` trigger in prompts currently does nothing — no style model is active. The v5 baked model (sd-turbo fine-tune, 5000 steps) produces abstract blobs. The LoRA at 30 steps on TELUS H200 produces excellent results (Prav: "AMAZING", March 31) — that's the proven path for offline rendering.
+
+**Files on 3090 Desktop:**
+- `briony_watercolor_sdturbo.safetensors` (13MB) — SD-Turbo specific LoRA, trained March 28
+- `briony_watercolor_sdturbo_kohya.safetensors` (13MB) — alternate SD-Turbo LoRA (kohya trainer)
+- `briony_watercolor_v1.safetensors` (38MB) — SD 1.5 LoRA, rank 16, 1000 steps
+
+**Option 0 — SD-Turbo LoRA (try first, ~30 min)**
+Already on Desktop. Load `briony_watercolor_sdturbo.safetensors` via SDTD LoRA Loader page. Keep sd-turbo as base model. This LoRA was created March 28 (same day as "30fps in TD" milestone — may have been what was running). Set weight 0.7–1.0.
+- Risk: Unclear if this LoRA was ever validated; unknown training quality
+- If it works: easiest win
+
+**Option 1 — IP-Adapter with Briony painting reference (~1 hour)**
+SDTD has IP-Adapter built-in (`Ipadapterenable`, `Ipadapterscale`, `Ipadapterimage`). Load a Briony watercolor into a MovieFileIn TOP in TD, point IP-Adapter at it, set scale 0.5–0.8. Works with sd-turbo at 4 steps, no training needed.
+- Risk: IP-Adapter + sd-turbo untested; style guidance may be weak at 4 steps
+- Briony reference images: `briony-lora/*.png` (copy to 3090)
+
+**Option 2 — SD 1.5 + LCM + Briony LoRA (~4 hours)**
+Switch `Modelid` to `runwayml/stable-diffusion-v1-5` (download ~4GB to 3090). Load `briony_watercolor_v1.safetensors` via LoRA Loader. Keep `Scheduler: lcm`, run at 8 steps. Expected ~12–18fps. LoRA style visible at 8 steps per compare-v2.html.
+- Risk: fps may feel choppy; need to download SD 1.5 base model
+- Briony LoRA file: `C:\Users\user\Desktop\briony_watercolor_v1.safetensors`
+
+**Option 3 — Pre-rendered + Resolume (zero risk fallback)**
+30-step TELUS renders (ControlNet + LoRA) already produced exhibition-quality videos. Play styled clips as video layers in Resolume. No live diffusion dependency. This was the March 31 decision. Hero videos: H1–H6 in shared Drive.
+- Use this if Options 0–2 fail by April 9 morning
 
 ## Project Vision
 
