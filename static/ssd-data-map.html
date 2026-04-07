@@ -426,13 +426,13 @@
         function isVisible(n) {
             if (n.type === 'hub') return true;
             if (n.type === 'visitor') return true;
+            if (n.depth <= 2) return true;           // depth-0/1/2 always on
             if (!expandedClusters.has(n.clusterHub)) return false;
-            if (n.depth <= 2) return true;
-            return expandedDirs.has(n._parentId);
+            return expandedDirs.has(n._parentId);    // depth-3+ only when expanded
         }
 
         function redraw() {
-            nodeEl.transition().duration(400)
+            nodeEl.transition().duration(500)
                 .attr('r', d => {
                     if (!isVisible(d)) return 0;
                     if (d.type === 'hub') return 28;
@@ -440,14 +440,14 @@
                 })
                 .attr('fill-opacity', d => isVisible(d) ? defaultOpacity(d) : 0)
                 .attr('stroke-opacity', d => isVisible(d) ? defaultStrokeOpacity(d) : 0);
-            link.transition().duration(400)
+            link.transition().duration(500)
                 .attr('stroke-opacity', d => {
                     const sid = d.source.id || d.source;
                     const tid = d.target.id || d.target;
                     const sn = nodeById[sid], tn = nodeById[tid];
-                    return (sn && tn && isVisible(sn) && isVisible(tn)) ? 0.5 : 0;
+                    return (sn && tn && isVisible(sn) && isVisible(tn)) ? 0.4 : 0;
                 });
-            simulation.alpha(0.2).restart();
+            simulation.alpha(0.3).restart();
         }
 
         // ── Graph ──────────────────────────────────────────────
@@ -460,26 +460,57 @@
         svg.call(d3.zoom().scaleExtent([0.1, 8])
             .on('zoom', e => gEl.attr('transform', e.transform)));
 
+        // Pre-position hub nodes in a circle so they spread out from the start
+        const _hubs = data.nodes.filter(n => n.type === 'hub');
+        const _angleStep = (2 * Math.PI) / _hubs.length;
+        _hubs.forEach((n, i) => {
+            n.x = w / 2 + Math.cos(i * _angleStep - Math.PI / 2) * 260;
+            n.y = h / 2 + Math.sin(i * _angleStep - Math.PI / 2) * 260;
+        });
+
         const simulation = d3.forceSimulation(data.nodes)
             .force('link', d3.forceLink(data.links).id(d => d.id)
-                .distance(d => d.target.type === 'hub' ? 160 : d.target.type === 'source' ? 80 : d.target.isDir ? 20 : 8)
-                .strength(d => d.target.type === 'hub' ? 0.4 : d.target.type === 'source' ? 0.3 : 0.7))
-            .force('charge', d3.forceManyBody().strength(d =>
-                d.type === 'hub' ? -400 : d.type === 'source' ? -300 : d.isDir ? -15 : -3))
-            .force('center', d3.forceCenter(w / 2, h / 2))
-            .force('collision', d3.forceCollide().radius(d => nodeR(d) + 1.5))
-            .alphaDecay(0.04);
+                .distance(d => d.target.type === 'hub' ? 120 : d.target.type === 'source' ? 60 : d.target.isDir ? 22 : 10)
+                .strength(d => d.target.type === 'hub' ? 0.3 : d.target.type === 'source' ? 0.2 : 0.6))
+            .force('charge', d3.forceManyBody()
+                .strength(d => d.type === 'hub' ? -500 : d.type === 'source' ? -150 : -30)
+                .distanceMax(350))
+            .force('cluster', function(alpha) {
+                // Pull each node toward its cluster hub — creates the blob effect
+                for (const n of data.nodes) {
+                    if (n.type === 'hub' || n.type === 'source' || !n.clusterHub) continue;
+                    const hub = nodeById[n.clusterHub];
+                    if (!hub || hub.x == null) continue;
+                    const k = 0.12 * alpha;
+                    n.vx += (hub.x - n.x) * k;
+                    n.vy += (hub.y - n.y) * k;
+                }
+            })
+            .force('center', d3.forceCenter(w / 2, h / 2).strength(0.05))
+            .force('collision', d3.forceCollide().radius(d => nodeR(d) + 1))
+            .alphaDecay(0.025);
 
         const link = gEl.append('g').selectAll('line').data(data.links).join('line')
-            .attr('stroke', '#2a4a6a').attr('stroke-opacity', 0).attr('stroke-width', 0.7);
+            .attr('stroke', d => {
+                const sid = d.source.id || d.source;
+                const sn = nodeById[sid];
+                return sn && sn.type === 'hub' ? (HUB_COLORS[sn.id] || '#2a4a6a') : '#2a4a6a';
+            })
+            .attr('stroke-opacity', d => {
+                const sid = d.source.id || d.source;
+                const tid = d.target.id || d.target;
+                const sn = nodeById[sid], tn = nodeById[tid];
+                return (sn && tn && isVisible(sn) && isVisible(tn)) ? 0.4 : 0;
+            })
+            .attr('stroke-width', 0.7);
 
         const nodeEl = gEl.append('g').selectAll('circle').data(data.nodes).join('circle')
-            .attr('r', d => d.type === 'hub' ? 28 : 0)
+            .attr('r', d => isVisible(d) ? (d.type === 'hub' ? 28 : nodeR(d)) : 0)
             .attr('fill', d => fillColor(d))
-            .attr('fill-opacity', d => d.type === 'hub' ? 0.9 : 0)
+            .attr('fill-opacity', d => isVisible(d) ? defaultOpacity(d) : 0)
             .attr('stroke', d => strokeColor(d))
             .attr('stroke-width', d => d.type === 'hub' ? 2.5 : d.type === 'source' ? 2 : d.isDir ? 0.5 : 1)
-            .attr('stroke-opacity', d => d.type === 'hub' ? 0.9 : 0)
+            .attr('stroke-opacity', d => isVisible(d) ? defaultStrokeOpacity(d) : 0)
             .style('cursor', 'pointer');
 
         const labels = gEl.append('g').selectAll('text')
@@ -533,7 +564,7 @@
         nodeEl.on('click', (event, d) => {
             if (suppressClick) { suppressClick = false; return; }
             event.stopPropagation();
-            // Hub click: toggle cluster expansion
+            // Hub click: toggle depth-3+ expansion for that cluster
             if (d.type === 'hub' && d.id !== 'hub:visitor-voices') {
                 if (expandedClusters.has(d.id)) {
                     expandedClusters.delete(d.id);
@@ -545,7 +576,7 @@
                 redraw();
                 return;
             }
-            // Directory click: toggle children expansion
+            // Directory click: toggle direct children expansion (depth-3+)
             if (d.isDir && d.type !== 'hub') {
                 if (expandedDirs.has(d.id)) {
                     expandedDirs.delete(d.id);
