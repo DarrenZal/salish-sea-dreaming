@@ -41,10 +41,26 @@ HUB_LABELS = {
     'hub:other':          'Other',
 }
 
+SKIP_NAMES = {'.gitkeep', '.gitignore', '.gitattributes', '.letta', '.github'}
+SKIP_PREFIXES = ('log-run',)
+SKIP_SUFFIXES = ('.log', '.tmp', '.lock', '.pid')
+
+def is_noisy(n):
+    name = n.get('name', '')
+    return (name in SKIP_NAMES or
+            any(name.startswith(p) for p in SKIP_PREFIXES) or
+            any(name.endswith(s) for s in SKIP_SUFFIXES))
+
 src = Path('static/ssd-data-map.json')
 data = json.loads(src.read_text())
-nodes = data['nodes']
-links = data['links']
+
+# Filter noisy nodes before building clusters
+skip_ids = {n['id'] for n in data['nodes'] if is_noisy(n)}
+if skip_ids:
+    print(f"Filtering {len(skip_ids)} noisy nodes: {sorted(skip_ids)}")
+nodes = [n for n in data['nodes'] if n['id'] not in skip_ids]
+links = [l for l in data['links']
+         if l['source'] not in skip_ids and l['target'] not in skip_ids]
 
 # Tag every node with its cluster hub
 for n in nodes:
