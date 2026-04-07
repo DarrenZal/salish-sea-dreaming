@@ -245,7 +245,7 @@
     (async function() {
         // ── Load graph data ────────────────────────────────────
         let resp;
-        try { resp = await fetch('ssd-data-map.json'); }
+        try { resp = await fetch('ssd-data-map-zoom.json'); }
         catch (e) {
             document.getElementById('subtitle').textContent = 'network error \u2014 tap to reload';
             document.getElementById('subtitle').style.cursor = 'pointer';
@@ -262,13 +262,26 @@
         const themeColors = data.theme_colors;
         const extColors = data.ext_colors;
         themeColors['visitor'] = '#7fffb2';
+        const HUB_COLORS = {
+            'hub:briony-art':     '#c8a06a',
+            'hub:research-data':  '#4a8ab0',
+            'hub:ecosystem':      '#5aaa7a',
+            'hub:marine-ref':     '#6a8ac8',
+            'hub:training':       '#aa6a8a',
+            'hub:generated':      '#c8a04a',
+            'hub:video':          '#8a6ac8',
+            'hub:docs':           '#6aaac8',
+            'hub:code':           '#c86a6a',
+            'hub:other':          '#6a8a8a',
+            'hub:visitor-voices': '#7fffb2',
+        };
 
         // ── Stats ──────────────────────────────────────────────
         const fileNodes = data.nodes.filter(n => n.type === 'file');
         const totalSize = fileNodes.reduce((s, n) => s + n.size, 0);
         document.getElementById('subtitle').textContent =
-            data.nodes.length + ' nodes \u00b7 ' + fileNodes.length + ' files \u00b7 ' +
-            (totalSize / 1024 / 1024).toFixed(0) + ' MB';
+            fileNodes.length + ' files \u00b7 ' +
+            (totalSize / 1024 / 1024).toFixed(0) + ' MB \u00b7 click a hub to explore';
         document.getElementById('stats').textContent =
             data.meta.sources.length + ' sources \u00b7 ' + Object.keys(themeColors).length + ' themes';
 
@@ -308,6 +321,12 @@
             if (!adjacency[t]) adjacency[t] = [];
             adjacency[s].push(t);
             adjacency[t].push(s);
+        });
+
+        // Pre-compute _parentId for depth-3+ expansion in semantic zoom
+        data.links.forEach(l => {
+            const tn = nodeById[l.target];
+            if (tn && !tn._parentId) tn._parentId = l.source;
         });
 
         // ── Visitor hub node ───────────────────────────────
@@ -376,9 +395,13 @@
                 return Math.max(1.5, Math.min(18, Math.sqrt(deg / maxDegree) * 16 + 2));
             },
         };
-        function nodeR(d) { return sizeFns[sizeMode](d); }
-        function fillColor(d) { return extColors[d.ext] || themeColors[d.theme] || '#555'; }
+        function nodeR(d) { if (d.type === 'hub') return 28; return sizeFns[sizeMode](d); }
+        function fillColor(d) {
+            if (d.type === 'hub') return HUB_COLORS[d.id] || '#7fffb2';
+            return extColors[d.ext] || themeColors[d.theme] || '#555';
+        }
         function strokeColor(d) {
+            if (d.type === 'hub') return d3.color(HUB_COLORS[d.id] || '#7fffb2').brighter(0.3);
             if (d.isDir) return d3.color(themeColors[d.theme] || '#555').darker(0.3);
             return themeColors[d.theme] || '#444';
         }
@@ -388,10 +411,43 @@
             return size + ' bytes';
         }
         function defaultOpacity(d) {
+            if (d.type === 'hub') return 0.9;
             return thumbNodes.has(d.id) ? 1 : d.isDir ? 0.3 : 0.7;
         }
         function defaultStrokeOpacity(d) {
+            if (d.type === 'hub') return 0.9;
             return thumbNodes.has(d.id) ? 0.8 : d.isDir ? 0.3 : 0.6;
+        }
+
+        // ── Semantic zoom state ────────────────────────────────
+        const expandedClusters = new Set();
+        const expandedDirs = new Set();
+
+        function isVisible(n) {
+            if (n.type === 'hub') return true;
+            if (n.type === 'visitor') return true;
+            if (!expandedClusters.has(n.clusterHub)) return false;
+            if (n.depth <= 2) return true;
+            return expandedDirs.has(n._parentId);
+        }
+
+        function redraw() {
+            nodeEl.transition().duration(400)
+                .attr('r', d => {
+                    if (!isVisible(d)) return 0;
+                    if (d.type === 'hub') return 28;
+                    return thumbNodes.has(d.id) ? 14 : nodeR(d);
+                })
+                .attr('fill-opacity', d => isVisible(d) ? defaultOpacity(d) : 0)
+                .attr('stroke-opacity', d => isVisible(d) ? defaultStrokeOpacity(d) : 0);
+            link.transition().duration(400)
+                .attr('stroke-opacity', d => {
+                    const sid = d.source.id || d.source;
+                    const tid = d.target.id || d.target;
+                    const sn = nodeById[sid], tn = nodeById[tid];
+                    return (sn && tn && isVisible(sn) && isVisible(tn)) ? 0.5 : 0;
+                });
+            simulation.alpha(0.2).restart();
         }
 
         // ── Graph ──────────────────────────────────────────────
@@ -406,24 +462,24 @@
 
         const simulation = d3.forceSimulation(data.nodes)
             .force('link', d3.forceLink(data.links).id(d => d.id)
-                .distance(d => d.target.type === 'source' ? 80 : d.target.isDir ? 20 : 8)
-                .strength(d => d.target.type === 'source' ? 0.3 : 0.7))
+                .distance(d => d.target.type === 'hub' ? 160 : d.target.type === 'source' ? 80 : d.target.isDir ? 20 : 8)
+                .strength(d => d.target.type === 'hub' ? 0.4 : d.target.type === 'source' ? 0.3 : 0.7))
             .force('charge', d3.forceManyBody().strength(d =>
-                d.type === 'source' ? -300 : d.isDir ? -15 : -3))
+                d.type === 'hub' ? -400 : d.type === 'source' ? -300 : d.isDir ? -15 : -3))
             .force('center', d3.forceCenter(w / 2, h / 2))
             .force('collision', d3.forceCollide().radius(d => nodeR(d) + 1.5))
             .alphaDecay(0.04);
 
         const link = gEl.append('g').selectAll('line').data(data.links).join('line')
-            .attr('stroke', '#2a4a6a').attr('stroke-opacity', 0.5).attr('stroke-width', 0.7);
+            .attr('stroke', '#2a4a6a').attr('stroke-opacity', 0).attr('stroke-width', 0.7);
 
         const nodeEl = gEl.append('g').selectAll('circle').data(data.nodes).join('circle')
-            .attr('r', d => nodeR(d))
+            .attr('r', d => d.type === 'hub' ? 28 : 0)
             .attr('fill', d => fillColor(d))
-            .attr('fill-opacity', d => d.isDir ? 0.3 : 0.7)
+            .attr('fill-opacity', d => d.type === 'hub' ? 0.9 : 0)
             .attr('stroke', d => strokeColor(d))
-            .attr('stroke-width', d => d.type === 'source' ? 2 : d.isDir ? 0.5 : 1)
-            .attr('stroke-opacity', d => d.isDir ? 0.3 : 0.6)
+            .attr('stroke-width', d => d.type === 'hub' ? 2.5 : d.type === 'source' ? 2 : d.isDir ? 0.5 : 1)
+            .attr('stroke-opacity', d => d.type === 'hub' ? 0.9 : 0)
             .style('cursor', 'pointer');
 
         const labels = gEl.append('g').selectAll('text')
@@ -432,6 +488,18 @@
             .attr('text-anchor', 'middle').attr('dy', d => nodeR(d) + 12)
             .attr('font-weight', '300').attr('pointer-events', 'none')
             .text(d => d.name);
+        const hubLabels = gEl.append('g').selectAll('text')
+            .data(data.nodes.filter(n => n.type === 'hub')).join('text')
+            .attr('font-size', '12px').attr('fill', d => HUB_COLORS[d.id] || '#7fffb2')
+            .attr('text-anchor', 'middle').attr('dy', '-2.4em')
+            .attr('font-weight', '500').attr('pointer-events', 'none')
+            .text(d => d.name);
+        const hubCounts = gEl.append('g').selectAll('text')
+            .data(data.nodes.filter(n => n.type === 'hub' && n.childCount > 0)).join('text')
+            .attr('font-size', '9px').attr('fill', 'rgba(255,255,255,0.35)')
+            .attr('text-anchor', 'middle').attr('dy', '-1.1em')
+            .attr('pointer-events', 'none')
+            .text(d => '\u00d7' + d.childCount);
 
         // ── Tick ───────────────────────────────────────────────
         simulation.on('tick', () => {
@@ -439,6 +507,8 @@
                 .attr('x2', d => d.target.x).attr('y2', d => d.target.y);
             nodeEl.attr('cx', d => d.x).attr('cy', d => d.y);
             labels.attr('x', d => d.x).attr('y', d => d.y);
+            hubLabels.attr('x', d => d.x).attr('y', d => d.y);
+            hubCounts.attr('x', d => d.x).attr('y', d => d.y);
         });
         simulation.on('end', () => {});
 
@@ -463,6 +533,28 @@
         nodeEl.on('click', (event, d) => {
             if (suppressClick) { suppressClick = false; return; }
             event.stopPropagation();
+            // Hub click: toggle cluster expansion
+            if (d.type === 'hub' && d.id !== 'hub:visitor-voices') {
+                if (expandedClusters.has(d.id)) {
+                    expandedClusters.delete(d.id);
+                    data.nodes.filter(n => n.clusterHub === d.id)
+                        .forEach(n => expandedDirs.delete(n.id));
+                } else {
+                    expandedClusters.add(d.id);
+                }
+                redraw();
+                return;
+            }
+            // Directory click: toggle children expansion
+            if (d.isDir && d.type !== 'hub') {
+                if (expandedDirs.has(d.id)) {
+                    expandedDirs.delete(d.id);
+                } else {
+                    expandedDirs.add(d.id);
+                }
+                redraw();
+                return;
+            }
             showDetail(d);
         });
         nodeEl.on('touchstart', () => { suppressClick = true; })
@@ -654,18 +746,32 @@
             document.getElementById('detail').classList.add('active');
 
             // Highlight
-            nodeEl.attr('fill-opacity', n => connected.has(n.id) ? (thumbNodes.has(n.id) ? 1 : 0.9) : 0.08)
-                  .attr('stroke-opacity', n => connected.has(n.id) ? 0.8 : 0.05);
+            nodeEl.attr('fill-opacity', n => {
+                if (!isVisible(n)) return 0;
+                if (n.type === 'hub') return connected.has(n.id) ? 0.9 : 0.35;
+                return connected.has(n.id) ? (thumbNodes.has(n.id) ? 1 : 0.9) : 0.08;
+            }).attr('stroke-opacity', n => {
+                if (!isVisible(n)) return 0;
+                return connected.has(n.id) ? 0.8 : 0.05;
+            });
             link.attr('stroke-opacity', l => {
                 const s = l.source.id, t = l.target.id;
+                const sn = nodeById[s], tn = nodeById[t];
+                if (!sn || !tn || !isVisible(sn) || !isVisible(tn)) return 0;
                 return (s === d.id || t === d.id) ? 0.6 : 0.03;
             });
         }
 
         function resetHighlight() {
             document.getElementById('detail').classList.remove('active');
-            nodeEl.attr('fill-opacity', defaultOpacity).attr('stroke-opacity', defaultStrokeOpacity);
-            link.attr('stroke-opacity', 0.3);
+            nodeEl.attr('fill-opacity', d => isVisible(d) ? defaultOpacity(d) : 0)
+                  .attr('stroke-opacity', d => isVisible(d) ? defaultStrokeOpacity(d) : 0);
+            link.attr('stroke-opacity', d => {
+                const sid = d.source.id || d.source;
+                const tid = d.target.id || d.target;
+                const sn = nodeById[sid], tn = nodeById[tid];
+                return (sn && tn && isVisible(sn) && isVisible(tn)) ? 0.5 : 0;
+            });
         }
 
         let highlightTimer = null;
@@ -738,12 +844,16 @@
             }
 
             nodeEl
-                .attr('r', d => thumbNodes.has(d.id) ? 14 : nodeR(d))
+                .attr('r', d => {
+                    if (!isVisible(d)) return 0;
+                    if (d.type === 'hub') return 28;
+                    return thumbNodes.has(d.id) ? 14 : nodeR(d);
+                })
                 .attr('fill', d => { const p = patternFor(d.id); return p >= 0 ? 'url(#thumb-' + p + ')' : fillColor(d); })
-                .attr('fill-opacity', defaultOpacity)
+                .attr('fill-opacity', d => isVisible(d) ? defaultOpacity(d) : 0)
                 .attr('stroke', d => thumbNodes.has(d.id) ? (themeColors[d.theme] || '#555') : strokeColor(d))
-                .attr('stroke-width', d => thumbNodes.has(d.id) ? 1.5 : d.type === 'source' ? 2 : d.isDir ? 0.5 : 1)
-                .attr('stroke-opacity', defaultStrokeOpacity);
+                .attr('stroke-width', d => d.type === 'hub' ? 2.5 : thumbNodes.has(d.id) ? 1.5 : d.type === 'source' ? 2 : d.isDir ? 0.5 : 1)
+                .attr('stroke-opacity', d => isVisible(d) ? defaultStrokeOpacity(d) : 0);
 
         }
         // ── Live visitor prompt injection ─────────────────
@@ -754,16 +864,8 @@
         const _nodeGroup = d3.select(nodeEl.node().parentNode);
         const _labelGroup = d3.select(labels.node().parentNode);
 
-        // Add hub label (hub is type 'hub', not 'source', so it missed the label binding)
+        // hub:visitor-voices label is rendered by the hubLabels selection above
         const _hubNode = data.nodes.find(n => n.id === 'hub:visitor-voices');
-        if (_hubNode) {
-            _labelGroup.append('text')
-                .datum(_hubNode)
-                .attr('font-size', '9px').attr('fill', '#7fffb2')
-                .attr('text-anchor', 'middle').attr('dy', d => nodeR(d) + 12)
-                .attr('font-weight', '300').attr('pointer-events', 'none')
-                .text('Visitor Voices');
-        }
 
         // Secondary tick handler for dynamically-added visitor elements
         simulation.on('tick.visitor', () => {
