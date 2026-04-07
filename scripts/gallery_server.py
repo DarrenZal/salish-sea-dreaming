@@ -99,7 +99,7 @@ BLOCKED_WORDS = [
 # ---------------------------------------------------------------------------
 
 BASE_PREFIX = ""
-ECOLOGICAL_SUFFIX = ", Salish Sea, Pacific Northwest, marine ecosystem"
+ECOLOGICAL_SUFFIX = ""
 MAX_VISITOR_CHARS = 150
 
 
@@ -176,6 +176,10 @@ PHOTO_DIR.mkdir(exist_ok=True)
 
 # SSE broadcast for knowledge graph viewers (multiple simultaneous)
 graph_subscribers: List[asyncio.Queue] = []
+
+# Server uptime + last-prompt tracking for /health
+_server_start: datetime = datetime.utcnow()
+_last_prompt_at: Optional[datetime] = None
 
 # ---------------------------------------------------------------------------
 # Database helpers
@@ -264,12 +268,13 @@ async def broadcast_sse(item: PromptItem) -> None:
 # ---------------------------------------------------------------------------
 
 async def advance() -> None:
-    global current, dwell_elapsed, td_prompt_seq, td_last_prompt
+    global current, dwell_elapsed, td_prompt_seq, td_last_prompt, _last_prompt_at
     current = queue.popleft()
     send_osc("/salish/prompt/visitor", current.enriched_text)
     send_osc("/salish/prompt/weight", 1.0)
     send_osc("/salish/queue/count", len(queue))
     dwell_elapsed = 0
+    _last_prompt_at = datetime.utcnow()
     logger.info(f"Queue advance → prompt id={current.id} source={current.source} relay={'yes' if active_td_relay_q else 'no'}")
     await update_sent_at(current.id)
 
@@ -398,7 +403,7 @@ def require_admin(credentials: HTTPBasicCredentials = Depends(security)) -> None
 # ---------------------------------------------------------------------------
 
 class PromptRequest(BaseModel):
-    text: str
+    text: Optional[str] = None  # absent = photo-only submission
     source: str = "typed"
     photo_data: Optional[str] = None  # base64 JPEG from visitor camera
 
@@ -415,48 +420,53 @@ async def post_prompt(body: PromptRequest, request: Request):
     check_rate_limit(request)
 
     # Validate
-    raw = body.text.strip()
-    if not raw:
-        raise HTTPException(status_code=400, detail="Prompt text must not be empty.")
+    raw = body.text.strip() if body.text else ""
+
+    # Photo-only submissions are valid (no text required)
+    if not raw and not body.photo_data:
+        raise HTTPException(status_code=400, detail="Prompt text or photo required.")
 
     if body.source not in ("typed", "voice"):
         raise HTTPException(status_code=400, detail="source must be 'typed' or 'voice'.")
 
-    # Determine display text (before enrichment checks for blocking)
-    blocked = is_blocked(raw[:MAX_VISITOR_CHARS])
-    if blocked:
-        logger.info("Blocked word category matched — silently replacing prompt")
-        display_text = "the sea dreaming"
-    else:
-        display_text = raw[:MAX_VISITOR_CHARS]
+    prompt_id = None
 
-    enriched = enrich_prompt(raw)
+    # Only queue a text prompt if the visitor actually typed something
+    if raw:
+        blocked = is_blocked(raw[:MAX_VISITOR_CHARS])
+        if blocked:
+            logger.info("Blocked word category matched — silently replacing prompt")
+            display_text = "the sea dreaming"
+        else:
+            display_text = raw[:MAX_VISITOR_CHARS]
 
-    # Enforce max queue size — drop oldest
-    if len(queue) >= MAX_QUEUE_SIZE:
-        dropped = queue.popleft()
-        logger.info(f"Queue full — dropped oldest prompt id={dropped.id}")
+        enriched = enrich_prompt(raw)
 
-    # Insert into DB
-    prompt_id = await insert_prompt(raw, enriched, body.source)
+        # Enforce max queue size — drop oldest
+        if len(queue) >= MAX_QUEUE_SIZE:
+            dropped = queue.popleft()
+            logger.info(f"Queue full — dropped oldest prompt id={dropped.id}")
 
-    item = PromptItem(
-        id=prompt_id,
-        raw_text=raw,
-        enriched_text=enriched,
-        display_text=display_text,
-        source=body.source,
-        submitted_at=datetime.utcnow(),
-    )
-    queue.append(item)
-    logger.info(f"Queued prompt id={prompt_id} source={body.source} queue_size={len(queue)}")
+        prompt_id = await insert_prompt(raw, enriched, body.source)
 
-    # Handle visitor photo
+        item = PromptItem(
+            id=prompt_id,
+            raw_text=raw,
+            enriched_text=enriched,
+            display_text=display_text,
+            source=body.source,
+            submitted_at=datetime.utcnow(),
+        )
+        queue.append(item)
+        logger.info(f"Queued prompt id={prompt_id} source={body.source} queue_size={len(queue)}")
+
+    # Handle visitor photo (works for photo-only or text+photo)
     if body.photo_data:
-        await _save_visitor_photo(prompt_id, body.photo_data)
+        await _save_visitor_photo(prompt_id or 0, body.photo_data)
 
-    # Broadcast SSE to all listeners
-    await broadcast_sse(item)
+    # Broadcast SSE to all listeners (only if a text prompt was queued)
+    if raw:
+        await broadcast_sse(item)
 
     return {"status": "queued", "position": len(queue)}
 
@@ -651,11 +661,15 @@ async def graph_stream(request: Request):
 
 @app.get("/health")
 async def health():
-    current_text = current.enriched_text if current else BASE_PROMPT
+    now = datetime.utcnow()
+    uptime_s = int((now - _server_start).total_seconds())
+    last_prompt_age_s = int((now - _last_prompt_at).total_seconds()) if _last_prompt_at else None
     return {
         "status": "ok",
+        "uptime_s": uptime_s,
         "queue_size": len(queue),
-        "current_prompt": current_text,
+        "current_prompt": current.enriched_text if current else BASE_PROMPT,
+        "last_prompt_age_s": last_prompt_age_s,
     }
 
 

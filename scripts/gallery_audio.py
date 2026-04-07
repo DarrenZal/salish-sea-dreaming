@@ -45,6 +45,20 @@ _smoothed_volume = 0.0
 _smoothed_energy = 0.0
 
 
+def _get_validated_device(preferred_index: int) -> int:
+    """Return preferred device index if valid, else fall back to system default input."""
+    import sounddevice as sd
+    try:
+        devices = sd.query_devices()
+        if preferred_index < len(devices) and devices[preferred_index]["max_input_channels"] > 0:
+            return preferred_index
+    except Exception:
+        pass
+    default_in = sd.default.device[0]
+    print(f"[audio] Device {preferred_index} not available — using system default ({default_in})")
+    return default_in
+
+
 def _compute_spectral_energy_ratio(data: np.ndarray) -> float:
     """
     Compute high-frequency energy ratio as a proxy for spectral centroid.
@@ -120,13 +134,14 @@ def run_monitor() -> None:
     from pythonosc import udp_client
 
     osc_client = udp_client.SimpleUDPClient(TD_HOST, TD_OSC_PORT)
+    device_index = _get_validated_device(AUDIO_DEVICE_INDEX)
     print(f"OSC target: {TD_HOST}:{TD_OSC_PORT}")
-    print(f"Audio device index: {AUDIO_DEVICE_INDEX}  |  Peak reference: {AUDIO_PEAK_REFERENCE}")
+    print(f"Audio device index: {device_index}  |  Peak reference: {AUDIO_PEAK_REFERENCE}")
     print("Sending /salish/audio/volume and /salish/audio/energy every 100ms. Ctrl+C to stop.\n")
 
     try:
         with sd.InputStream(
-            device=AUDIO_DEVICE_INDEX,
+            device=device_index,
             channels=1,
             samplerate=SAMPLE_RATE,
             blocksize=BLOCK_SIZE,

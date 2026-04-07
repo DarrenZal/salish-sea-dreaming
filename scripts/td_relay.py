@@ -230,6 +230,6 @@ while True:
         break
     except Exception as e:
         consecutive_errors += 1
-        backoff = min(5 * consecutive_errors, 60)
+        backoff = min(5 * consecutive_errors, 15)
         log.warning(f"Poll error ({consecutive_errors}): {e}. Retrying in {backoff}s...")
         time.sleep(backoff)

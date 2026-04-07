@@ -84,6 +84,9 @@ def frameStart(frame):
         _state["visitor_active"] = False
         _state["visitor_start"] = 0
         _state["interrupted_prompt"] = 0
+        # Always reset slot 22 to original on startup
+        sd.par["Promptdict" + str(VISITOR_SLOT) + "concept"] = ORIG_SLOT22
+        sd.par["Promptdict" + str(VISITOR_SLOT) + "weight"]  = 0.0
 
     now = absTime.seconds
     has_visitor = queue and queue.numRows > 1
