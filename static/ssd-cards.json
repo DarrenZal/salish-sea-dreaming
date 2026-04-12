@@ -23,7 +23,13 @@
     },
     "hub:visitor-dreams": {
       "title": "Visitor Dreams",
-      "body": "Your words become dreams. Speak or type at the QR portal — your vision travels through GPT filtering, OSC, and TouchDesigner to the projection wall. The machine renders your dream back to you. Bidirectional: your words travel to the machine; its dreams travel back to the wall."
+      "body": "Your words become dreams. Speak or type your offering — the installation renders your vision as a living watercolor on the projection wall. Every dream joins the collective Dreamworld, where visitor voices cluster into emergent patterns.",
+      "links": [
+        {
+          "label": "Explore the Dreamworld",
+          "url": "/graph-assets/dreamworld.html"
+        }
+      ]
     },
     "hub:knowledge": {
       "title": "Knowledge & Research",

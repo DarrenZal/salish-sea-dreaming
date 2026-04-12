@@ -136,6 +136,15 @@
         .detail-conn-item {
             font-size: 10px; color: #5a7a9a; font-weight: 300; padding: 2px 0;
         }
+        .detail-links { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+        .detail-link {
+            display: inline-block; padding: 4px 12px; border-radius: 14px;
+            font-size: 10px; letter-spacing: 0.04em;
+            background: rgba(122,168,200,0.12); border: 1px solid #2a4a6a;
+            color: #7fffb2; text-decoration: none; cursor: pointer;
+            transition: background 0.2s;
+        }
+        .detail-link:hover { background: rgba(122,168,200,0.25); }
         .detail-footer { padding-top: 10px; border-top: 1px solid #1a2a3a; }
         .detail-meta { font-size: 9px; color: #3a5a6a; margin-bottom: 3px; }
         .detail-path {
@@ -400,6 +409,7 @@
         <img class="detail-img" id="detail-img" alt="" loading="lazy">
         <div class="detail-artist" id="detail-artist"></div>
         <div class="detail-body" id="detail-body"></div>
+        <div class="detail-links" id="detail-links" style="display:none"></div>
         <div class="detail-species" id="detail-species" style="display:none">
             <div class="detail-species-label">species depicted</div>
             <div class="detail-species-list" id="detail-species-list"></div>
@@ -742,10 +752,12 @@
             .style('cursor', 'pointer');
 
         const labels = gEl.append('g').selectAll('text')
-            .data(data.nodes.filter(n => n.type === 'source')).join('text')
-            .attr('font-size', '9px').attr('fill', '#4a7a9a')
+            .data(data.nodes.filter(n => n.type === 'source' || n.type === 'installation')).join('text')
+            .attr('font-size', d => d.type === 'installation' ? '11px' : '9px')
+            .attr('fill', d => d.type === 'installation' ? '#ba8a4a' : '#4a7a9a')
             .attr('text-anchor', 'middle').attr('dy', d => nodeR(d) + (isMobile ? 16 : 12))
-            .attr('font-weight', '300').attr('pointer-events', 'none')
+            .attr('font-weight', d => d.type === 'installation' ? '400' : '300')
+            .attr('pointer-events', 'none')
             .text(d => d.name);
         const hubLabels = gEl.append('g').selectAll('text')
             .data(data.nodes.filter(n => n.type === 'hub')).join('text')
@@ -826,7 +838,7 @@
             })
         );
         function handleNodeClick(d) {
-            // Hub click: toggle expansion
+            // Hub click: toggle expansion + show detail
             if (d.type === 'hub' && d.id !== 'hub:visitor-dreams') {
                 if (expandedClusters.has(d.id)) {
                     expandedClusters.delete(d.id);
@@ -836,9 +848,8 @@
                     expandedClusters.add(d.id);
                 }
                 redraw();
-                return;
             }
-            // Cluster/species: toggle children + show detail
+            // Cluster/species: toggle children
             if (d.type === 'cluster-summary' || d.type === 'species') {
                 if (expandedDirs.has(d.id)) expandedDirs.delete(d.id);
                 else expandedDirs.add(d.id);
@@ -976,6 +987,24 @@
             const fullText = [card.body, card.notes].filter(Boolean).join('\n\n');
             bodyEl.textContent = fullText;
             bodyEl.style.display = fullText ? 'block' : 'none';
+
+            // Links
+            const linksEl = document.getElementById('detail-links');
+            linksEl.textContent = '';
+            const cardLinks = card.links || [];
+            if (cardLinks.length > 0) {
+                cardLinks.forEach(l => {
+                    const a = document.createElement('a');
+                    a.className = 'detail-link';
+                    a.href = l.url;
+                    a.target = '_blank';
+                    a.textContent = l.label;
+                    linksEl.append(a);
+                });
+                linksEl.style.display = 'flex';
+            } else {
+                linksEl.style.display = 'none';
+            }
 
             // Species
             const speciesEl = document.getElementById('detail-species');
