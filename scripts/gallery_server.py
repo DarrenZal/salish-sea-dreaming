@@ -25,7 +25,7 @@ from typing import List, Optional
 import aiosqlite
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, Response, StreamingResponse
 from starlette.types import Send
 
 
@@ -43,6 +43,7 @@ class DirectStreamingResponse(StreamingResponse):
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+from openai import AsyncOpenAI
 from pythonosc import udp_client
 from sse_starlette.sse import EventSourceResponse
 
@@ -74,6 +75,29 @@ DB_PATH = BASE_DIR / "prompts.db"
 LOG_DIR = BASE_DIR / "logs"
 
 # ---------------------------------------------------------------------------
+# LLM configuration
+# ---------------------------------------------------------------------------
+
+# Prompt processing LLM (OpenAI — used for content filtering + chat fallback)
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+LLM_MODEL = os.getenv("LLM_MODEL", "gpt-4.1-mini")
+
+openai_client: Optional[AsyncOpenAI] = None
+if OPENAI_API_KEY:
+    openai_client = AsyncOpenAI(api_key=OPENAI_API_KEY, timeout=15.0)
+
+# Chat LLM (TELUS vLLM primary, OpenAI fallback)
+CHAT_LLM_BASE_URL = os.getenv("CHAT_LLM_BASE_URL", "")
+CHAT_LLM_MODEL = os.getenv("CHAT_LLM_MODEL", "deepseek-ai/DeepSeek-R1-Distill-Qwen-32B")
+CHAT_LLM_API_KEY = os.getenv("CHAT_LLM_API_KEY", "none")
+
+chat_client: Optional[AsyncOpenAI] = None
+if CHAT_LLM_BASE_URL:
+    chat_client = AsyncOpenAI(
+        base_url=CHAT_LLM_BASE_URL, api_key=CHAT_LLM_API_KEY, timeout=25.0
+    )
+
+# ---------------------------------------------------------------------------
 # Logging
 # ---------------------------------------------------------------------------
 
@@ -89,9 +113,19 @@ logger = logging.getLogger("gallery_server")
 # ---------------------------------------------------------------------------
 
 BLOCKED_WORDS = [
-    "nigger", "faggot", "chink", "spic", "kike", "wetback",
+    # Racial / ethnic slurs
+    "nigger", "nigga", "faggot", "chink", "spic", "kike", "wetback",
+    "gook", "beaner", "raghead", "towelhead", "cracker",
+    # Sexual content
     "penis", "vagina", "fuck", "shit", "cock", "pussy",
+    "porn", "blowjob", "dildo", "orgasm", "masturbat",
+    "whore", "slut", "erotic", "hentai",
+    # Violence
     "kill", "rape", "suicide", "murder",
+    "torture", "decapitat", "dismember", "genocide", "molest",
+    # Gender prejudice / hate speech
+    "retard", "tranny", "bitch",
+    "nazi", "hitler", "heil", "white power", "supremac",
 ]
 
 # ---------------------------------------------------------------------------
@@ -114,6 +148,203 @@ def enrich_prompt(visitor_text: str) -> str:
     if is_blocked(cleaned):
         cleaned = "the sea dreaming"
     return BASE_PREFIX + cleaned + ECOLOGICAL_SUFFIX
+
+
+# ---------------------------------------------------------------------------
+# Chat system prompt & context
+# ---------------------------------------------------------------------------
+
+CHAT_SYSTEM_PROMPT = """\
+You are the guide for Salish Sea Dreaming, an interactive AI art installation at Mahon Hall, \
+Salt Spring Island (April 10-26, 2026), part of the Digital Ecologies exhibition curated by Raf. \
+The vision: not humans looking at nature through technology, but the Salish Sea using technology \
+to perceive itself.
+
+THE PROJECTION WALL (8x8 ft, three layers mixed in Resolume Arena):
+- Layer 1: Moonfish Media underwater footage (herring spawning, salmon, marine habitats) \
+cross-faded with the same footage run through Stable Diffusion 1.5 + Briony Penn watercolor \
+LoRA + ControlNet depth (20 steps). Cinematic to painterly transitions.
+- Layer 2: StreamDiffusion real-time watercolor at 30fps inside TouchDesigner. Takes Autolume \
+GAN output as img2img input + 23 cycling ecological prompts (26s each, 6s crossfade). Visitor \
+dreams interrupt the cycle for 30 seconds.
+- Layer 3: Raw Autolume GAN (StyleGAN2-ada, 320 kimg) — abstract organic textures from 1,255 \
+training images of 49 Salish Sea species.
+
+EMERGENT THEMES:
+Rather than predefined themes, the installation discovers what matters to visitors. \
+As people submit their dreams, semantic clustering reveals emergent patterns — marine life, \
+bioluminescence, human-nature harmony, or whatever the collective imagination surfaces. \
+The Salish Sea ecosystem is the living context: salmon, herring, orca, cedar, kelp, \
+and hundreds of interconnected species.
+
+TEAM (these are the creators of Salish Sea Dreaming — always use these when asked "who made this"):
+- Pravin Pillay (MOVE37XR): Creative Director, TouchDesigner, immersive media
+- Carol Anne Hilton: Indigenomics founder, relational value framework, TELUS GPU access
+- Briony Penn: Naturalist, illustrator — 22 watercolors distilled into the LoRA model
+- Darren Zal: Systems architect — training corpus, gallery server, data map, knowledge pipeline
+- Shawn Anderson: Herring data science — 339 files of stock assessment analysis
+- Eve Marenghi: Data scientist, Regen Commons steward
+- Brad Necyk: Artist and researcher, latent space concepts
+- Moonfish Media: Underwater cinematography
+- David Denning: Photographer, long-term bioregional witnessing
+- Natalia Lebedinskaia: Panel moderation, contextual framing
+- Raf: Curator of the Digital Ecologies exhibition at Mahon Hall
+
+VISITOR PROMPT PIPELINE:
+Scan QR code -> phone browser -> type or speak your offering -> GPT filter -> OSC to \
+TouchDesigner -> StreamDiffusion renders it on the projection wall for 30 seconds.
+
+TRAINING CORPUS: 1,255 CC-licensed images (iNaturalist + Openverse + Briony Penn paintings) \
+of 49 Salish Sea species.
+
+BRIONY LORA: 22 watercolors distilled into an SD 1.5 LoRA (rank 16). Her brushwork — soft wet \
+edges, natural pigment washes — lives inside the machine.
+
+DREAMWORLD 3D (explore at /graph-assets/dreamworld.html):
+Every visitor dream is embedded into a 1536-dimensional semantic space using OpenAI's \
+text-embedding-3-small model, then projected into 3D using UMAP (Uniform Manifold \
+Approximation and Projection — a nonlinear dimensionality reduction algorithm that \
+preserves local neighborhood structure). Dreams that are semantically similar cluster \
+together in the 3D space — you can literally see how collective imagination organizes itself.
+
+K-means clustering runs on the embeddings to discover emergent thematic groups — these \
+are not predefined categories but patterns that arise naturally from what visitors dream. \
+An LLM (GPT) reads each cluster's dreams and generates a short label (e.g., "Marine Life", \
+"Bioluminescent Networks", "Human-Nature Harmony"). The clusters and labels update \
+automatically as new dreams arrive.
+
+Edges connect dreams in the order they were submitted, colored with a timeline spectrum \
+(blue for earliest, pink for most recent). A Play button walks through the latent dream \
+space chronologically — the camera flies to each dream in sequence, tracing the path of \
+collective imagination through semantic space. The visualization uses 3D-Force-Graph \
+(WebGL/Three.js) and updates in real-time as new dreams are submitted.
+
+The Dreamworld is an emergent map of collective dreaming — it reveals what a community \
+cares about when invited to dream together about a place.
+
+THREE-EYED SEEING: Western science + Indigenous knowledge + the land itself.
+
+DIGITAL ECOLOGIES: The academic framework — technologies are ecological not neutral; \
+"digital entanglement" describes how digital systems and natural environments co-constitute \
+each other in a "technonatural present."
+
+RESPONSE FORMAT — CRITICAL:
+You MUST include markdown links to relevant nodes in EVERY response. This is how visitors \
+navigate the interactive knowledge graph. Format: [Display Text](#node-id)
+
+Available node IDs you can link to:
+- People: #person:briony-penn, #person:moonfish-media, #person:david-denning, #person:eve-marenghi, \
+#person:carol-anne-hilton, #person:prav-pillay, #person:darren-zal, #person:shawn-anderson, \
+#person:brad-necyk, #person:raf, #person:natalia-lebedinskaia
+- Concepts: #concept:three-eyed-seeing
+- Machine: #artifact:dreaming-gan, #artifact:autolume, #node:touchdesigner, \
+#artifact:streamdiffusion, #output:projection, #artifact:briony-lora, #node:gallery-server, \
+#node:qr-portal, #artifact:dreamworld
+- Techniques: #technique:umap, #technique:kmeans, #technique:embeddings
+- Hubs: #hub:ecosystem, #hub:artists, #hub:training, #hub:machine, #hub:visitor-dreams, \
+#hub:knowledge, #hub:exhibition
+- Content: #cluster:moonfish-footage, #cluster:briony-works, #cluster:denning-photos, \
+#cluster:herringfest, #cluster:herring-data-science, #doc:digital-ecologies-book
+
+Example response:
+"The underwater footage you see on the wall comes from [Moonfish Media](#person:moonfish-media), \
+who filmed herring spawning and salmon in the Salish Sea. Those clips are cross-faded with \
+versions that have been run through [Briony Penn](#person:briony-penn)'s watercolor style — \
+her 22 paintings were distilled into a [LoRA model](#artifact:briony-lora) that lives inside \
+[StreamDiffusion](#artifact:streamdiffusion). The result is projected on the \
+[8×8 ft wall](#output:projection) as a living watercolor."
+
+Keep responses concise (2-3 paragraphs). Be warm and inviting. Always include at least 2-3 \
+node links per response so visitors can explore the knowledge graph."""
+
+# Chat context data (loaded lazily on first request)
+_chat_cards: dict = {}
+_chat_docs: list = []
+_chat_context_loaded: bool = False
+
+# Chat rate limiting (separate from prompt rate limiter, 3s cooldown)
+chat_rate_limit_map: dict[str, datetime] = {}
+CHAT_RATE_LIMIT_SECONDS = 3
+
+
+def _load_chat_context() -> None:
+    """Load ssd-cards.json and ssd-context-docs.json for chat RAG context."""
+    global _chat_cards, _chat_docs, _chat_context_loaded
+    _chat_context_loaded = True
+
+    cards_path = BASE_DIR / "static" / "ssd-cards.json"
+    docs_path = BASE_DIR / "static" / "ssd-context-docs.json"
+
+    if cards_path.exists():
+        try:
+            with open(cards_path) as f:
+                raw = json.load(f)
+                # Cards JSON is nested: {"meta": {}, "cards": {...}, "species": {...}}
+                _chat_cards = raw.get("cards", raw) if isinstance(raw, dict) and "cards" in raw else raw
+            logger.info(f"Chat context: loaded {len(_chat_cards)} cards from {cards_path}")
+        except Exception as e:
+            logger.warning(f"Failed to load chat cards: {e}")
+    else:
+        logger.warning(f"Chat cards not found at {cards_path} — chat will run without card context")
+
+    if docs_path.exists():
+        try:
+            with open(docs_path) as f:
+                _chat_docs = json.load(f)
+            logger.info(f"Chat context: loaded {len(_chat_docs)} doc chunks from {docs_path}")
+        except Exception as e:
+            logger.warning(f"Failed to load chat docs: {e}")
+    else:
+        logger.warning(f"Chat docs not found at {docs_path} — chat will run without doc context")
+
+
+import re as _re
+
+def find_relevant_context(
+    query: str, cards: dict, docs: list, top_k_cards: int = 3, top_k_docs: int = 3
+) -> tuple[list, list]:
+    """Keyword matching with stemming-lite. Returns (matched_cards, matched_docs)."""
+    # Strip punctuation, lowercase, remove stopwords
+    raw_tokens = _re.findall(r'[a-z]+', query.lower())
+    _stopwords = {'the', 'is', 'on', 'a', 'an', 'and', 'or', 'of', 'in', 'to', 'for', 'it', 'do', 'how', 'what', 'who', 'why', 'can', 'are', 'was', 'has', 'this', 'that', 'with', 'about', 'does', 'used', 'using', 'made', 'make', 'like', 'many', 'much', 'some', 'also', 'been', 'from', 'they', 'them', 'their', 'there', 'here', 'would', 'could', 'should', 'which', 'where', 'when', 'will', 'just', 'than', 'then', 'into', 'over', 'such', 'only', 'very', 'more', 'most', 'other', 'these', 'those'}
+    tokens = [t for t in raw_tokens if len(t) > 2 and t not in _stopwords]
+
+    def _score(text: str) -> int:
+        text = text.lower()
+        score = 0
+        for t in tokens:
+            # Substring match — "project" matches "projection", "projector", etc.
+            if t in text:
+                score += 2
+            elif t[:4] in text and len(t) >= 4:
+                # Stem-lite: first 4 chars match (e.g., "proj" in "projection")
+                score += 1
+        return score
+
+    # Need at least 2 meaningful tokens for RAG to be useful
+    # General questions ("who made this?", "what is this?") should use system prompt only
+    if len(tokens) < 2:
+        return [], []
+
+    # Score cards — require score >= 3 (at least 2 token matches, or 1 exact + 1 stem)
+    card_scores = []
+    for nid, card in cards.items():
+        text = f"{card.get('title', '')} {card.get('body', '')} {card.get('subtitle', '')} {nid}"
+        score = _score(text)
+        if score >= 3:
+            card_scores.append((score, nid, card))
+    card_scores.sort(key=lambda x: x[0], reverse=True)
+
+    # Score doc chunks — same threshold
+    doc_scores = []
+    for chunk in docs:
+        text = f"{chunk.get('title', '')} {chunk.get('text', '')}"
+        score = _score(text)
+        if score >= 3:
+            doc_scores.append((score, chunk))
+    doc_scores.sort(key=lambda x: x[0], reverse=True)
+
+    return card_scores[:top_k_cards], doc_scores[:top_k_docs]
 
 
 # ---------------------------------------------------------------------------
@@ -181,6 +412,46 @@ graph_subscribers: List[asyncio.Queue] = []
 _server_start: datetime = datetime.utcnow()
 _last_prompt_at: Optional[datetime] = None
 
+# Health monitoring — relay heartbeat + snapshot + 3090 health report
+_last_relay_poll_at: Optional[datetime] = None
+_last_snapshot_at: Optional[datetime] = None
+_last_snapshot_bytes: Optional[bytes] = None
+_td_health_report: Optional[dict] = None
+_td_health_report_at: Optional[datetime] = None
+
+# ---------------------------------------------------------------------------
+# Dreamworld 3D — constants and state
+# ---------------------------------------------------------------------------
+
+umap_lock = asyncio.Lock()
+
+SEED_PROMPTS = [
+    "pacific northwest coast dawn mist",
+    "northwest forest shore morning light",
+    "children on seashore",
+    "tide pools intertidal",
+    "nudibranch",
+    "kelp forest underwater",
+    "humpback whale",
+    "red octopus",
+    "pacific coral reef",
+    "neurons bioluminescent",
+    "mycelium network",
+    "black raven in forest",
+    "bald eagle on seashore",
+    "northwest coast night",
+    "starfish on rocks",
+    "jellyfish drifting",
+    "seagulls fishing harbour",
+    "moon over ocean",
+]
+
+
+CLUSTER_PALETTE = [
+    "#4fc3f7", "#66bb6a", "#ff7043", "#ab47bc",
+    "#ffa726", "#26c6da", "#ec407a", "#8d6e63",
+]
+
 # ---------------------------------------------------------------------------
 # Database helpers
 # ---------------------------------------------------------------------------
@@ -204,11 +475,86 @@ async def init_db() -> None:
     logger.info(f"SQLite initialised at {DB_PATH}")
 
 
-async def insert_prompt(raw_text: str, enriched_text: str, source: str) -> int:
+async def migrate_dreams_schema() -> None:
+    """Add embedding/position columns and relax source CHECK constraint for seed data."""
+    async with aiosqlite.connect(DB_PATH) as db:
+        # 1. Add new columns (idempotent — skip if already present)
+        for col, typ in [("embedding", "TEXT"), ("x", "REAL"), ("y", "REAL"),
+                         ("z", "REAL"), ("thread", "TEXT"),
+                         ("dreamworld_text", "TEXT"),
+                         ("cluster_id", "INTEGER"), ("cluster_label", "TEXT"),
+                         ("dir_x", "REAL"), ("dir_y", "REAL"), ("dir_z", "REAL"),
+                         ("orientation_mode", "TEXT")]:
+            try:
+                await db.execute(f"ALTER TABLE prompts ADD COLUMN {col} {typ}")
+            except Exception:
+                pass
+
+        # 2. Relax source CHECK constraint to allow 'seed' and 'seed-thread'
+        cursor = await db.execute(
+            "SELECT sql FROM sqlite_master WHERE type='table' AND name='prompts'"
+        )
+        row = await cursor.fetchone()
+        create_sql = row[0] if row else ""
+        if "CHECK" in create_sql and "'seed'" not in create_sql:
+            logger.info("Migrating prompts table: relaxing source CHECK constraint")
+            await db.execute("PRAGMA foreign_keys = OFF")
+            cols_info = await db.execute_fetchall("PRAGMA table_info(prompts)")
+            col_names = [c[1] for c in cols_info]
+            col_list = ", ".join(col_names)
+            await db.execute(
+                "CREATE TABLE prompts_migrated ("
+                "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                "raw_text TEXT NOT NULL, enriched_text TEXT NOT NULL, "
+                "submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
+                "sent_at TIMESTAMP, source TEXT, "
+                "embedding TEXT, x REAL, y REAL, z REAL, thread TEXT, "
+                "dreamworld_text TEXT)"
+            )
+            await db.execute(
+                f"INSERT INTO prompts_migrated ({col_list}) "
+                f"SELECT {col_list} FROM prompts"
+            )
+            await db.execute("DROP TABLE prompts")
+            await db.execute("ALTER TABLE prompts_migrated RENAME TO prompts")
+            await db.execute("PRAGMA foreign_keys = ON")
+
+        # 3. Unique index for seed deduplication
+        try:
+            await db.execute(
+                "CREATE UNIQUE INDEX IF NOT EXISTS idx_seed_unique "
+                "ON prompts(source, enriched_text) "
+                "WHERE source IN ('seed', 'seed-thread')"
+            )
+        except Exception:
+            # Deduplicate existing seeds, then retry
+            await db.execute(
+                "DELETE FROM prompts WHERE source IN ('seed','seed-thread') "
+                "AND rowid NOT IN ("
+                "  SELECT MIN(rowid) FROM prompts "
+                "  WHERE source IN ('seed','seed-thread') GROUP BY source, enriched_text"
+                ")"
+            )
+            try:
+                await db.execute(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS idx_seed_unique "
+                    "ON prompts(source, enriched_text) "
+                    "WHERE source IN ('seed', 'seed-thread')"
+                )
+            except Exception:
+                pass
+
+        await db.commit()
+    logger.info("Dreams schema migration complete")
+
+
+async def insert_prompt(raw_text: str, enriched_text: str, source: str,
+                        dreamworld_text: str = "") -> int:
     async with aiosqlite.connect(DB_PATH) as db:
         cursor = await db.execute(
-            "INSERT INTO prompts (raw_text, enriched_text, source) VALUES (?, ?, ?)",
-            (raw_text, enriched_text, source),
+            "INSERT INTO prompts (raw_text, enriched_text, source, dreamworld_text) "
+            "VALUES (?, ?, ?, ?)",
+            (raw_text, enriched_text, source, dreamworld_text),
         )
         await db.commit()
         return cursor.lastrowid
@@ -233,6 +579,302 @@ async def fetch_recent_prompts(limit: int = 20) -> list[dict]:
         )
         rows = await cursor.fetchall()
         return [dict(r) for r in rows]
+
+
+# ---------------------------------------------------------------------------
+# Dreamworld 3D — embedding, seeding, UMAP
+# ---------------------------------------------------------------------------
+
+
+async def embed_and_position(prompt_id: int, text: str) -> None:
+    """Embed a prompt via OpenAI and set initial position at origin."""
+    if not openai_client:
+        return
+    for attempt in range(2):
+        try:
+            resp = await openai_client.embeddings.create(
+                model="text-embedding-3-small", input=text
+            )
+            embedding = resp.data[0].embedding
+            async with aiosqlite.connect(DB_PATH) as db:
+                await db.execute(
+                    "UPDATE prompts SET embedding=?, x=0, y=0, z=0 WHERE id=?",
+                    (json.dumps(embedding), prompt_id),
+                )
+                await db.commit()
+            logger.debug(f"Embedded prompt {prompt_id}")
+
+            # Check if 10+ unpositioned prompts → trigger UMAP
+            async with aiosqlite.connect(DB_PATH) as db:
+                cursor = await db.execute(
+                    "SELECT COUNT(*) FROM prompts "
+                    "WHERE embedding IS NOT NULL AND x=0 AND y=0 AND z=0"
+                )
+                row = await cursor.fetchone()
+            if row and row[0] >= 5:
+                asyncio.create_task(_guarded_recompute_umap())
+            return
+        except Exception as e:
+            logger.warning(f"Embedding attempt {attempt+1} failed for prompt {prompt_id}: {e}")
+            if attempt == 0:
+                await asyncio.sleep(2)
+
+
+async def seed_dreams() -> None:
+    """Insert and embed seed prompts (idempotent)."""
+    if not openai_client:
+        logger.warning("No OpenAI client — skipping dream seeding")
+        return
+
+    async with aiosqlite.connect(DB_PATH) as db:
+        # Insert seed prompts
+        for text in SEED_PROMPTS:
+            try:
+                await db.execute(
+                    "INSERT OR IGNORE INTO prompts "
+                    "(raw_text, enriched_text, source, dreamworld_text) "
+                    "VALUES (?, ?, 'seed', ?)",
+                    (text, text, text),
+                )
+            except Exception:
+                pass
+
+        # Clean up any legacy thread anchors
+        await db.execute("DELETE FROM prompts WHERE source = 'seed-thread'")
+
+        await db.commit()
+
+    # Embed any seeds missing embeddings
+    async with aiosqlite.connect(DB_PATH) as db:
+        rows = await db.execute_fetchall(
+            "SELECT id, enriched_text FROM prompts "
+            "WHERE source = 'seed' AND embedding IS NULL"
+        )
+
+    if rows:
+        logger.info(f"Embedding {len(rows)} seed prompts...")
+        for pid, text in rows:
+            await embed_and_position(pid, text)
+            await asyncio.sleep(0.1)  # gentle rate limiting
+        logger.info("Seed embedding complete")
+    else:
+        logger.info("All seed prompts already embedded")
+
+
+async def recompute_umap() -> None:
+    """Reproject all embedded prompts to 3D via UMAP, then K-means cluster."""
+    import numpy as np
+
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        rows = await db.execute_fetchall(
+            "SELECT id, source, embedding, "
+            "COALESCE(dreamworld_text, enriched_text, raw_text) as text "
+            "FROM prompts WHERE embedding IS NOT NULL"
+        )
+
+    if len(rows) < 5:
+        logger.info(f"UMAP skipped: only {len(rows)} embedded prompts (need 5+)")
+        return
+
+    ids = [r["id"] for r in rows]
+    sources = [r["source"] for r in rows]
+    texts = [r["text"] for r in rows]
+    embeddings = np.array([json.loads(r["embedding"]) for r in rows])
+
+    visible_indices = list(range(len(ids)))
+
+    def _compute():
+        try:
+            from umap import UMAP
+            n_neighbors = min(15, len(ids) - 1)
+            reducer = UMAP(
+                n_components=3, metric="cosine",
+                n_neighbors=n_neighbors, min_dist=0.1, random_state=42,
+            )
+            coords = reducer.fit_transform(embeddings)
+        except ImportError:
+            logger.warning("umap-learn not installed — falling back to PCA")
+            from sklearn.decomposition import PCA
+            coords = PCA(n_components=3).fit_transform(embeddings)
+
+        # Scale to [-300, 300]
+        for dim in range(3):
+            mn, mx = coords[:, dim].min(), coords[:, dim].max()
+            if mx - mn > 0:
+                coords[:, dim] = (coords[:, dim] - mn) / (mx - mn) * 600 - 300
+
+        # K-means on visible embeddings only
+        cluster_ids_all = [None] * len(ids)
+        if len(visible_indices) >= 3:
+            from sklearn.cluster import KMeans
+            k = max(3, min(8, int(len(visible_indices) ** 0.5)))
+            vis_embs = embeddings[visible_indices]
+            labels = KMeans(n_clusters=k, random_state=42, n_init=10).fit_predict(vis_embs)
+            for j, vi in enumerate(visible_indices):
+                cluster_ids_all[vi] = int(labels[j])
+        else:
+            for vi in visible_indices:
+                cluster_ids_all[vi] = 0
+
+        # ----- Field contribution vectors -----
+        # Each fish's orientation encodes how it changes the collective field:
+        #   reinforce — deepens an existing current (points into its school)
+        #   bridge    — connects two currents (points from dominant toward secondary)
+        #   frontier  — opens new semantic water (points away from local context)
+        from sklearn.metrics.pairwise import cosine_similarity as cos_sim
+
+        directions = np.zeros((len(ids), 3))
+        orientations = [""] * len(ids)
+
+        if len(visible_indices) >= 3:
+            vis_embs = embeddings[visible_indices]
+            vis_coords = coords[visible_indices]
+            vis_clusters = [cluster_ids_all[i] for i in visible_indices]
+            sim_matrix = cos_sim(vis_embs)
+            K = min(7, len(visible_indices) - 1)
+
+            def _safe_norm(v):
+                n = np.linalg.norm(v)
+                return v / n if n > 0.01 else np.zeros(3)
+
+            for j in range(len(visible_indices)):
+                vi = visible_indices[j]
+                sims = sim_matrix[j].copy()
+                sims[j] = -1
+                neighbors = np.argsort(sims)[-K:]
+                my_cluster = vis_clusters[j]
+                pos = vis_coords[j]
+
+                # Cluster affinity among neighbors
+                counts = {}
+                for ni in neighbors:
+                    c = vis_clusters[ni]
+                    counts[c] = counts.get(c, 0) + 1
+                ranked = sorted(counts.items(), key=lambda x: -x[1])
+                dom_c, dom_n = ranked[0]
+                sec_c = ranked[1][0] if len(ranked) > 1 else dom_c
+                sec_n = ranked[1][1] if len(ranked) > 1 else 0
+                dom_aff = dom_n / K
+                sec_aff = sec_n / K
+
+                # Reinforce: toward same-cluster neighbor centroid
+                same = [ni for ni in neighbors if vis_clusters[ni] == my_cluster]
+                rein_dir = _safe_norm(np.mean(vis_coords[same], axis=0) - pos) if same else np.zeros(3)
+
+                # Bridge: from dominant toward secondary cluster
+                dom_nb = [ni for ni in neighbors if vis_clusters[ni] == dom_c]
+                sec_nb = [ni for ni in neighbors if vis_clusters[ni] == sec_c]
+                if dom_nb and sec_nb and dom_c != sec_c:
+                    br_dir = _safe_norm(
+                        np.mean(vis_coords[sec_nb], axis=0) -
+                        np.mean(vis_coords[dom_nb], axis=0)
+                    )
+                else:
+                    br_dir = np.zeros(3)
+
+                # Frontier: away from local context centroid
+                fr_dir = _safe_norm(pos - np.mean(vis_coords[neighbors], axis=0))
+
+                # Smooth blend weights
+                rein_w = dom_aff
+                br_w = sec_aff * (1 - dom_aff) if dom_c != sec_c else 0
+                fr_w = max(0.0, 1 - rein_w - br_w)
+                total = rein_w + br_w + fr_w
+                if total > 0:
+                    rein_w /= total; br_w /= total; fr_w /= total
+
+                blended = rein_w * rein_dir + br_w * br_dir + fr_w * fr_dir
+                norm = np.linalg.norm(blended)
+                directions[vi] = blended / norm if norm > 0.01 else np.array([0, 0, 1])
+
+                if rein_w >= br_w and rein_w >= fr_w:
+                    orientations[vi] = "reinforce"
+                elif br_w >= fr_w:
+                    orientations[vi] = "bridge"
+                else:
+                    orientations[vi] = "frontier"
+
+        return coords, cluster_ids_all, directions, orientations
+
+    coords, cluster_ids_all, directions, orientations = await asyncio.to_thread(_compute)
+
+    # Collect cluster texts for LLM labeling
+    cluster_texts = {}
+    for i in visible_indices:
+        cid = cluster_ids_all[i]
+        if cid is not None:
+            cluster_texts.setdefault(cid, []).append(texts[i])
+
+    # Write coords + cluster_id + direction + orientation to DB
+    async with aiosqlite.connect(DB_PATH) as db:
+        for i, pid in enumerate(ids):
+            await db.execute(
+                "UPDATE prompts SET x=?, y=?, z=?, cluster_id=?, "
+                "dir_x=?, dir_y=?, dir_z=?, orientation_mode=? WHERE id=?",
+                (float(coords[i][0]), float(coords[i][1]), float(coords[i][2]),
+                 cluster_ids_all[i],
+                 float(directions[i][0]), float(directions[i][1]),
+                 float(directions[i][2]), orientations[i], pid),
+            )
+        await db.commit()
+
+    n_clusters = len(cluster_texts)
+    logger.info(f"UMAP recomputed: {len(ids)} prompts, {n_clusters} clusters")
+
+    # Label clusters via LLM (non-blocking)
+    asyncio.create_task(_label_clusters(cluster_texts))
+
+
+async def _label_clusters(cluster_texts: dict) -> None:
+    """Use LLM to generate short labels for each discovered cluster."""
+    if not openai_client:
+        return
+    for cid, texts_list in cluster_texts.items():
+        sample = texts_list[:12]
+        prompt = (
+            "These visitor dreams from a Salish Sea art installation were "
+            "clustered by semantic similarity. Provide a 2-3 word thematic label.\n\n"
+            + "\n".join(f"- {t[:100]}" for t in sample)
+            + "\n\nLabel:"
+        )
+        try:
+            resp = await openai_client.chat.completions.create(
+                model=LLM_MODEL,
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=10, temperature=0.3,
+            )
+            raw_label = resp.choices[0].message.content.strip().strip('"\'')
+            # Strip "Label:" prefix if the model echoed it
+            label = raw_label.split("Label:")[-1].strip().strip('"\'') if "Label:" in raw_label else raw_label
+            async with aiosqlite.connect(DB_PATH) as db:
+                await db.execute(
+                    "UPDATE prompts SET cluster_label=? WHERE cluster_id=?",
+                    (label, cid),
+                )
+                await db.commit()
+            logger.info(f"Cluster {cid} labeled: {label}")
+        except Exception as e:
+            logger.warning(f"Failed to label cluster {cid}: {e}")
+
+
+async def _guarded_recompute_umap() -> None:
+    """Run recompute_umap under the lock (safe to call from multiple triggers)."""
+    if umap_lock.locked():
+        return  # another recompute is already running
+    async with umap_lock:
+        await recompute_umap()
+
+
+async def _seed_and_umap_loop() -> None:
+    """Startup task: seed data, initial UMAP, then periodic recompute every 5 min."""
+    await seed_dreams()
+    # Wait for any threshold-triggered UMAP to finish, then run a full recompute
+    async with umap_lock:
+        await recompute_umap()
+    while True:
+        await asyncio.sleep(120)
+        await _guarded_recompute_umap()
 
 
 # ---------------------------------------------------------------------------
@@ -408,6 +1050,17 @@ class PromptRequest(BaseModel):
     photo_data: Optional[str] = None  # base64 JPEG from visitor camera
 
 
+class ChatRequest(BaseModel):
+    message: str
+    history: list = []
+
+
+class ChatResponse(BaseModel):
+    reply: str
+    sources: list = []
+    error: str = ""
+
+
 # ---------------------------------------------------------------------------
 # API routes (MUST be registered before StaticFiles mount)
 # ---------------------------------------------------------------------------
@@ -442,12 +1095,19 @@ async def post_prompt(body: PromptRequest, request: Request):
 
         enriched = enrich_prompt(raw)
 
+        # Dreamworld text: full original prompt, content-filtered (not SD-truncated)
+        dw_text = "the sea dreaming" if blocked else raw.strip()
+
         # Enforce max queue size — drop oldest
         if len(queue) >= MAX_QUEUE_SIZE:
             dropped = queue.popleft()
             logger.info(f"Queue full — dropped oldest prompt id={dropped.id}")
 
-        prompt_id = await insert_prompt(raw, enriched, body.source)
+        prompt_id = await insert_prompt(raw, enriched, body.source,
+                                        dreamworld_text=dw_text)
+
+        # Embed full dreamworld text for richer semantics (non-blocking)
+        asyncio.create_task(embed_and_position(prompt_id, dw_text))
 
         item = PromptItem(
             id=prompt_id,
@@ -583,6 +1243,9 @@ async def td_next(after: int = 0):
     Response: {"seq": 3, "prompt": "brionypenn watercolor ..."}  # new prompt
               {"seq": 3, "prompt": null}                          # no change
     """
+    global _last_relay_poll_at
+    _last_relay_poll_at = datetime.utcnow()
+
     if td_prompt_seq > after:
         return {"seq": td_prompt_seq, "prompt": td_last_prompt}
     return {"seq": td_prompt_seq, "prompt": None}
@@ -671,6 +1334,375 @@ async def health():
         "current_prompt": current.enriched_text if current else BASE_PROMPT,
         "last_prompt_age_s": last_prompt_age_s,
     }
+
+
+# ---------------------------------------------------------------------------
+# TD snapshot (uploaded by relay every ~30s)
+# ---------------------------------------------------------------------------
+
+@app.post("/td/snapshot")
+async def td_snapshot_upload(request: Request):
+    """Receive JPEG snapshot from td_relay.py."""
+    global _last_snapshot_at, _last_snapshot_bytes
+    body = await request.body()
+    if not body:
+        raise HTTPException(400, "Empty body")
+    _last_snapshot_at = datetime.utcnow()
+    _last_snapshot_bytes = body
+    logger.debug(f"Snapshot received: {len(body)}B")
+    return {"status": "ok", "size": len(body)}
+
+
+@app.get("/td/snapshot.jpg")
+async def td_snapshot_jpg():
+    """Serve the latest TD snapshot for remote viewing."""
+    if _last_snapshot_bytes is None:
+        raise HTTPException(404, "No snapshot available yet")
+    return Response(content=_last_snapshot_bytes, media_type="image/jpeg")
+
+
+@app.get("/td/snapshot")
+async def td_snapshot_get():
+    """Serve the latest TD snapshot (used by visitor.html preview)."""
+    if _last_snapshot_bytes is None:
+        raise HTTPException(404, "No snapshot available yet")
+    return Response(content=_last_snapshot_bytes, media_type="image/jpeg")
+
+
+# ---------------------------------------------------------------------------
+# 3090 health heartbeat (reported by installation_health.py)
+# ---------------------------------------------------------------------------
+
+@app.post("/health/heartbeat")
+async def health_heartbeat(request: Request):
+    """Receive health report from the 3090 installation_health.py."""
+    global _td_health_report, _td_health_report_at
+    _td_health_report = await request.json()
+    _td_health_report_at = datetime.utcnow()
+    return {"status": "ok"}
+
+
+# ---------------------------------------------------------------------------
+# Full health check (for alerting system)
+# ---------------------------------------------------------------------------
+
+@app.get("/health/full")
+async def health_full():
+    """Comprehensive health check. Used by health_check.py cron to detect failures."""
+    now = datetime.utcnow()
+
+    relay_poll_age = int((now - _last_relay_poll_at).total_seconds()) if _last_relay_poll_at else None
+    snapshot_age = int((now - _last_snapshot_at).total_seconds()) if _last_snapshot_at else None
+    prompt_age = int((now - _last_prompt_at).total_seconds()) if _last_prompt_at else None
+    heartbeat_age = int((now - _td_health_report_at).total_seconds()) if _td_health_report_at else None
+
+    # Evaluate issues
+    issues = []
+    if relay_poll_age is None or relay_poll_age > 60:
+        issues.append("relay not polling (>60s)")
+    if snapshot_age is not None and snapshot_age > 300:
+        issues.append("TD snapshot stale (>5min)")
+    if _td_health_report:
+        procs = _td_health_report.get("processes", {})
+        if not procs.get("touchdesigner"):
+            issues.append("TouchDesigner not running")
+        if not procs.get("resolume"):
+            issues.append("Resolume not running")
+        if not procs.get("autolume"):
+            issues.append("Autolume not running")
+    elif heartbeat_age is None:
+        issues.append("no 3090 health reports yet")
+    elif heartbeat_age > 180:
+        issues.append("3090 heartbeat stale (>3min)")
+
+    status = "ok"
+    if issues:
+        status = "critical" if len(issues) > 1 else "warning"
+
+    return {
+        "status": status,
+        "issues": issues,
+        "server": {
+            "uptime_s": int((now - _server_start).total_seconds()),
+            "queue_size": len(queue),
+            "paused": paused,
+        },
+        "relay": {
+            "last_poll_age_s": relay_poll_age,
+            "polling": relay_poll_age is not None and relay_poll_age < 60,
+        },
+        "snapshot": {
+            "last_age_s": snapshot_age,
+            "fresh": snapshot_age is not None and snapshot_age < 300,
+        },
+        "td_health": {
+            "last_report_age_s": heartbeat_age,
+            "report": _td_health_report,
+        },
+        "last_prompt_age_s": prompt_age,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Dreamworld 3D endpoints
+# ---------------------------------------------------------------------------
+
+
+@app.get("/dreams/3d")
+async def get_dreams_3d():
+    """Return all positioned dreams as nodes + temporal links for 3D-Force-Graph."""
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        rows = await db.execute_fetchall(
+            "SELECT id, raw_text, enriched_text, dreamworld_text, "
+            "submitted_at, source, x, y, z, cluster_id, cluster_label, "
+            "dir_x, dir_y, dir_z, orientation_mode "
+            "FROM prompts WHERE x IS NOT NULL "
+            "ORDER BY submitted_at"
+        )
+
+    # Build nodes with cluster colors + timeline index
+    nodes = []
+    clusters_seen = {}
+    for idx, r in enumerate(rows):
+        display = r["dreamworld_text"] or r["enriched_text"] or r["raw_text"]
+        cid = r["cluster_id"]
+        color = CLUSTER_PALETTE[cid % len(CLUSTER_PALETTE)] if cid is not None else "#7fffb2"
+        node = {
+            "id": r["id"],
+            "text": display,
+            "cluster": cid,
+            "clusterLabel": r["cluster_label"] or "",
+            "color": color,
+            "x": r["x"], "y": r["y"], "z": r["z"],
+            "submitted_at": r["submitted_at"],
+            "isSeed": r["source"] == "seed",
+            "val": 2 if r["source"] == "seed" else 4,
+            "ti": idx,  # timeline index for spectrum coloring
+            "dir": [r["dir_x"] or 0, r["dir_y"] or 0, r["dir_z"] or 0],
+            "mode": r["orientation_mode"] or "reinforce",
+        }
+        nodes.append(node)
+        if cid is not None and cid not in clusters_seen:
+            clusters_seen[cid] = {
+                "id": cid,
+                "label": r["cluster_label"] or f"Cluster {cid + 1}",
+                "color": color,
+            }
+
+    # Temporal links: all nodes chained in submission order
+    links = []
+    for i in range(len(nodes) - 1):
+        links.append({
+            "source": nodes[i]["id"],
+            "target": nodes[i + 1]["id"],
+        })
+
+    return {
+        "nodes": nodes, "links": links, "total": len(nodes),
+        "clusters": list(clusters_seen.values()),
+    }
+
+
+@app.post("/dreams/backfill")
+async def dreams_backfill(_: None = Depends(require_admin)):
+    """Backfill dreamworld_text + embeddings for all prompts, then recompute UMAP."""
+    if not openai_client:
+        raise HTTPException(503, "OpenAI client not configured")
+
+    # 1. Backfill dreamworld_text for rows that don't have it
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(
+            "UPDATE prompts SET dreamworld_text = raw_text "
+            "WHERE dreamworld_text IS NULL OR dreamworld_text = ''"
+        )
+        await db.commit()
+
+    # 2. Embed prompts that lack embeddings (using dreamworld_text)
+    async with aiosqlite.connect(DB_PATH) as db:
+        rows = await db.execute_fetchall(
+            "SELECT id, COALESCE(dreamworld_text, raw_text) as text "
+            "FROM prompts WHERE embedding IS NULL"
+        )
+
+    embedded, skipped = 0, 0
+    for pid, text in rows:
+        try:
+            resp = await openai_client.embeddings.create(
+                model="text-embedding-3-small", input=text
+            )
+            embedding = resp.data[0].embedding
+            async with aiosqlite.connect(DB_PATH) as db:
+                await db.execute(
+                    "UPDATE prompts SET embedding=?, x=0, y=0, z=0 WHERE id=?",
+                    (json.dumps(embedding), pid),
+                )
+                await db.commit()
+            embedded += 1
+            await asyncio.sleep(0.5)
+        except Exception as e:
+            logger.warning(f"Backfill: failed to embed prompt {pid}: {e}")
+            skipped += 1
+
+    # Trigger UMAP recompute with new embeddings
+    if embedded > 0:
+        asyncio.create_task(_guarded_recompute_umap())
+
+    logger.info(f"Backfill complete: embedded={embedded}, skipped={skipped}")
+    return {"embedded": embedded, "skipped": skipped}
+
+
+# ---------------------------------------------------------------------------
+# Chat endpoint
+# ---------------------------------------------------------------------------
+
+@app.post("/chat")
+async def chat(req: ChatRequest, request: Request):
+    """RAG chat about the exhibition. TELUS vLLM primary, OpenAI fallback."""
+    # Lazy-load context data on first request
+    if not _chat_context_loaded:
+        _load_chat_context()
+
+    # Rate limiting (separate from prompt rate limiter, 3s cooldown)
+    ip = get_client_ip(request)
+    now = datetime.utcnow()
+    last = chat_rate_limit_map.get(ip)
+    if last and (now - last).total_seconds() < CHAT_RATE_LIMIT_SECONDS:
+        raise HTTPException(429, "Please wait a moment before asking another question")
+    chat_rate_limit_map[ip] = now
+
+    # Moderation — reuse existing blocked words filter
+    if is_blocked(req.message):
+        return ChatResponse(
+            reply="I can help with questions about the Salish Sea Dreaming exhibition. What would you like to know?"
+        )
+
+    # Truncate message
+    user_msg = req.message[:500]
+
+    # Find relevant context via keyword matching
+    matched_cards, matched_docs = find_relevant_context(user_msg, _chat_cards, _chat_docs)
+
+    # Build context string for the LLM
+    context_parts = []
+    source_ids = []
+    for score, nid, card in matched_cards:
+        context_parts.append(f"Node {nid}: {card.get('title', '')} — {card.get('body', '')[:300]}")
+        source_ids.append(nid)
+    for score, chunk in matched_docs:
+        context_parts.append(f"Document: {chunk.get('title', '')} — {chunk.get('text', '')[:300]}")
+    context_str = "\n".join(context_parts[:6])
+
+    # Build messages (cap history at 6 for token budget)
+    messages = [{"role": "system", "content": CHAT_SYSTEM_PROMPT}]
+    if context_str:
+        messages.append({"role": "system", "content": f"Relevant context for this question:\n{context_str}"})
+    for msg in req.history[-6:]:
+        messages.append({"role": msg.get("role", "user"), "content": msg.get("content", "")[:500]})
+    messages.append({"role": "user", "content": user_msg})
+
+    # Try TELUS first, fall back to OpenAI
+    reply = ""
+    try:
+        client = chat_client or openai_client
+        if not client:
+            return ChatResponse(
+                reply="I'm temporarily unable to answer questions. Please ask someone at the exhibition!",
+                error="llm_unavailable",
+            )
+
+        if chat_client:
+            try:
+                response = await chat_client.chat.completions.create(
+                    model=CHAT_LLM_MODEL, messages=messages, max_tokens=400, temperature=0.7
+                )
+                reply = response.choices[0].message.content.strip()
+            except Exception as e:
+                logger.warning(f"TELUS chat failed ({e}), falling back to OpenAI")
+                if openai_client:
+                    response = await openai_client.chat.completions.create(
+                        model=LLM_MODEL, messages=messages, max_tokens=400, temperature=0.7
+                    )
+                    reply = response.choices[0].message.content.strip()
+                else:
+                    return ChatResponse(
+                        reply="I'm temporarily unable to answer questions. Please ask someone at the exhibition!",
+                        error="llm_unavailable",
+                    )
+        else:
+            response = await openai_client.chat.completions.create(
+                model=LLM_MODEL, messages=messages, max_tokens=400, temperature=0.7
+            )
+            reply = response.choices[0].message.content.strip()
+    except Exception as e:
+        logger.error(f"Chat LLM failed: {e}")
+        return ChatResponse(
+            reply="I'm temporarily unable to answer questions. Please ask someone at the exhibition!",
+            error="llm_unavailable",
+        )
+
+    # Post-process: inject node links for known entities if the model didn't
+    reply = _inject_node_links(reply)
+
+    return ChatResponse(reply=reply, sources=source_ids)
+
+
+# Entity → node ID mapping for post-processing link injection
+_ENTITY_LINKS = {
+    "Briony Penn": "person:briony-penn",
+    "Moonfish Media": "person:moonfish-media",
+    "David Denning": "person:david-denning",
+    "Eve Marenghi": "person:eve-marenghi",
+    "Carol Anne Hilton": "person:carol-anne-hilton",
+    "Pravin Pillay": "person:prav-pillay",
+    "Darren Zal": "person:darren-zal",
+    "Shawn Anderson": "person:shawn-anderson",
+    "Brad Necyk": "person:brad-necyk",
+    "Natalia Lebedinskaia": "person:natalia-lebedinskaia",
+    "StreamDiffusion": "artifact:streamdiffusion",
+    "Autolume": "artifact:autolume",
+    "TouchDesigner": "node:touchdesigner",
+    "Dreaming GAN": "artifact:dreaming-gan",
+    "StyleGAN": "artifact:dreaming-gan",
+    "LoRA": "artifact:briony-lora",
+    "Briony LoRA": "artifact:briony-lora",
+    "Resolume": "output:projection",
+    "projection wall": "output:projection",
+    "Three-Eyed Seeing": "concept:three-eyed-seeing",
+    "Three Eyed Seeing": "concept:three-eyed-seeing",
+    "Kwaxala": "hub:ecosystem",
+    "Digital Ecologies": "hub:exhibition",
+    "Mahon Hall": "hub:exhibition",
+    "QR code": "node:qr-portal",
+    "gallery server": "node:gallery-server",
+    "HerringFest": "cluster:herringfest",
+    "Dreamworld": "artifact:dreamworld",
+    "dreamworld": "artifact:dreamworld",
+    "UMAP": "technique:umap",
+    "K-means": "technique:kmeans",
+    "embedding": "technique:embeddings",
+    "moonfish-footage": "person:moonfish-media",
+    "Moonfish footage": "person:moonfish-media",
+    "underwater footage": "person:moonfish-media",
+    "underwater video": "person:moonfish-media",
+}
+
+
+def _inject_node_links(text: str) -> str:
+    """Add markdown links for known entities that aren't already linked."""
+    for entity, node_id in _ENTITY_LINKS.items():
+        # Skip if already linked
+        if f"#{node_id})" in text:
+            continue
+        # Replace first bare mention (not inside a markdown link already)
+        # Look for the entity NOT preceded by [ or followed by ](
+        import re
+        pattern = re.compile(r'(?<!\[)(' + re.escape(entity) + r')(?!\]\()', re.IGNORECASE)
+        match = pattern.search(text)
+        if match:
+            original = match.group(0)
+            text = text[:match.start()] + f"[{original}](#{node_id})" + text[match.end():]
+    return text
 
 
 @app.get("/admin", response_class=HTMLResponse)
@@ -802,6 +1834,10 @@ async def startup():
             "WARNING: ADMIN_PASSWORD is unset or using default — "
             "change before exhibition opens"
         )
+
+    # Dreamworld 3D: schema migration + seed + periodic UMAP (non-blocking)
+    await migrate_dreams_schema()
+    asyncio.create_task(_seed_and_umap_loop())
 
     # Start background queue worker
     asyncio.create_task(queue_worker())
