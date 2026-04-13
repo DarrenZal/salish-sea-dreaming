@@ -170,15 +170,28 @@ schtasks /run /tn "SSD-Resolume"
 schtasks /run /tn "SSD-SSH-Tunnel"
 ```
 
-### Autolume boot sequence (manual — not yet automated)
+### Autolume boot sequence (autostart wrapper — pending Monday validation)
 
-Prav's instructions: Autolume needs to boot with **320/120 pkl file** animating from **Autolume live performance mode**. 3 instances expected.
+**Model:** `C:\Users\user\Documents\models\network-snapshot-000120.pkl`
+**Saved presets:** `C:\Users\user\Documents\presets\0` and `\1` (both reference the same model, differ in widget state — latent/layer/adjusters/etc.)
 
-**TODO (before April 13 test):** Convert this to a Task Scheduler auto-start.
+**Wrapper** (deployed 2026-04-12, not yet enabled on boot):
+
+- `C:\Users\user\autolume_autostart.py` — subclasses Autolume, skips Welcome/Splash, seeds the pkl, calls `start_renderer()`, and loads the preset once the render loop is live. Original Autolume source untouched.
+- `C:\Users\user\launch_autolume_autostart.bat` — Task Scheduler launcher (activates conda `autolume` env, runs the wrapper with default `--pkl` + `--preset 0`).
+- `C:\Users\user\test_autolume_autostart.bat` — interactive dry-run (visible console, `pause` at end to read errors).
+- `C:\Users\user\autolume_watchdog.ps1` — 2-min restart watchdog (detects Autolume.exe OR python.exe running autolume).
+
+**Monday validation sequence:**
+1. Close current (manual) Autolume.
+2. Double-click `test_autolume_autostart.bat` → verify Autolume launches straight into live render with the model loaded and preset applied.
+3. If preset 0 isn't the desired state, edit one line in `launch_autolume_autostart.bat` to `PRESET_DIR=...presets\1` and re-test.
+4. Once validated: re-point `SSD-Autolume` task action to `launch_autolume_autostart.bat`, enable the task, register the watchdog as `SSD-Autolume-Watchdog`.
+5. Cold-boot test.
 
 ### Known gaps (cold-boot test priorities — April 13)
 
-- ❗ **Autolume auto-start is broken.** `SSD-Autolume` task is **disabled**. Existing `launch_autolume.bat` only runs `python main.py` — opens the GUI but doesn't load a .pkl model or enter live performance mode. `autolume_launch.bat all` loads 3 instances (fish-400kimg.pkl / whale.pkl / bird.pkl) but Prav referenced a specific "320/120 pkl" file — need to confirm which model + how to auto-enter live performance mode. **The 3 Autolume instances currently running were launched manually and will be lost on reboot.**
+- 🟡 **Autolume autostart — wrapper deployed, awaiting Monday validation.** New `autolume_autostart.py` wrapper subclasses Autolume to skip the Welcome screen, seed `network-snapshot-000120.pkl`, and load preset 0 (parameterized — one-line flip to preset 1). Verified imports + argparse work via SSH. Still needs an interactive dry-run on a real desktop session before re-enabling `SSD-Autolume`. See "Autolume boot sequence" below.
 - ❗ **Ambient audio has no auto-start.** Ableton Live 12 Suite is currently running (presumably playing the loop) but no scheduled task or Startup folder entry launches it on logon. Same story: running now, lost on reboot. Need either a task that opens the .als file, or a simpler media-player loop.
 - ✅ **Resolume auto-start — confirmed working.** `SSD-Resolume` is "At logon time" with `Last Result: 0`. Task status shows "Ready" because the launcher bat exits after `start ""` — Arena.exe itself is what runs. Verified via `tasklist | findstr Arena` (Arena.exe PID 132748).
 - ✅ **TouchDesigner auto-start — confirmed working.** `SSD-TouchDesigner` "At logon time", launches `SSD-exhibition.toe` after 30s ping delay.
@@ -247,7 +260,7 @@ Logs: `ssd_watchdog.log`, `display_watchdog.log`, etc. on the 3090 desktop.
 
 | Date | Change |
 |------|--------|
-| 2026-04-12 | Initial playbook. Verified live task list on 3090 (11 scheduled tasks). Display reshuffle gap confirmed solved via `SSD-Display-Watchdog` + MultiMonitorTool. |
+| 2026-04-12 | Initial playbook. Verified live task list on 3090 (11 scheduled tasks). Display reshuffle gap confirmed solved via `SSD-Display-Watchdog` + MultiMonitorTool. Autolume autostart wrapper (`autolume_autostart.py`) built + deployed; enable pending Monday validation. |
 | 2026-04-13 | (planned) Remote reboot test w/ Prav — validate full cold-boot sequence. |
 | — | (pre-Monday TODO) Phone-accessible `/admin/reboot` URL on gallery server so anyone in WhatsApp group can remote-reboot without laptop/SSH. |
 | — | (planned) Enable + validate `SSD-Autolume` — load `network-snapshot-000120.pkl`, enter live performance mode. |
