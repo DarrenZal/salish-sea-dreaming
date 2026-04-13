@@ -192,7 +192,7 @@ schtasks /run /tn "SSD-SSH-Tunnel"
 ### Known gaps (cold-boot test priorities — April 13)
 
 - 🟡 **Autolume autostart — wrapper deployed, awaiting Monday validation.** New `autolume_autostart.py` wrapper subclasses Autolume to skip the Welcome screen, seed `network-snapshot-000120.pkl`, and load preset 0 (parameterized — one-line flip to preset 1). Verified imports + argparse work via SSH. Still needs an interactive dry-run on a real desktop session before re-enabling `SSD-Autolume`. See "Autolume boot sequence" below.
-- ❗ **Ambient audio has no auto-start.** Ableton Live 12 Suite is currently running (presumably playing the loop) but no scheduled task or Startup folder entry launches it on logon. Same story: running now, lost on reboot. Need either a task that opens the .als file, or a simpler media-player loop.
+- 🟡 **Ambient audio — launcher built, awaiting Monday validation.** `gallery_ambient_audio.ps1` plays `Salish Dreaming 21 min.wav` on loop via .NET `SoundPlayer.PlayLooping()` (hidden, no GUI). Syntax + file-path verified. Pending: interactive test (stop current WMP → launch script → confirm audio) and registering `SSD-Ambient-Audio` task. Longer term: swap to Ableton auto-start once Prav ports his mix session from the 3060.
 - ✅ **Resolume auto-start — confirmed working.** `SSD-Resolume` is "At logon time" with `Last Result: 0`. Task status shows "Ready" because the launcher bat exits after `start ""` — Arena.exe itself is what runs. Verified via `tasklist | findstr Arena` (Arena.exe PID 132748).
 - ✅ **TouchDesigner auto-start — confirmed working.** `SSD-TouchDesigner` "At logon time", launches `SSD-exhibition.toe` after 30s ping delay.
 - ✅ **Display ID reshuffle — solved.** `SSD-Display-Watchdog` polls every 15s, detects display count changes, waits 15s for HDMI settle, runs `MultiMonitorTool /LoadConfig display_config.cfg`.
@@ -264,5 +264,5 @@ Logs: `ssd_watchdog.log`, `display_watchdog.log`, etc. on the 3090 desktop.
 | 2026-04-13 | (planned) Remote reboot test w/ Prav — validate full cold-boot sequence. |
 | — | (pre-Monday TODO) Phone-accessible `/admin/reboot` URL on gallery server so anyone in WhatsApp group can remote-reboot without laptop/SSH. |
 | — | (planned) Enable + validate `SSD-Autolume` — load `network-snapshot-000120.pkl`, enter live performance mode. |
-| — | (planned) Ambient audio auto-start — WMP-on-loop launcher now; Ableton session after Prav ports it from 3060. |
+| — | (built, pending enable) Ambient audio auto-start via `gallery_ambient_audio.ps1` (SoundPlayer.PlayLooping). Swap to Ableton once Prav ports his mix from 3060. |
 | — | (planned) Diagnostic chatbot — docent types "wall is black" → gets guided recovery + one-tap reboot button. |
