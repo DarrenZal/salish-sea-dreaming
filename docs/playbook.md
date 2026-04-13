@@ -28,17 +28,20 @@
 
 ### What NOT to do
 
-- ❌ Don't unplug anything at the gallery — the computer is not there.
-- ❌ Don't restart any machine — we do that remotely.
+- ❌ Don't unplug anything at the gallery — the computer is **not there** (it's at 108 Fraser Rd).
+- ❌ Don't try to reboot the gallery equipment — there's nothing to reboot here.
 - ✅ Projector power-cycles are OK — the display watchdog auto-restores the mapping.
 
-### Emergency contacts
+### Escalation ladder (if something is broken after waiting 2 min)
 
-| Who | When | Contact |
-|-----|------|---------|
-| **Darren** | Technical problems (black wall, frozen, no sound) | 518-210-2828 (SMS) or WhatsApp group |
-| **Prav** | Gallery coordination, visitor questions | WhatsApp group |
-| **Blair** | On-site fallback (has key, knows layout) | — |
+| Step | Who / how | What happens |
+|------|-----------|--------------|
+| 1 | **WhatsApp group** (Darren + Prav) with photo of wall | Fastest — both see it. One of us remote-reboots from our phone / laptop. |
+| 2 | **Text Darren directly: 518-210-2828** | If group is quiet. Darren triggers remote reboot. |
+| 3 | **Text Prav** | If Darren unreachable. Prav can trigger remote reboot from his phone via the admin URL (see Part 4). |
+| 4 | **Last resort — someone drives to 108 Fraser Rd** | Only if all remote paths fail. Blair or Prav has key + knows how to hit the power button. |
+
+**Remote reboot from phone:** `https://ssd-gallery.<tunnel>/admin/reboot` (requires admin password — shared in WhatsApp group pinned message). Darren or Prav can trigger this from anywhere.
 
 ---
 
@@ -127,6 +130,10 @@ The 3090 at 108 Fraser Rd runs the entire stack. Remote access via:
 
 ### Remote reboot (the nuclear option)
 
+**From phone (fastest, no laptop needed):**
+`GET https://ssd-gallery.<tunnel>/admin/reboot` — password-protected endpoint on the gallery server that SSHes to the 3090 and runs `shutdown /r /t 0`. Usable by anyone in the WhatsApp group from any phone. *(Pre-Monday TODO — not yet built.)*
+
+**From laptop with SSH:**
 ```bash
 ssh windows-desktop-remote
 shutdown /r /t 0 /f
@@ -232,6 +239,7 @@ Logs: `ssd_watchdog.log`, `display_watchdog.log`, etc. on the 3090 desktop.
 |------|--------|
 | 2026-04-12 | Initial playbook. Verified live task list on 3090 (11 scheduled tasks). Display reshuffle gap confirmed solved via `SSD-Display-Watchdog` + MultiMonitorTool. |
 | 2026-04-13 | (planned) Remote reboot test w/ Prav — validate full cold-boot sequence. |
-| — | (planned) Enable + validate `SSD-Autolume` (320/120 pkl, live performance mode, 3 instances). |
-| — | (planned) Ambient audio loop as scheduled task (not just media player). |
-| — | (planned) Diagnostic chatbot — docent types "wall is black" → gets guided recovery. |
+| — | (pre-Monday TODO) Phone-accessible `/admin/reboot` URL on gallery server so anyone in WhatsApp group can remote-reboot without laptop/SSH. |
+| — | (planned) Enable + validate `SSD-Autolume` — load `network-snapshot-000120.pkl`, enter live performance mode. |
+| — | (planned) Ambient audio auto-start — WMP-on-loop launcher now; Ableton session after Prav ports it from 3060. |
+| — | (planned) Diagnostic chatbot — docent types "wall is black" → gets guided recovery + one-tap reboot button. |
