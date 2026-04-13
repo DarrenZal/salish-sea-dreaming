@@ -3,7 +3,7 @@
 **Exhibition:** Digital Ecologies: Bridging Nature and Technology
 **Venue:** Mahon Hall, Salt Spring Island
 **Dates:** April 10–26, 2026
-**Equipment location:** 108 Fraser Rd (the 3090 runs there — the gallery streams from it)
+**Equipment location:** Mahon Hall (the 3090 tower is on-site in the gallery)
 
 ---
 
@@ -28,8 +28,8 @@
 
 ### What NOT to do
 
-- ❌ Don't unplug anything at the gallery — the computer is **not there** (it's at 108 Fraser Rd).
-- ❌ Don't try to reboot the gallery equipment — there's nothing to reboot here.
+- ❌ **Don't hit the power button on the computer tower** unless a tech has asked you to. We reboot remotely — randomly power-cycling the machine can interrupt a running recovery.
+- ❌ Don't unplug cables or move the equipment.
 - ✅ Projector power-cycles are OK — the display watchdog auto-restores the mapping.
 
 ### Escalation ladder (if something is broken after waiting 2 min)
@@ -39,7 +39,7 @@
 | 1 | **WhatsApp group** (Darren + Prav) with photo of wall | Fastest — both see it. One of us remote-reboots from our phone / laptop. |
 | 2 | **Text Darren directly: 518-210-2828** | If group is quiet. Darren triggers remote reboot. |
 | 3 | **Text Prav** | If Darren unreachable. Prav can trigger remote reboot from his phone via the admin URL (see Part 4). |
-| 4 | **Last resort — someone drives to 108 Fraser Rd** | Only if all remote paths fail. Blair or Prav has key + knows how to hit the power button. |
+| 4 | **On-site reboot (only if asked by a tech)** | Tower is on-site. If we're all unreachable AND the wall has been broken for 10+ min, press and hold the power button on the computer tower for 5 seconds to force shutdown, wait 10 seconds, press it once to power on. The auto-start tasks will bring everything back up in ~3–5 minutes. |
 
 **Remote reboot from phone:** `https://ssd-gallery.<tunnel>/admin/reboot` (requires admin password — shared in WhatsApp group pinned message). Darren or Prav can trigger this from anywhere.
 
@@ -106,7 +106,7 @@
 
 ### The full cold-boot sequence
 
-The 3090 at 108 Fraser Rd runs the entire stack. Remote access via:
+The 3090 (on-site at Mahon Hall) runs the entire stack. Remote access via:
 - **Local network** (same house): `ssh windows-desktop`
 - **From anywhere**: `ssh windows-desktop-remote` (reverse tunnel via poly)
 
