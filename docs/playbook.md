@@ -80,6 +80,13 @@
 
 ### Opening (gallery opens at 11:00 AM)
 
+**10:40 AM — projector power-on (2 min):**
+
+1. Pick up **both projector remotes**.
+2. Point each remote at its projector. **Press the power button on both at roughly the same time** (within a few seconds of each other is fine).
+3. Wait ~30 seconds — the projectors warm up, Windows detects them, and the display watchdog restores the saved mapping within ~15 seconds after that.
+4. *Why simultaneous?* Windows assigns display IDs in the order it detects the signals. Bringing them up together gives one clean detection event and one restore from the watchdog, instead of cascading triggers. The watchdog handles either case, but together is tidier.
+
 **10:45 AM — walk-in check (5 min):**
 
 1. Look at the wall. Is it moving?
@@ -97,8 +104,10 @@
 
 ### Closing (gallery closes 5:00 PM)
 
-- The installation keeps running overnight — **do not shut anything down**.
+- The **computer stays on overnight** — don't touch it, don't shut it down.
+- Use both projector remotes to **power off the projectors**.
 - Take a photo of the wall as you leave (for the morning comparison).
+- Put the remotes back in their usual spot so the opening docent can find them.
 
 ---
 
@@ -174,6 +183,7 @@ Prav's instructions: Autolume needs to boot with **320/120 pkl file** animating 
 - ✅ **Resolume auto-start — confirmed working.** `SSD-Resolume` is "At logon time" with `Last Result: 0`. Task status shows "Ready" because the launcher bat exits after `start ""` — Arena.exe itself is what runs. Verified via `tasklist | findstr Arena` (Arena.exe PID 132748).
 - ✅ **TouchDesigner auto-start — confirmed working.** `SSD-TouchDesigner` "At logon time", launches `SSD-exhibition.toe` after 30s ping delay.
 - ✅ **Display ID reshuffle — solved.** `SSD-Display-Watchdog` polls every 15s, detects display count changes, waits 15s for HDMI settle, runs `MultiMonitorTool /LoadConfig display_config.cfg`.
+- ❓ **Does simultaneous projector power-on actually matter?** In theory the watchdog handles any ordering, but one clean detection event is better than two cascading triggers. Worth empirically validating during the April 13 test: power one projector on, wait 30s, power the other, confirm mapping still lands correctly.
 
 ---
 
