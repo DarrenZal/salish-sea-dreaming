@@ -40,6 +40,10 @@ images/*-raw/
 images/*-openverse/
 images/*-openverse-raw/
 images/*-targeted/
+images/*-wikimedia/
+
+# Generated exhibition output (3.8GB of videos, regenerable)
+output/
 
 # Prepped training corpora (512x512, regenerable from raw via prep_training_data.py)
 training-data/fish-model/
