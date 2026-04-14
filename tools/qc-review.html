@@ -75,7 +75,7 @@ h1 { color: #8ecae6; margin-bottom: 8px; }
   <button class="export" onclick="exportTags()">Export Tags CSV</button>
   <button onclick="markSpeciesDone()" id="markDoneBtn" style="background:#2a6b2a;">Mark species done</button>
   <button onclick="loadImages()">Reload</button>
-  <label>Image dir: <input type="text" id="imageDirInput" value="/images/intertidal-raw" size="30"></label>
+  <label>Image dir: <input type="text" id="imageDirInput" value="/images/dreaming-model-final" size="30"></label>
 </div>
 <div class="stats" id="progressBar" style="margin-top:4px;"></div>
 
@@ -211,9 +211,15 @@ function updateProgress() {
 }
 
 function getSpecies(filename) {
-  const parts = filename.replace(/\.[^.]+$/, '').split('_');
-  const numIdx = parts.findIndex(p => /^\d+$/.test(p));
-  return numIdx > 0 ? parts.slice(0, numIdx).join('_') : filename;
+  const base = filename.replace(/\.[^.]+$/, '');
+  const parts = base.split('_');
+  // Match: numeric IDs (iNat: 12345678), hex hashes (Openverse: a1b2c3d4e5f6),
+  // or truncated UUIDs (Openverse: 0604dd7f-97b)
+  const idIdx = parts.findIndex(p => /^\d{3,}$/.test(p) || /^[0-9a-f]{8,}$/i.test(p) || /^[0-9a-f]{8}-/.test(p));
+  let species = idIdx > 0 ? parts.slice(0, idIdx).join('_') : base;
+  // Normalize orca video frame prefixes
+  if (species === 'orca_swim' || species === 'orca_with') species = 'orca';
+  return species;
 }
 
 async function loadImages() {

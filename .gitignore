@@ -36,15 +36,10 @@ images/denning-curated/
 *.zip
 
 # Raw scraped images (large, not committed)
-images/marine-base-raw/
-images/fish-commercial-raw/
-images/fish-supplement-raw/
-images/whales-raw/
-images/birds-raw/
-images/herring-eggs-raw/
-images/herring-spawn-raw/
-images/fish-schools-raw/
-images/birds-in-fish-raw/
+images/*-raw/
+images/*-openverse/
+images/*-openverse-raw/
+images/*-targeted/
 
 # Prepped training corpora (512x512, regenerable from raw via prep_training_data.py)
 training-data/fish-model/
@@ -67,6 +62,16 @@ telus/fakes*.png
 briony-lora/gan-frames/
 briony-lora/eval/img2img/
 briony-lora/eval/temporal/
+briony-lora/curate/
+briony-lora/images/
+briony-lora/*.safetensors
+
+# AdaIN experimentation (local only)
+adain-test/
+
+# Top-level image scratch files
+boids-*.png
+qr_gallery.png
 
 # Excalidraw logs
 excalidraw.log
@@ -81,9 +86,17 @@ training-data/provenance.csv.bak
 briony-lora/CLAUDE.md
 docs/CLAUDE.md
 docs/archive/CLAUDE.md
+docs/archive/drafts/CLAUDE.md
 docs/comms/CLAUDE.md
 scripts/CLAUDE.md
+tools/CLAUDE.md
+training-data/CLAUDE.md
+training-data/review/CLAUDE.md
+VisualArt/CLAUDE.md
 web/src/CLAUDE.md
+
+# Claude Code internals (worktrees, scratchpads)
+.claude/
 
 # Private / sensitive — DO NOT commit to public repo
 docs/Wasanec Legal Case/

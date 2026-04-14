@@ -283,6 +283,84 @@
             opacity: 1;
         }
 
+        /* Mic help panel — persistent, device-specific instructions */
+        .mic-help {
+            display: none;
+            margin-top: 12px;
+            padding: 14px 16px;
+            background: rgba(232, 168, 124, 0.08);
+            border: 1px solid rgba(232, 168, 124, 0.3);
+            border-radius: 8px;
+            font-size: 0.85rem;
+            line-height: 1.7;
+            color: var(--text-primary);
+        }
+
+        .mic-help.visible { display: block; }
+
+        .mic-help-title {
+            font-size: 0.78rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--salmon);
+            margin-bottom: 8px;
+        }
+
+        .mic-help-steps {
+            list-style: none;
+            counter-reset: steps;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .mic-help-steps li {
+            counter-increment: steps;
+            display: flex;
+            gap: 8px;
+            align-items: flex-start;
+            color: var(--text-primary);
+        }
+
+        .mic-help-steps li::before {
+            content: counter(steps);
+            flex-shrink: 0;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: rgba(232, 168, 124, 0.25);
+            color: var(--salmon);
+            font-size: 0.72rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 2px;
+        }
+
+        .mic-help-note {
+            margin-top: 10px;
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        .mic-help-close {
+            margin-top: 12px;
+            background: none;
+            border: 1px solid rgba(232, 168, 124, 0.3);
+            border-radius: 6px;
+            padding: 6px 14px;
+            color: var(--text-muted);
+            font-size: 0.78rem;
+            font-family: inherit;
+            cursor: pointer;
+            display: block;
+            width: 100%;
+        }
+
+        .mic-help-close:hover { color: var(--salmon); }
+
         /* Divider */
         .divider {
             display: flex;
@@ -344,6 +422,10 @@
             flex-direction: column;
             gap: 8px;
             min-height: 40px;
+            max-height: 200px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(0,168,168,0.2) transparent;
         }
 
         .voice-entry {
@@ -425,6 +507,326 @@
         .live-dot.polling {
             animation: none;
         }
+
+        /* TD live preview */
+        .td-preview-section {
+            margin-top: 8px;
+        }
+
+        .td-preview-img {
+            width: 100%;
+            display: block;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: #000;
+            min-height: 40px;
+            opacity: 0;
+            transition: opacity 0.8s ease;
+        }
+
+        .td-preview-img.loaded {
+            opacity: 1;
+        }
+
+        .snapshot-clock-wrap {
+            display: flex;
+            justify-content: center;
+            margin-top: 8px;
+        }
+
+        @keyframes clockSweep {
+            from { stroke-dashoffset: 100; }
+            to   { stroke-dashoffset: 0; }
+        }
+
+        .snapshot-arc {
+            animation: clockSweep 30s linear infinite;
+        }
+
+        /* --- Container transition --- */
+        .container {
+            transition: opacity 0.4s ease;
+        }
+
+        /* --- Chat Mode --- */
+        .chat-mode {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            background: var(--ocean-dark);
+            z-index: 100;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+        .chat-mode.visible {
+            opacity: 1;
+        }
+
+        .chat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            background: var(--ocean-mid);
+            min-height: 48px;
+        }
+        .chat-title {
+            font-size: 1rem;
+            font-weight: 300;
+            letter-spacing: 0.12em;
+            color: var(--cyan);
+        }
+        .chat-back {
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            padding: 6px 14px;
+            border-radius: 16px;
+            cursor: pointer;
+            min-height: 44px;
+            min-width: 44px;
+            display: flex;
+            align-items: center;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            scroll-behavior: smooth;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .msg {
+            display: flex;
+            max-width: 85%;
+        }
+        .msg.user {
+            align-self: flex-end;
+        }
+        .msg.assistant {
+            align-self: flex-start;
+        }
+        .msg-bubble {
+            padding: 10px 14px;
+            border-radius: 16px;
+            font-size: 1rem;
+            line-height: 1.8;
+            word-wrap: break-word;
+        }
+        .msg.user .msg-bubble {
+            background: var(--teal);
+            color: #fff;
+            border-bottom-right-radius: 4px;
+        }
+        .msg.assistant .msg-bubble {
+            background: var(--ocean-surface);
+            color: var(--text-primary);
+            border-bottom-left-radius: 4px;
+        }
+
+        .msg-bubble .node-link {
+            color: var(--cyan);
+            text-decoration: none;
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 14px;
+            padding: 3px 10px;
+            cursor: pointer;
+            display: inline-block;
+            margin: 2px 0;
+            transition: background 0.2s, border-color 0.2s;
+        }
+        .msg-bubble .node-link:active {
+            background: rgba(0, 212, 255, 0.25);
+            border-color: rgba(0, 212, 255, 0.6);
+            padding: 6px 0;
+            display: inline;
+        }
+
+        .msg-bubble .error-msg {
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        /* Typing indicator */
+        .chat-loading {
+            display: flex;
+            gap: 5px;
+            padding: 8px 16px;
+            align-self: flex-start;
+        }
+        .chat-loading span {
+            width: 8px;
+            height: 8px;
+            background: var(--text-muted);
+            border-radius: 50%;
+            animation: chatDot 1.2s ease-in-out infinite;
+        }
+        .chat-loading span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        .chat-loading span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        @keyframes chatDot {
+            0%, 60%, 100% { opacity: 0.3; transform: scale(0.8); }
+            30% { opacity: 1; transform: scale(1); }
+        }
+
+        /* Chat input */
+        .chat-input-wrap {
+            display: flex;
+            align-items: flex-end;
+            gap: 8px;
+            padding: 10px 12px;
+            border-top: 1px solid var(--border);
+            background: var(--ocean-mid);
+        }
+        .chat-input-wrap textarea {
+            flex: 1;
+            min-height: 44px;
+            max-height: 120px;
+            resize: none;
+            font-size: 1rem;
+            padding: 10px 14px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            background: var(--ocean-dark);
+            color: var(--text-primary);
+            outline: none;
+            font-family: inherit;
+            line-height: 1.4;
+        }
+        .chat-input-wrap textarea:focus {
+            border-color: var(--border-focus);
+        }
+        .chat-input-wrap .btn-send {
+            min-width: 44px;
+            min-height: 44px;
+            border-radius: 50%;
+            font-size: 1.2rem;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        /* Knowledge panel (bottom sheet) */
+        .knowledge-panel {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            max-height: 60vh;
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+            border-radius: 16px 16px 0 0;
+            background: var(--ocean-mid);
+            z-index: 200;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.5);
+        }
+        .knowledge-panel.open {
+            transform: translateY(0);
+        }
+        .kp-handle {
+            width: 36px;
+            height: 4px;
+            background: var(--text-dim);
+            border-radius: 2px;
+            margin: 10px auto 0;
+        }
+        .kp-close {
+            position: absolute;
+            top: 8px;
+            right: 12px;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.5rem;
+            cursor: pointer;
+            min-width: 44px;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .kp-content {
+            padding: 20px 16px 24px;
+        }
+        .kp-content h3 {
+            font-size: 1.15rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+        }
+        .kp-badge {
+            display: inline-block;
+            font-size: 0.7rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--teal);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 2px 10px;
+            margin-bottom: 12px;
+        }
+        .kp-thumb {
+            width: 100%;
+            max-height: 200px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 12px;
+        }
+        .kp-body {
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: var(--text-primary);
+            margin-bottom: 16px;
+        }
+        .kp-species {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 16px;
+        }
+        .kp-species-pill {
+            font-size: 0.75rem;
+            background: rgba(0, 168, 168, 0.12);
+            color: var(--teal);
+            border-radius: 12px;
+            padding: 3px 10px;
+        }
+        .kp-graph-link {
+            display: inline-block;
+            color: var(--cyan);
+            font-size: 0.9rem;
+            text-decoration: none;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 8px 16px;
+            min-height: 44px;
+            line-height: 28px;
+        }
+        .kp-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.4);
+            z-index: 199;
+            display: none;
+        }
+        .kp-overlay.open {
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -433,12 +835,12 @@
         <!-- Header -->
         <header class="header">
             <h1 class="title">~ Salish Sea Dreaming ~</h1>
-            <p class="subtitle">"We are the sea, dreaming itself awake"</p>
+            <p class="subtitle">"We dream the Salish Sea, and the Salish Sea dreams us"</p>
         </header>
 
         <!-- Input section -->
         <section class="input-section">
-            <label class="prompt-label" for="offering-input">What do you care for?</label>
+            <label class="prompt-label" for="offering-input">What are you dreaming?</label>
             <textarea
                 id="offering-input"
                 rows="3"
@@ -453,14 +855,17 @@
                 <button class="btn btn-mic" id="mic-btn" aria-label="Speak your offering" style="display:none;">
                     🎤 Speak
                 </button>
-                <button class="btn btn-camera" id="camera-btn" aria-label="Add your photo" style="display:none;">
-                    📷
-                </button>
                 <button class="btn btn-send" id="send-btn" aria-label="Send your offering">
                     Send →
                 </button>
             </div>
             <div class="status-message" id="status-message" role="status" aria-live="polite"></div>
+            <div class="mic-help" id="mic-help" role="alert" aria-live="polite">
+                <div class="mic-help-title" id="mic-help-title">Microphone access needed</div>
+                <ol class="mic-help-steps" id="mic-help-steps"></ol>
+                <p class="mic-help-note" id="mic-help-note"></p>
+                <button class="mic-help-close" id="mic-help-close">got it</button>
+            </div>
         </section>
 
         <!-- Divider -->
@@ -468,7 +873,7 @@
 
         <!-- Feed header -->
         <div class="feed-header">
-            <span class="feed-label">From the dream</span>
+            <span class="feed-label">Dream Stream</span>
             <div class="live-indicator" id="live-indicator">
                 <div class="live-dot" id="live-dot"></div>
                 <span id="live-label">live</span>
@@ -480,28 +885,62 @@
             <div class="feed-empty" id="feed-empty">Waiting for voices…</div>
         </div>
 
-        <!-- Camera modal -->
-        <div class="camera-modal" id="camera-modal">
-            <p class="camera-hint" id="camera-hint">Position yourself in frame</p>
-            <video class="camera-preview" id="camera-video" autoplay playsinline muted></video>
-            <img class="camera-captured" id="camera-captured" alt="Your captured photo" />
-            <canvas class="camera-canvas" id="camera-canvas" width="512" height="512"></canvas>
-            <div class="camera-actions">
-                <button class="btn btn-camera" id="camera-retake" style="display:none; flex:1;">↩ Retake</button>
-                <button class="btn btn-mic" id="camera-snap" style="flex:1;">📷 Capture</button>
-                <button class="btn btn-send" id="camera-use" style="display:none; flex:1;">Use Photo →</button>
-                <button class="btn" id="camera-cancel" style="background:rgba(255,255,255,0.05); color:var(--text-muted); flex-shrink:0;">✕</button>
+        <!-- TD live preview -->
+        <div class="td-preview-section" id="td-preview-section">
+            <div class="divider">what the sea is dreaming</div>
+            <img id="td-preview-img" class="td-preview-img" src="" alt="Live output from the installation" />
+            <div class="snapshot-clock-wrap">
+                <svg viewBox="0 0 36 36" width="28" height="28" aria-hidden="true">
+                    <circle cx="18" cy="18" r="15.9" fill="none" stroke="rgba(0,168,168,0.12)" stroke-width="2.5"/>
+                    <circle cx="18" cy="18" r="15.9" fill="none" stroke="rgba(0,168,168,0.4)" stroke-width="2.5"
+                            stroke-dasharray="100 100" stroke-dashoffset="100"
+                            stroke-linecap="round"
+                            transform="rotate(-90 18 18)"
+                            class="snapshot-arc"/>
+                </svg>
             </div>
         </div>
 
         <!-- Footer -->
         <p class="notice">Your words will shape the dream. Submissions are stored for post-exhibition reflection.</p>
         <p style="margin-top:1rem;text-align:center;">
+            <a href="/graph-assets/dreamworld.html" target="_blank" style="color:var(--cyan);font-size:0.85rem;text-decoration:none;">
+                explore the dreamworld &rarr;
+            </a>
+        </p>
+        <p style="margin-top:0.5rem;text-align:center;">
             <a href="/graph" target="_blank" style="color:var(--teal);font-size:0.85rem;text-decoration:none;">
                 explore the knowledge graph &rarr;
             </a>
         </p>
 
+    </div>
+
+    <!-- Chat mode (hidden by default) -->
+    <div class="chat-mode" id="chat-mode" style="display:none;">
+        <header class="chat-header">
+            <span class="chat-title">~ Salish Sea Dreaming ~</span>
+            <button class="chat-back" id="chat-back">&larr; back</button>
+        </header>
+        <div class="chat-messages" id="chat-messages"></div>
+        <div class="chat-loading" id="chat-loading" style="display:none;">
+            <span></span><span></span><span></span>
+        </div>
+        <div class="chat-input-wrap">
+            <textarea id="chat-input" rows="1" maxlength="500"
+                placeholder="ask the sea..." autocomplete="off"></textarea>
+            <button class="btn btn-send" id="chat-send">&rarr;</button>
+        </div>
+    </div>
+
+    <!-- Knowledge panel overlay -->
+    <div class="kp-overlay" id="kp-overlay"></div>
+
+    <!-- Knowledge panel (bottom sheet) -->
+    <div class="knowledge-panel" id="knowledge-panel">
+        <div class="kp-handle"></div>
+        <button class="kp-close" id="kp-close">&times;</button>
+        <div class="kp-content" id="kp-content"></div>
     </div>
 
     <script>
@@ -533,7 +972,7 @@
 
             const MAX_CHARS    = 150;
             const WARN_CHARS   = 140;
-            const MAX_ENTRIES  = 5;
+            const MAX_ENTRIES  = 20;
             const POLL_INTERVAL = 15000;
 
             let pollingInterval = null;
@@ -649,7 +1088,7 @@
 
                 pollingInterval = setInterval(async function () {
                     try {
-                        const res = await fetch('/prompts?limit=5');
+                        const res = await fetch('/prompts?limit=20');
                         if (!res.ok) return;
                         const data = await res.json();
                         // API returns array of objects with display_text
@@ -768,35 +1207,21 @@
                 stopCameraStream();
             }
 
-            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                cameraBtn.style.display = 'inline-flex';
-                cameraBtn.addEventListener('click', openCamera);
-            }
-
-            cameraSnap.addEventListener('click', capturePhoto);
-            cameraRetake.addEventListener('click', openCamera);
-            cameraCancel.addEventListener('click', function () {
-                capturedPhotoData = null;
-                cameraBtn.classList.remove('has-photo');
-                closeCameraModal();
-            });
-            cameraUse.addEventListener('click', function () {
-                cameraBtn.classList.add('has-photo');
-                cameraBtn.textContent = '📷 ✓';
-                closeCameraModal();
-            });
 
             // --- Submit ---
             async function submitPrompt(source) {
                 const raw = textarea.value.trim();
-                if (!raw) return;
+                if (!raw && !capturedPhotoData) return;
 
-                const text = raw.slice(0, MAX_CHARS);
+                // Only use text if the user actually typed something
+                // Photo-only submissions skip the text prompt entirely
+                const text = raw ? raw.slice(0, MAX_CHARS) : '';
 
                 sendBtn.disabled = true;
 
                 try {
-                    const body = { text: text, source: source };
+                    const body = { source: source };
+                    if (text) body.text = text;
                     if (capturedPhotoData) body.photo_data = capturedPhotoData;
 
                     const res = await fetch('/prompt', {
@@ -813,9 +1238,15 @@
                         textarea.value = '';
                         updateCharCounter();
                         capturedPhotoData = null;
-                        cameraBtn.classList.remove('has-photo');
-                        cameraBtn.textContent = '📷';
+                        if (cameraBtn) {
+                            cameraBtn.classList.remove('has-photo');
+                            cameraBtn.textContent = '📷';
+                        }
                         statusTimeout = setTimeout(hideStatus, 2000);
+                        // Enter chat mode for text offerings
+                        if (text) {
+                            setTimeout(function() { enterChatMode(text); }, 600);
+                        }
                     } else if (res.status === 429) {
                         showStatus('please wait a moment before sending again');
                         statusTimeout = setTimeout(hideStatus, 3000);
@@ -843,6 +1274,139 @@
                 }
             });
 
+            // --- Mic help panel ---
+            const micHelp      = document.getElementById('mic-help');
+            const micHelpTitle = document.getElementById('mic-help-title');
+            const micHelpSteps = document.getElementById('mic-help-steps');
+            const micHelpNote  = document.getElementById('mic-help-note');
+            const micHelpClose = document.getElementById('mic-help-close');
+
+            micHelpClose.addEventListener('click', function () {
+                micHelp.classList.remove('visible');
+            });
+
+            function detectDevice() {
+                var ua = navigator.userAgent;
+                var isIOS      = /iPhone|iPad|iPod/i.test(ua);
+                var isChromeIOS = isIOS && /CriOS/i.test(ua);
+                var isFirefoxIOS = isIOS && /FxiOS/i.test(ua);
+                var isSafariIOS  = isIOS && !isChromeIOS && !isFirefoxIOS;
+                var isAndroid  = /Android/i.test(ua);
+                var isSamsung  = /SamsungBrowser/i.test(ua);
+                var isFirefox  = /Firefox/i.test(ua) && !isIOS;
+                // iOS version (for settings path differences in iOS 18+)
+                var iosVer = 0;
+                if (isIOS) {
+                    var m = ua.match(/OS (\d+)_/);
+                    if (m) iosVer = parseInt(m[1], 10);
+                }
+                return { isIOS, isChromeIOS, isFirefoxIOS, isSafariIOS, isAndroid, isSamsung, isFirefox, iosVer };
+            }
+
+            function showMicHelp(errorType) {
+                var d = detectDevice();
+                var title = 'Microphone access needed';
+                var steps = [];
+                var note  = '';
+
+                if (errorType === 'not-allowed' || errorType === 'permission-denied') {
+                    if (d.isChromeIOS || d.isFirefoxIOS) {
+                        // Chrome/Firefox on iOS: Web Speech API not available in these browsers
+                        title = 'Switch to Safari';
+                        steps = [
+                            'Copy this page\'s address',
+                            'Open Safari on your iPhone',
+                            'Paste the address and visit the page',
+                            'Tap Speak — Safari supports voice input',
+                        ];
+                        note = 'Chrome and Firefox on iPhone don\'t support mic speech. Safari works.';
+                    } else if (d.isSafariIOS) {
+                        title = 'Allow mic in iPhone Settings';
+                        if (d.iosVer >= 18) {
+                            steps = [
+                                'Open the iPhone Settings app',
+                                'Scroll down and tap Safari',
+                                'Tap Microphone → Allow',
+                                'Return here and tap Speak again',
+                            ];
+                        } else {
+                            steps = [
+                                'Open the iPhone Settings app',
+                                'Tap Privacy & Security → Microphone',
+                                'Turn on the toggle next to Safari',
+                                'Return here and tap Speak again',
+                            ];
+                        }
+                        note = 'If you don\'t see a toggle, tap Speak once — iPhone will ask for permission.';
+                    } else if (d.isAndroid && d.isSamsung) {
+                        title = 'Allow mic in browser settings';
+                        steps = [
+                            'Tap the address bar at the top',
+                            'Tap the lock 🔒 or info icon',
+                            'Tap Permissions → Microphone → Allow',
+                            'Refresh the page, then tap Speak',
+                        ];
+                        note = 'Or switch to Chrome — mic permissions are easier to manage there.';
+                    } else if (d.isAndroid) {
+                        title = 'Allow mic in Chrome';
+                        steps = [
+                            'Tap the lock 🔒 icon in the address bar',
+                            'Tap Microphone',
+                            'Select Allow',
+                            'Tap Speak again — no need to refresh',
+                        ];
+                        note = 'You may need to close and reopen Chrome if the icon doesn\'t appear.';
+                    } else if (d.isFirefox) {
+                        title = 'Allow mic in Firefox';
+                        steps = [
+                            'Click the lock icon in the address bar',
+                            'Click Connection Secure → More Information',
+                            'Click Permissions → Microphone → Allow',
+                            'Tap Speak again',
+                        ];
+                    } else {
+                        // Desktop Chrome / Edge / other
+                        title = 'Allow mic in your browser';
+                        steps = [
+                            'Click the 🔒 lock or 🎤 mic icon in the address bar',
+                            'Find Microphone and set it to Allow',
+                            'Refresh the page if needed',
+                            'Tap Speak again',
+                        ];
+                        note = 'Each browser shows the mic icon differently — look in the address bar.';
+                    }
+                } else if (errorType === 'no-speech') {
+                    micHelp.classList.remove('visible');
+                    showStatus('No speech detected — hold Speak and talk clearly.');
+                    statusTimeout = setTimeout(hideStatus, 3500);
+                    return;
+                } else if (errorType === 'network') {
+                    micHelp.classList.remove('visible');
+                    showStatus('Voice needs a network connection — check your signal and try again.');
+                    statusTimeout = setTimeout(hideStatus, 3500);
+                    return;
+                } else {
+                    micHelp.classList.remove('visible');
+                    showStatus('Mic error (' + errorType + ') — try again or type your offering.');
+                    statusTimeout = setTimeout(hideStatus, 3500);
+                    return;
+                }
+
+                // Populate and show the help panel
+                micHelpTitle.textContent = title;
+                micHelpSteps.innerHTML = '';
+                steps.forEach(function (s) {
+                    var li = document.createElement('li');
+                    li.textContent = s;
+                    micHelpSteps.appendChild(li);
+                });
+                micHelpNote.textContent = note;
+                micHelpNote.style.display = note ? '' : 'none';
+                micHelp.classList.add('visible');
+                // Scroll help panel into view
+                setTimeout(function () { micHelp.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, 50);
+            }
+
             // --- Web Speech API ---
             var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             var recognition = null;
@@ -851,6 +1415,8 @@
                 micBtn.style.display = 'inline-flex';
 
                 micBtn.addEventListener('click', function () {
+                    micHelp.classList.remove('visible');  // dismiss any open help
+
                     if (recognition) {
                         recognition.stop();
                         return;
@@ -863,7 +1429,7 @@
                     recognition.continuous = false;
 
                     micBtn.textContent = '🎤 listening…';
-                    micBtn.disabled = false; // keep tappable so user can cancel
+                    micBtn.disabled = false;
 
                     var gotResult = false;
 
@@ -871,8 +1437,7 @@
 
                     recognition.onresult = function (e) {
                         gotResult = true;
-                        const transcript = e.results[0][0].transcript;
-                        textarea.value = transcript;
+                        textarea.value = e.results[0][0].transcript;
                         updateCharCounter();
                         micBtn.textContent = '🎤 Speak';
                         recognition = null;
@@ -881,13 +1446,7 @@
                     recognition.onerror = function (e) {
                         micBtn.textContent = '🎤 Speak';
                         recognition = null;
-                        if (e.error === 'not-allowed') {
-                            showStatus('Mic access denied — allow microphone in browser settings.');
-                        } else if (e.error === 'no-speech') {
-                            showStatus('No speech detected — try again.');
-                        } else {
-                            showStatus('Mic error: ' + e.error + '. Try again.');
-                        }
+                        showMicHelp(e.error);
                     };
 
                     recognition.onend = function () {
@@ -895,15 +1454,375 @@
                         recognition = null;
                         if (!gotResult) {
                             showStatus('Nothing heard — tap Speak and try again.');
+                            statusTimeout = setTimeout(hideStatus, 3000);
                         }
                     };
                 });
             } else {
-                micBtn.style.display = 'none';
+                // Web Speech not supported — show button anyway, clicking explains why
+                var d = detectDevice();
+                if (d.isChromeIOS || d.isFirefoxIOS) {
+                    micBtn.style.display = 'inline-flex';
+                    micBtn.addEventListener('click', function () {
+                        showMicHelp('not-allowed');  // shows "switch to Safari" steps
+                    });
+                }
+                // else hide (desktop browsers that genuinely don't support it)
             }
+
+            // --- TD live preview ---
+            var tdPreviewImg = document.getElementById('td-preview-img');
+            var _snapBlob = null;
+
+            function pollTdPreview() {
+                fetch('/td/snapshot?t=' + Date.now())
+                    .then(function(r) {
+                        if (!r.ok) throw new Error(r.status);
+                        return r.blob();
+                    })
+                    .then(function(blob) {
+                        var newUrl = URL.createObjectURL(blob);
+                        tdPreviewImg.src = newUrl;
+                        tdPreviewImg.classList.add('loaded');
+                        if (_snapBlob) URL.revokeObjectURL(_snapBlob);
+                        _snapBlob = newUrl;
+                    })
+                    .catch(function() {});
+            }
+
+            var tdPollInterval = setInterval(pollTdPreview, 3000);
+            pollTdPreview();
 
             // --- Init ---
             connectSSE();
+
+            // ===========================
+            // Chat Mode
+            // ===========================
+
+            var INITIAL_RESPONSE = 'Your offering is now part of the dream \u2014 dissolving into a shared space alongside the dreams of other visitors to this exhibition.\n\nThis installation is an experiment in digital entanglement \u2014 technology not as a window onto nature, but as a place where human care and more-than-human worlds meet and shape each other.\n\nAs more dreams arrive, we map them into a semantic space where patterns emerge on their own \u2014 clusters of meaning that no one planned. You can explore the [emergent dreamworld](/graph-assets/dreamworld.html) to see how visitor dreams are weaving together, or dive into the [knowledge graph](/graph-assets/ssd-data-map.html) behind the installation.\n\nWhat draws you to the Salish Sea?';
+
+            var chatModeEl     = document.getElementById('chat-mode');
+            var chatMessagesEl = document.getElementById('chat-messages');
+            var chatLoadingEl  = document.getElementById('chat-loading');
+            var chatInputEl    = document.getElementById('chat-input');
+            var chatSendEl     = document.getElementById('chat-send');
+            var chatBackEl     = document.getElementById('chat-back');
+            var knowledgePanel = document.getElementById('knowledge-panel');
+            var kpContent      = document.getElementById('kp-content');
+            var kpCloseEl      = document.getElementById('kp-close');
+            var kpOverlay      = document.getElementById('kp-overlay');
+            var containerEl    = document.querySelector('.container');
+
+            var chatInitialized = false;
+            var chatHistory     = [];
+            var chatPending     = false;
+            var cardData        = null;
+            var lastChatSend    = 0;
+
+            function enterChatMode(offeringText) {
+                // Pause TD preview polling
+                clearInterval(tdPollInterval);
+
+                // Fade out offering form
+                containerEl.style.opacity = '0';
+                setTimeout(function() {
+                    containerEl.style.display = 'none';
+                    // Show chat mode
+                    chatModeEl.style.display = 'flex';
+                    // Trigger fade in on next frame
+                    requestAnimationFrame(function() {
+                        chatModeEl.classList.add('visible');
+                    });
+                }, 400);
+
+                // Fetch card data (non-blocking)
+                if (!cardData) {
+                    fetch('/graph-assets/ssd-cards.json')
+                        .then(function(r) { return r.json(); })
+                        .then(function(data) { cardData = data.cards; })
+                        .catch(function() {});
+                }
+
+                // Append the user's offering as first message
+                appendMessage('user', escapeHtml(offeringText));
+
+                if (!chatInitialized) {
+                    chatInitialized = true;
+
+                    // Disable input during stored response delay
+                    chatInputEl.disabled = true;
+                    chatSendEl.disabled = true;
+
+                    // Show typing indicator
+                    chatLoadingEl.style.display = 'flex';
+
+                    setTimeout(function() {
+                        chatLoadingEl.style.display = 'none';
+                        appendMessage('assistant', renderChatMessage(INITIAL_RESPONSE));
+                        chatInputEl.disabled = false;
+                        chatSendEl.disabled = false;
+                        chatInputEl.focus();
+                        // Initialize chat history
+                        chatHistory = [
+                            { role: 'user', content: offeringText },
+                            { role: 'assistant', content: INITIAL_RESPONSE }
+                        ];
+                    }, 800);
+                } else {
+                    // Returning from "back" with a new offering
+                    chatHistory.push({ role: 'user', content: offeringText });
+                    chatInputEl.focus();
+                }
+
+                scrollChatToBottom();
+            }
+
+            function escapeHtml(text) {
+                return text
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;');
+            }
+
+            function renderChatMessage(text) {
+                // Escape HTML entities
+                var html = escapeHtml(text);
+                // Convert [text](#node-id) to knowledge panel links
+                html = html.replace(/\[([^\]]+)\]\(#([a-zA-Z0-9:_.\-]+)\)/g,
+                    '<a href="#" data-node="$2" class="node-link">$1</a>');
+                // Convert [text](/path) to regular links (open in new tab)
+                html = html.replace(/\[([^\]]+)\]\((\/[a-zA-Z0-9:_.\-\/]+)\)/g,
+                    '<a href="$2" target="_blank" class="node-link">$1</a>');
+                // Convert newlines to <br>
+                html = html.replace(/\n/g, '<br>');
+                return html;
+            }
+
+            function appendMessage(role, html) {
+                var msg = document.createElement('div');
+                msg.className = 'msg ' + role;
+                var bubble = document.createElement('div');
+                bubble.className = 'msg-bubble';
+                bubble.innerHTML = html;
+                msg.appendChild(bubble);
+                chatMessagesEl.appendChild(msg);
+                scrollChatToBottom();
+            }
+
+            function scrollChatToBottom() {
+                requestAnimationFrame(function() {
+                    chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+                });
+            }
+
+            function sendChatMessage() {
+                var text = chatInputEl.value.trim();
+                if (!text || chatPending) return;
+
+                // Rate limit: 3s cooldown
+                var now = Date.now();
+                if (now - lastChatSend < 3000) return;
+
+                chatPending = true;
+                chatSendEl.disabled = true;
+                lastChatSend = now;
+
+                // Clear input and reset height
+                chatInputEl.value = '';
+                chatInputEl.style.height = 'auto';
+
+                // Display user message immediately
+                appendMessage('user', escapeHtml(text));
+
+                // Show typing indicator
+                chatLoadingEl.style.display = 'flex';
+                scrollChatToBottom();
+
+                // Prepare history (prior turns only, capped at 12)
+                var priorHistory = chatHistory.slice(-12);
+
+                var ctrl = new AbortController();
+                var timeoutId = setTimeout(function() { ctrl.abort(); }, 15000);
+
+                fetch('/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: text, history: priorHistory }),
+                    signal: ctrl.signal
+                })
+                .then(function(r) {
+                    clearTimeout(timeoutId);
+                    if (r.status === 429) {
+                        chatLoadingEl.style.display = 'none';
+                        appendMessage('assistant',
+                            '<span class="error-msg">Please wait a moment before sending again...</span>');
+                        return null;
+                    }
+                    if (!r.ok) throw new Error('HTTP ' + r.status);
+                    return r.json();
+                })
+                .then(function(data) {
+                    if (!data) return; // 429 case
+                    chatLoadingEl.style.display = 'none';
+                    var reply = data.reply;
+                    if (!reply || data.error) {
+                        appendMessage('assistant',
+                            '<span class="error-msg">The sea is quiet right now \u2014 try again in a moment</span>');
+                        return;
+                    }
+                    appendMessage('assistant', renderChatMessage(reply));
+                    // Add both turns to history (only on success)
+                    chatHistory.push({ role: 'user', content: text });
+                    chatHistory.push({ role: 'assistant', content: reply });
+                })
+                .catch(function() {
+                    clearTimeout(timeoutId);
+                    chatLoadingEl.style.display = 'none';
+                    appendMessage('assistant',
+                        '<span class="error-msg">The sea is quiet right now \u2014 try again in a moment</span>');
+                })
+                .finally(function() {
+                    chatPending = false;
+                    // Re-enable after 3s cooldown
+                    setTimeout(function() {
+                        chatSendEl.disabled = false;
+                    }, 3000);
+                });
+            }
+
+            // Chat send handlers
+            chatSendEl.addEventListener('click', sendChatMessage);
+            chatInputEl.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendChatMessage();
+                }
+            });
+
+            // Auto-resize chat textarea
+            chatInputEl.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+            });
+
+            // Back button
+            chatBackEl.addEventListener('click', function() {
+                // Close knowledge panel if open
+                closeKnowledgePanel();
+
+                // Fade out chat
+                chatModeEl.classList.remove('visible');
+                setTimeout(function() {
+                    chatModeEl.style.display = 'none';
+                    // Show offering form
+                    containerEl.style.display = 'flex';
+                    requestAnimationFrame(function() {
+                        containerEl.style.opacity = '1';
+                    });
+                    // Resume TD polling
+                    tdPollInterval = setInterval(pollTdPreview, 3000);
+                    pollTdPreview();
+                }, 400);
+            });
+
+            // Knowledge panel
+            function openKnowledgePanel(nodeId) {
+                if (!cardData) {
+                    // Try to fetch and open
+                    fetch('/graph-assets/ssd-cards.json')
+                        .then(function(r) { return r.json(); })
+                        .then(function(data) {
+                            cardData = data.cards;
+                            showPanel(nodeId);
+                        })
+                        .catch(function() {});
+                    return;
+                }
+                showPanel(nodeId);
+            }
+
+            function showPanel(nodeId) {
+                var card = cardData[nodeId];
+                if (!card) return;
+
+                // Clear content
+                kpContent.innerHTML = '';
+
+                // Title
+                var h3 = document.createElement('h3');
+                h3.textContent = card.title || nodeId;
+                kpContent.appendChild(h3);
+
+                // Type badge from node ID prefix
+                var badge = document.createElement('span');
+                badge.className = 'kp-badge';
+                badge.textContent = nodeId.split(':')[0];
+                kpContent.appendChild(badge);
+
+                // Thumbnail
+                if (card.thumbnail_url) {
+                    var img = document.createElement('img');
+                    img.className = 'kp-thumb';
+                    img.src = card.thumbnail_url;
+                    img.alt = card.title || '';
+                    img.loading = 'lazy';
+                    img.onerror = function() { this.style.display = 'none'; };
+                    kpContent.appendChild(img);
+                }
+
+                // Body
+                if (card.body) {
+                    var p = document.createElement('p');
+                    p.className = 'kp-body';
+                    p.textContent = card.body;
+                    kpContent.appendChild(p);
+                }
+
+                // Species pills
+                if (card.species && card.species.length) {
+                    var pillWrap = document.createElement('div');
+                    pillWrap.className = 'kp-species';
+                    card.species.forEach(function(sp) {
+                        var pill = document.createElement('span');
+                        pill.className = 'kp-species-pill';
+                        pill.textContent = sp;
+                        pillWrap.appendChild(pill);
+                    });
+                    kpContent.appendChild(pillWrap);
+                }
+
+                // Graph link
+                var graphLink = document.createElement('a');
+                graphLink.className = 'kp-graph-link';
+                graphLink.href = '/graph-assets/ssd-data-map.html#node=' + encodeURIComponent(nodeId);
+                graphLink.target = '_blank';
+                graphLink.textContent = 'explore in the graph \u2192';
+                kpContent.appendChild(graphLink);
+
+                // Open panel
+                knowledgePanel.classList.add('open');
+                kpOverlay.classList.add('open');
+            }
+
+            function closeKnowledgePanel() {
+                knowledgePanel.classList.remove('open');
+                kpOverlay.classList.remove('open');
+            }
+
+            kpCloseEl.addEventListener('click', closeKnowledgePanel);
+            kpOverlay.addEventListener('click', closeKnowledgePanel);
+
+            // Delegate node link clicks
+            chatMessagesEl.addEventListener('click', function(e) {
+                var link = e.target.closest('.node-link');
+                if (link && link.dataset.node) {
+                    e.preventDefault();
+                    openKnowledgePanel(link.dataset.node);
+                }
+                // Links without data-node (regular URLs) navigate normally via href + target="_blank"
+            });
 
         })();
     </script>
