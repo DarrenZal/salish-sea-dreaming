@@ -1,23 +1,25 @@
 """
-td_relay.py — runs on TD machine (Windows 3090).
+td_relay_v2.py — runs on TD machine (Windows 3090).
 Polls gallery server for new visitor prompts and photos, sends each via OSC to TouchDesigner.
+NEW: Also controls Resolume layer opacity (auto-fade on prompt arrival).
+     Dual mode: auto (relay controls Resolume) / live (Prav controls via MIDI).
+     Mode toggle: GET http://localhost:7002/mode/auto|live|
 
-Uses HTTP polling (/td/next?after=N) instead of SSE streaming — SSE via
-requests.iter_content() dies silently on Windows after 1-2 events due to
-socket buffering differences.
-
-Singleton via PID file — exits if another instance is already running.
-Run: python td_relay.py
+Based on td_relay.py — original is preserved as rollback.
+Run: python td_relay_v2.py
 """
 import atexit
 import logging
 import os
 import sys
 import time
+import threading
+from http.server import HTTPServer, BaseHTTPRequestHandler
 from pathlib import Path
 
 import requests
 from pythonosc import udp_client
+from resolume_fade import ResolumeFader
 
 # ---------------------------------------------------------------------------
 # Logging — timestamps in every line
@@ -115,6 +117,68 @@ _acquire_singleton()
 osc = udp_client.SimpleUDPClient(TD_HOST, TD_PORT)
 log.info(f"OSC target: {TD_HOST}:{TD_PORT}")
 log.info(f"Gallery poll: {GALLERY_URL}/td/next  interval={POLL_INTERVAL}s")
+
+# ---------------------------------------------------------------------------
+# Resolume fade control (v2 addition)
+# ---------------------------------------------------------------------------
+
+RESOLUME_OSC_PORT = int(os.getenv("RESOLUME_OSC_PORT", "7001"))
+RESOLUME_TD_LAYER = int(os.getenv("RESOLUME_TD_LAYER", "4"))
+FADE_IN_SECS = float(os.getenv("FADE_IN_SECS", "2.0"))
+FADE_OUT_SECS = float(os.getenv("FADE_OUT_SECS", "2.0"))
+PROMPT_DWELL_SECS = float(os.getenv("PROMPT_DWELL_SECS", "30"))
+MODE_PORT = int(os.getenv("MODE_PORT", "7002"))
+
+fader = ResolumeFader(
+    host="127.0.0.1",
+    port=RESOLUME_OSC_PORT,
+    layer=RESOLUME_TD_LAYER,
+    fade_duration=FADE_IN_SECS,
+)
+_mode = "auto"  # "auto" or "live"
+_prompt_arrived_at = 0.0  # wall-clock time of last visitor prompt
+
+log.info(f"Resolume fade: layer={RESOLUME_TD_LAYER} port={RESOLUME_OSC_PORT} mode={_mode}")
+
+# ---------------------------------------------------------------------------
+# Mode toggle HTTP server (v2 addition)
+# ---------------------------------------------------------------------------
+
+class _ModeHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        global _mode, _prompt_arrived_at
+        if self.path == "/mode/auto":
+            _mode = "auto"
+            _prompt_arrived_at = 0.0
+            msg = "auto"
+            log.info("Mode switched to AUTO")
+        elif self.path == "/mode/live":
+            if _mode == "auto":
+                fader.fade_out()  # graceful handoff
+            _mode = "live"
+            _prompt_arrived_at = 0.0
+            msg = "live"
+            log.info("Mode switched to LIVE")
+        elif self.path == "/mode":
+            msg = _mode
+        else:
+            self.send_response(404)
+            self.end_headers()
+            return
+        self.send_response(200)
+        self.send_header("Content-Type", "text/plain")
+        self.end_headers()
+        self.wfile.write(msg.encode())
+
+    def log_message(self, *args):
+        pass  # suppress HTTP request logs
+
+try:
+    _mode_server = HTTPServer(("127.0.0.1", MODE_PORT), _ModeHandler)
+    threading.Thread(target=_mode_server.serve_forever, daemon=True).start()
+    log.info(f"Mode server: http://127.0.0.1:{MODE_PORT}/mode/auto|live")
+except OSError as e:
+    log.warning(f"Mode server failed to start on port {MODE_PORT}: {e} — mode toggle unavailable")
 
 # ---------------------------------------------------------------------------
 # Main polling loop
@@ -260,6 +324,11 @@ while True:
             last_seq = server_seq
             osc.send_message("/salish/prompt/visitor", prompt)
             log.info(f"-> OSC seq={last_seq}: {prompt[:80]}")
+            # v2: fade in Resolume TD layer on visitor prompt (auto mode only)
+            if _mode == "auto":
+                fader.fade_in()
+                _prompt_arrived_at = time.time()
+                log.info(f"Resolume: fade IN (auto mode, dwell={PROMPT_DWELL_SECS}s)")
         else:
             log.debug(f"poll seq={server_seq} (no change)")
 
@@ -290,6 +359,13 @@ while True:
                 log.info(f"-> OSC photo seq={last_photo_seq} -> {PHOTO_LOCAL_PATH}")
         except Exception as e:
             log.debug(f"Photo poll error (non-fatal): {e}")
+
+        # --- v2: Dwell timeout — fade out after prompt dwell period ---
+        if _mode == "auto" and _prompt_arrived_at > 0:
+            if (time.time() - _prompt_arrived_at) > PROMPT_DWELL_SECS:
+                fader.fade_out()
+                _prompt_arrived_at = 0.0
+                log.info("Resolume: fade OUT (dwell expired)")
 
         # --- Upload TD snapshot every SNAP_UPLOAD_EVERY polls ---
         _snap_poll_count += 1

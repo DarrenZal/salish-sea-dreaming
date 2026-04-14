@@ -6,8 +6,8 @@
 # After detecting TD is gone, waits 60s grace period before checking again
 # (allows TD to fully load before the next check would re-trigger).
 
-$TdExe  = "C:\Program Files\Derivative\TouchDesigner\TouchDesigner.exe"
-$ToeFile = "C:\Users\user\Desktop\SalishSeaDreaming.toe"
+$TdExe  = "C:\Program Files\Derivative\TouchDesigner.2025.32460\bin\TouchDesigner.exe"
+$ToeFile = "C:\Users\user\Desktop\SSD-exhibition.toe"
 $LogFile = "C:\Users\user\Desktop\ssd_watchdog.log"
 
 function Write-Log($msg) {
@@ -22,15 +22,13 @@ while ($true) {
 
     $proc = Get-Process -Name "TouchDesigner" -ErrorAction SilentlyContinue
     if (-not $proc) {
-        Write-Log "TouchDesigner not running — restarting"
-        if (Test-Path $ToeFile) {
-            Start-Process $TdExe -ArgumentList "`"$ToeFile`""
-            Write-Log "Launched: $TdExe `"$ToeFile`""
-        } else {
-            Start-Process $TdExe
-            Write-Log "WARNING: .toe not found; launched TD without project file"
-        }
-        # Grace period — let TD load before next watchdog check
-        Start-Sleep -Seconds 60
+        Write-Log "TouchDesigner not running - restarting via SSD-TouchDesigner task"
+        # Use schtasks /run instead of Start-Process so TD launches in the
+        # interactive user session (session 1) rather than the watchdog's
+        # background session (session 0) where the TD GUI cannot initialise.
+        & schtasks.exe /run /tn "SSD-TouchDesigner"
+        Write-Log "Triggered SSD-TouchDesigner task"
+        # Grace period - let TD load before next watchdog check
+        Start-Sleep -Seconds 120
     }
 }
