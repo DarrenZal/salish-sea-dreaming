@@ -76,3 +76,37 @@ training-data/review/contact-sheets/
 
 # Provenance backup
 training-data/provenance.csv.bak
+
+# Claude-mem auto-generated activity stubs (not the canonical /CLAUDE.md)
+briony-lora/CLAUDE.md
+docs/CLAUDE.md
+docs/archive/CLAUDE.md
+docs/comms/CLAUDE.md
+scripts/CLAUDE.md
+web/src/CLAUDE.md
+
+# Private / sensitive — DO NOT commit to public repo
+docs/Wasanec Legal Case/
+docs/comms/2026-03-24-signal-response-draft.md
+docs/comms/2026-03-25-signal-update-draft.md
+
+# Corpus + training data (large, regenerable, host out-of-band)
+training-data/dreaming-model-512/
+training-data/supplement-512/
+training-data/review/qc-*/
+training-data/review/rejects-*.csv
+training-data/review/tags-*.csv
+training-data/review/balanced-selection.csv
+tools/species-supplement.tsv
+
+# TELUS training runs (outputs kept locally / shared via Drive)
+telus/stats-*.jsonl
+telus/log-*.txt
+telus/training_options-*.json
+telus/ssd_experiments_*.py
+
+# StyleGAN2 source tree (vendored locally, not our code)
+stylegan2/
+
+# Generated school-marketing output (regenerable from scripts/generate_school_marketing*.py)
+output/school-marketing/
