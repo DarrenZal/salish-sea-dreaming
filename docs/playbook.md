@@ -11,8 +11,8 @@
 
 ### What "working" looks like
 
-- The projection wall is **moving**, with watercolor-style marine imagery.
-- You can see dreamy shapes: fish, kelp, light, sometimes visitor prompts appearing.
+- The projection wall is **moving**, with dreamy marine imagery (GAN-generated latent interpolations — salmon, kelp, waves, birds, light).
+- You can see organic flowing shapes shifting slowly into each other.
 - Sound is playing (gentle ambient audio, looping).
 - **If all three are true → the installation is healthy. Leave it alone.**
 
@@ -20,11 +20,12 @@
 
 | # | Symptom | Action |
 |---|---------|--------|
-| 1 | **Black wall / no image** | Wait 2 minutes. The system auto-restarts itself. If still black → **Step 4**. |
-| 2 | **Frozen image (not moving)** | Wait 2 minutes. If still frozen → **Step 4**. |
-| 3 | **Image on wrong wall** | Wait 30 seconds — display watchdog auto-restores projector assignments. If still wrong → **Step 4**. |
-| 4 | **No sound** | Check the speaker power and volume knob. If still silent → **Step 5**. |
-| 5 | **Still broken after waiting** | **Text Darren: 518-210-2828** (or message the WhatsApp group) with a photo of the wall. |
+| 1 | **Black wall / no image** | Wait 2 minutes. The system auto-restarts itself. If still black → **Step 5**. |
+| 2 | **Frozen image (not moving)** | Wait 2 minutes. If still frozen → **Step 5**. |
+| 3 | **One wall black, other wall fine** (BenQ vs Epson) | Likely BenQ signal drop — a tech can reset it quickly via Resolume. **Text Darren** with a photo of which wall is dark. |
+| 4 | **Image on wrong wall** | Wait 30 seconds — display watchdog auto-restores projector assignments. If still wrong → **Step 5**. |
+| 5 | **No sound** | Check the speaker power and volume knob. If still silent → **Step 6**. |
+| 6 | **Still broken after waiting** | **Text Darren: 518-210-2828** (or message the WhatsApp group) with a photo of the wall. |
 
 ### What NOT to do
 
@@ -55,6 +56,7 @@
 | Frozen image | TouchDesigner or StreamDiffusion hung | Wait 2 min for auto-recovery. | TD watchdog restarts it within 2 min. |
 | Wrong image (not marine) | Resolume playing wrong composition | Text Darren with photo. | Remote fix: relaunch Resolume with correct composition. |
 | Image on wrong wall / misaligned | Windows reshuffled display IDs (projector power-cycle) | Wait 30s for auto-restore. If still wrong after 1 min → text Darren with photo of all walls. | Display-Watchdog detects change, reloads MultiMonitorTool config (~15s). |
+| **One wall black, other wall fine** — especially if it's the **BenQ** | EDID handshake drift (BenQ is sensitive; Epsons tolerate it). Intermittent blackouts / signal drops. | Text Darren with photo. Don't power-cycle the projector — that can re-trigger. | Resolume → Output → Advanced Output → reset output for the affected screen. ~10s fix. Long-term: inline EDID emulator (~$30 dongle) locks the handshake. |
 | Visitor prompts not appearing | Relay or gallery server down | Text Darren. | Relay watchdog restarts it. Server may need manual check. |
 | Pixelated / low quality | Projector resolution mismatch | Text Darren. | Remote fix possible. |
 
@@ -197,6 +199,27 @@ schtasks /run /tn "SSD-SSH-Tunnel"
 - ✅ **TouchDesigner auto-start — confirmed working.** `SSD-TouchDesigner` "At logon time", launches `SSD-exhibition.toe` after 30s ping delay.
 - ✅ **Display ID reshuffle — solved.** `SSD-Display-Watchdog` polls every 15s, detects display count changes, waits 15s for HDMI settle, runs `MultiMonitorTool /LoadConfig display_config.cfg`.
 - ❓ **Does simultaneous projector power-on actually matter?** In theory the watchdog handles any ordering, but one clean detection event is better than two cascading triggers. Worth empirically validating during the April 13 test: power one projector on, wait 30s, power the other, confirm mapping still lands correctly.
+- ✅ **BenQ = root cause of Resolume crashes — confirmed fixed April 13.** Prav on the follow-up call: *"once I changed the BenQ down [to 1920×1080], it stopped doing its funny jiggling and weirdness and crashing Resolume. It was the BenQ that was crashing Resolume."* Applied mitigations:
+  - ✅ **Windows → Display Settings → Advanced → pin BenQ to 1920×1080 @ 60 Hz.** ⚠️ **Gotcha:** changing resolution invalidates the existing Resolume slice — the main screen had to be **remapped in Advanced Output** after the res change. Any future res/refresh change → expect a remap.
+  - ✅ BenQ menu: disabled **Auto Source Detect** and **Eco Mode**, enabled **PC/Presentation Mode**.
+  - 🟡 **EDID copy-from-source dongles** ordered for Impact venue (May) — passive HDMI dongle that captures native EDID once and replays it forever so the projector can never re-handshake. Defence in depth; not required now but belt-and-braces for tour.
+  - 🟡 **Epson replacement for BenQ** — Prav's strong preference going forward: *"BenQs aren't a very good brand. Epsons are what you want if you're a VJ."* On the equipment list for Impact.
+- 🟡 **NDI flicker — observed April 13 afternoon, partially diagnosed April 13 evening.** Both Resolume NDI inputs and TouchDesigner NDI inputs go "offline" briefly (a few seconds) then recover. A second, more severe issue was uncovered in evening diagnostics: **stale NDI hostname bindings** (see next item). After the hostname fix, continue monitoring for real flicker. Remaining suspects if flicker returns:
+  - LAN capacity — NDI is bandwidth-hungry (~100 Mbps per HD stream).
+  - NIC / driver power management — disable on Windows NIC settings.
+  - GPU encode capacity — NDI encoder shares GPU with TD/StreamDiffusion.
+  - Diagnostics: NDI Tools Studio Monitor; `Get-Counter` on NIC during a drop.
+- 🔴→✅ **NDI hostname mismatch — root cause of post-reboot black visuals, fixed at runtime April 13 evening, needs persistence.** The 3090's hostname is `DESKTOP-37616PR` but was once `MSI`. TD's `/project1/ndiin2` was hardcoded to listen for `MSI (Autolume Live)` — stream that hasn't existed since the hostname change. After reboot, the default Autolume → StreamDiffusion → Resolume pipeline received black frames → web-app snapshot was black. Same root cause very likely behind the Arena "nothing playing, had to click Advanced Output" symptom (Arena sources also hardcoded to `MSI (*)`).
+  - ✅ **Runtime fix April 13 evening:** `op('/project1/ndiin2').par.name = 'DESKTOP-37616PR (Autolume Live)'` — snapshot went from 11KB black → 430KB real content within seconds.
+  - ⚠️ **Not yet persisted:** fix is ephemeral until TD re-saves `SSD-exhibition.toe`. On next reboot, the stale MSI name returns.
+  - 🟡 **Pending April 14 morning with Prav:** (1) Ctrl+S the .toe to persist the NDI source name. (2) Open Arena, check every NDI source, re-pick from dropdown, save the composition. (3) Grep the .toe binary for any other `MSI` references (it's binary but contains ASCII strings; `findstr` should surface them).
+- 🟡 **BenQ resolution doesn't persist across reboots — Windows reverts to 4K.** Prav pinned BenQ to 1920×1080 in the afternoon, but after the evening reboot Windows defaulted it back to 4K, then he had to re-pin manually. This needs to be automated as part of the boot sequence — either a boot script that enforces display resolution, or an EDID emulator dongle (which would make Windows "see" only 1080p as a valid mode).
+- 🟡 **Arena "click to play" on cold boot.** Even after Arena auto-starts, the composition window's clips don't begin playing until someone clicks into the Arena window (focuses it). Prav's workaround during manual recovery: click Arena's main window → clips start playing. **Automation option:** PowerShell script triggered after Arena launch that uses `SetForegroundWindow` + a safe mouse click into the composition area. Risk: brittle if window position changes.
+- 🟡 **Arena first-clip-can't-be-missing-source rule.** In Arena, if the first clip on a clip line references a NDI source that isn't yet broadcasting (e.g., Autolume not up), the whole clip line freezes. Prav rearranged composition April 13 so Autolume is no longer first. Document this constraint so we don't accidentally revert.
+- 🟡 **StreamDiffusion resolution resets to 1024×1024 on cold boot.** After April 13 reboot, SD came up at 1024 (heavy — ~6 fps). Prav manually changed to 768 and saved via the TD UI, but unclear if the save persists to the .toe or is in-memory only. Needs verification on April 14 reboot: does it come up at 768 or 1024?
+- 🔴 **Autolume wrapper `autolume_autostart.py` has a TypeError — wrapper approach deferred.** Test run showed `PickleWidget.load() got an unexpected keyword argument 'ignore_errors'` — Autolume's own `start_renderer()` → `load_pickle()` path passes `ignore_errors` to `PickleWidget.load()` which doesn't accept it. Root cause is a version mismatch inside Autolume that the programmatic call path exposes. The GUI click path works because it doesn't hit this branch. Fix options: monkey-patch `PickleWidget.load` to accept `**kwargs` in the wrapper, or find an alternative API path in Autolume that doesn't call `load_pickle(..., ignore_errors=...)`. Until this is fixed, Autolume auto-start is disabled and Prav manually launches it after cold boot.
+- 🟡 **Ambient audio task registered and running, but audio may not have been audible post-reboot.** `SSD-Ambient-Audio` fired on logon (log confirmed `SoundPlayer.PlayLooping()` started at T+90sec), but Prav couldn't hear anything. Most likely cause: Windows reset the default audio output device at boot (e.g., to NVIDIA HDMI, NDI Webcam Audio, or wrong USB device). **Pending verification April 14**: what's the default audio output device after cold boot, and does the .ps1 script play to the correct speakers? Fix if wrong: explicitly set the default audio endpoint via PowerShell at boot, or pin it via `audioswitch`/`SoundVolumeView`.
+- 🟡 **TD spawns TWO StreamDiffusion instances on startup.** On April 13 reboot, two Python subprocesses both running `streamdiffusionTD/td_main.py` spawned at the exact same second — one using venv Python, one using system Python 3.11. Composition has both `/project1/StreamDiffusionTD` and `/project1/StreamDiffusionTD1` operators. Not necessarily a bug — may be intentional (dual SD pipelines, e.g., for two walls). Worth confirming design intent with Prav and verifying the PATH resolution issue (system Python spawning via relative `python` is not reliable long-term — safer to hardcode the venv python in whatever DAT is spawning).
 
 ---
 
@@ -204,23 +227,44 @@ schtasks /run /tn "SSD-SSH-Tunnel"
 
 ### Components
 
+**The main live render pipeline (confirmed April 13):**
+
 ```
-Visitor phone (QR)
-    ↓
-Gallery server (poly, 37.27.48.12:9000) — FastAPI, queues prompts
-    ↓  (polled every 2s)
-Relay (3090, td_relay.py) — pulls /td/next, sends via OSC
-    ↓  (OSC port 7000)
-TouchDesigner (3090) — StreamDiffusion styles the image
-    ↓  (NDI / capture)
-Resolume (3090) — mapping + video mixing → projectors
-    ↓  (HDMI × 2)
-Projection wall (Mahon Hall)
+Autolume (3090, GAN latent interpolation — Salish Sea model) 
+    ↓  NDI: "DESKTOP-37616PR (Autolume Live)"
+TouchDesigner/ndiin2 → StreamDiffusionTD (pass-through / minimal styling) → TD/ndiout2
+    ↓  NDI: "DESKTOP-37616PR (TouchDesigner)"
+Resolume Arena — mapping + video mixing
+    ↓  HDMI × 2
+Projection walls (Mahon Hall — 1× BenQ, 1× Epson)
 ```
 
-Parallel:
-- **Autolume** (3090) → separate projection output (320/120 pkl latent animation)
-- **Audio**: media player on 3090 → stereo speakers (looped ambient)
+**Note on StreamDiffusion:** the original vision was SD applying Briony-watercolor LoRA styling to Autolume's GAN output in real time, but SD-Turbo and SD 1.5 LoRA were never compatible. StreamDiffusion is currently running effectively as pass-through; the visual aesthetic on the walls is Autolume's GAN output directly. See `CLAUDE.md` "Briony Style Transfer" options for exhibition-time alternatives.
+
+**Visitor prompt pipeline (in parallel):**
+
+```
+Visitor phone (QR) → Gallery server (poly, 37.27.48.12:9000, FastAPI)
+    ↓  poll /td/next every 2s
+Relay (3090, td_relay.py) → OSC port 7000
+    ↓
+TouchDesigner (applies visitor prompt to SD)
+    ↓  (affects the NDI stream out to Resolume)
+Walls
+```
+
+**Snapshot pipeline (drives the visitor web app preview):**
+
+```
+TD/ndiout2 → snap_runner DAT (every 600 frames) → C:\Users\user\Desktop\td_snap.jpg
+    ↓  relay watches mtime, POSTs when changed
+Gallery server /td/snapshot endpoint
+    ↓  GET every ~2s from visitor.html
+https://salishseadreaming.art/static/visitor.html — live preview
+```
+
+**Other outputs:**
+- **Audio**: `gallery_ambient_audio.ps1` .NET SoundPlayer → stereo speakers (21-min .wav loop). Prav plans to swap this to an Ableton live-set after April 14.
 
 ### Watchdogs (all active as of April 12)
 
@@ -262,6 +306,10 @@ Logs: `ssd_watchdog.log`, `display_watchdog.log`, etc. on the 3090 desktop.
 |------|--------|
 | 2026-04-12 | Initial playbook. Verified live task list on 3090 (11 scheduled tasks). Display reshuffle gap confirmed solved via `SSD-Display-Watchdog` + MultiMonitorTool. Autolume autostart wrapper (`autolume_autostart.py`) built + deployed; enable pending Monday validation. |
 | 2026-04-13 | (planned) Remote reboot test w/ Prav — validate full cold-boot sequence. |
+| 2026-04-13 | BenQ EDID blackout observed during setup (Prav). Recovery: Resolume → Output → Advanced Output → reset. Added symptom rows to Parts 1 + 2 and known-gaps entry w/ mitigation ladder (refresh-rate pin → BenQ menu toggles → EDID emulator). |
+| 2026-04-13 | BenQ mitigations applied (Prav): pinned to 1920×1080 @ 60 Hz + BenQ menu toggles. **Gotcha logged:** res change invalidated Resolume slice → required main-screen remap in Advanced Output. EDID copy-from-source dongles on order (staging 2) for Impact venue; may pre-stage for April if drops recur. Autolume transitions also working well. |
+| 2026-04-13 | **BenQ confirmed as root cause of Resolume crashes** (Prav follow-up call): "once I changed the BenQ down, it stopped crashing Resolume." Status upgraded to ✅. Epson replacement planned for Impact. **New known issue: NDI flicker** — all NDI streams (Resolume + TD) drop offline briefly then recover. Likely capacity/routing. Diagnostics plan added. Tour-readiness plan drafted at `docs/tour-readiness-plan.md`. |
+| 2026-04-13 | **Reboot test + deep NDI diagnostic.** Triggered remote reboot at 16:33. All auto-start tasks fired cleanly (TD, Resolume, Relay, SSH tunnel, watchdogs, NEW `SSD-Ambient-Audio`). Prav manually fixed three post-boot state issues: (1) BenQ Windows resolution reverted to 4K → manually re-pinned to 1920×1080; (2) SD came up at 1024×1024 → manually changed to 768 + saved; (3) Arena composition frozen on launch → clicked window to start playback, rearranged first clip to not reference Autolume. **Autolume wrapper validation failed** — `PickleWidget.load() got an unexpected keyword argument 'ignore_errors'` — SSD-Autolume task reverted to disabled + old launcher; Prav manual-launches Autolume. **BIGGEST FIND:** web-app visitor preview black because TD's `ndiin2` was listening for `MSI (Autolume Live)` but machine hostname is now `DESKTOP-37616PR`. Actual NDI name is `DESKTOP-37616PR (Autolume Live)`. Fixed at runtime via TD MCP — snap went from 11KB black → 430KB real content. Fix is ephemeral until .toe save. Likely same stale-hostname root cause for Arena "click to start" symptom and possibly earlier NDI flicker reports. Full April 14 morning checklist in `docs/tour-readiness-plan.md` Horizon 1. |
 | — | (pre-Monday TODO) Phone-accessible `/admin/reboot` URL on gallery server so anyone in WhatsApp group can remote-reboot without laptop/SSH. |
 | — | (planned) Enable + validate `SSD-Autolume` — load `network-snapshot-000120.pkl`, enter live performance mode. |
 | — | (built, pending enable) Ambient audio auto-start via `gallery_ambient_audio.ps1` (SoundPlayer.PlayLooping). Swap to Ableton once Prav ports his mix from 3060. |
