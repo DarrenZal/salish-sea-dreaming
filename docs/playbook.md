@@ -167,6 +167,22 @@ Get-Process TouchDesigner, Resolume, python
 schtasks /query /tn "SSD-*" /fo LIST
 ```
 
+### Resolume Advanced Output kick (remote)
+
+**Symptom:** Resolume is running but the projectors aren't outputting (Prav's recurring morning fix is to open the Advanced Output panel — `Ctrl+Shift+A` — which forces the outputs to re-engage).
+
+**Remote trigger from anywhere with SSH:**
+
+```bash
+ssh windows-desktop-remote "schtasks /run /tn SSD-Resolume-Kick"
+```
+
+This fires `gallery_resolume_kick.ps1` in the user's interactive session, which brings Arena to the foreground and sends `Ctrl+Shift+A`. Logs to `C:\Users\user\resolume_kick.log`.
+
+**Why a Task Scheduler hop:** SendKeys requires a real desktop. A direct SSH invocation runs in a headless session and the keystroke goes nowhere. The task runs in the logged-in user's session, where the keystroke reaches Arena.
+
+**Note:** `Ctrl+Shift+A` *toggles* the panel — firing it twice cancels out. If you don't know the current state, fire once and check the wall; if still black, fire again.
+
 ### Manual service launch (if auto-start failed)
 
 ```powershell
