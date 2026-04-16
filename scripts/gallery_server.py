@@ -18,7 +18,7 @@ import os
 import secrets
 import sys
 from collections import deque
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import List, Optional
 
@@ -386,6 +386,10 @@ dwell_elapsed: float = 0.0
 
 # Rate limiting: {ip: last_submission_timestamp}
 rate_limit_map: dict[str, datetime] = {}
+
+# Per-minute submission rate tracking (for metrics logging; see metrics_logger task).
+# Each entry is the UTC timestamp of a successfully-queued prompt.
+_recent_prompt_timestamps: deque[datetime] = deque()
 
 # SSE subscriber queues
 sse_subscribers: List[asyncio.Queue] = []
@@ -980,6 +984,27 @@ async def queue_worker() -> None:
                 restore_base()
 
 
+async def metrics_logger() -> None:
+    """Log a per-minute submission-rate line so we can see kid-storm bursts.
+
+    Logs look like:
+        metrics prompts_last_min=7 queue_depth=3 max_queue=20 dwell=30
+    Grep `metrics ` in the server log to chart the rate; informs whether the
+    kid-prompt-storm throttle (see plan §4 step 2) is needed.
+    """
+    while True:
+        await asyncio.sleep(60.0)
+        now = datetime.utcnow()
+        cutoff = now - timedelta(seconds=60)
+        while _recent_prompt_timestamps and _recent_prompt_timestamps[0] < cutoff:
+            _recent_prompt_timestamps.popleft()
+        logger.info(
+            f"metrics prompts_last_min={len(_recent_prompt_timestamps)} "
+            f"queue_depth={len(queue)} max_queue={MAX_QUEUE_SIZE} "
+            f"dwell={PROMPT_DWELL_SECONDS}"
+        )
+
+
 # ---------------------------------------------------------------------------
 # Rate limit helper
 # ---------------------------------------------------------------------------
@@ -1010,10 +1035,14 @@ def check_rate_limit(request: Request) -> None:
     if last is not None:
         elapsed = (now - last).total_seconds()
         if elapsed < RATE_LIMIT_SECONDS:
+            remaining = max(1, int(RATE_LIMIT_SECONDS - elapsed + 0.5))
             logger.info(f"Rate limit hit from {ip} ({elapsed:.1f}s since last)")
             raise HTTPException(
                 status_code=429,
-                detail=f"Too many requests — please wait {RATE_LIMIT_SECONDS}s between offerings.",
+                detail=(
+                    f"Your last offering is still dissolving — "
+                    f"please wait {remaining}s before sending another."
+                ),
             )
     rate_limit_map[ip] = now
 
@@ -1118,6 +1147,7 @@ async def post_prompt(body: PromptRequest, request: Request):
             submitted_at=datetime.utcnow(),
         )
         queue.append(item)
+        _recent_prompt_timestamps.append(datetime.utcnow())
         logger.info(f"Queued prompt id={prompt_id} source={body.source} queue_size={len(queue)}")
 
     # Handle visitor photo (works for photo-only or text+photo)
@@ -1128,7 +1158,15 @@ async def post_prompt(body: PromptRequest, request: Request):
     if raw:
         await broadcast_sse(item)
 
-    return {"status": "queued", "position": len(queue)}
+    # Estimate when this prompt will reach the wall: (position - 1) * dwell seconds.
+    # The kid-facing app can surface this so they don't spam-retry.
+    position = len(queue)
+    eta_seconds = max(0, (position - 1) * PROMPT_DWELL_SECONDS)
+    return {
+        "status": "queued",
+        "position": position,
+        "eta_seconds": eta_seconds,
+    }
 
 
 @app.get("/prompts")
@@ -1841,6 +1879,8 @@ async def startup():
 
     # Start background queue worker
     asyncio.create_task(queue_worker())
+    # Per-minute metrics logger (submission rate + queue depth)
+    asyncio.create_task(metrics_logger())
     logger.info(
         f"Gallery server started — OSC → {TD_HOST}:{TD_OSC_PORT}, "
         f"dwell={PROMPT_DWELL_SECONDS}s, max_queue={MAX_QUEUE_SIZE}"

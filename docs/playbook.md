@@ -59,6 +59,7 @@
 | **One wall black, other wall fine** — especially if it's the **BenQ** | EDID handshake drift (BenQ is sensitive; Epsons tolerate it). Intermittent blackouts / signal drops. | Text Darren with photo. Don't power-cycle the projector — that can re-trigger. | Resolume → Output → Advanced Output → reset output for the affected screen. ~10s fix. Long-term: inline EDID emulator (~$30 dongle) locks the handshake. |
 | Visitor prompts not appearing | Relay or gallery server down | Text Darren. | Relay watchdog restarts it. Server may need manual check. |
 | Pixelated / low quality | Projector resolution mismatch | Text Darren. | Remote fix possible. |
+| **Everything was fine yesterday, now all walls are black at opening** | Most likely: Windows Update reboot overnight. Watchdogs re-arm on logon but Resolume may come up idle, BenQ resolution may have reverted to 4K, NDI bindings may be stale. | Wait 3 minutes — auto-start may still be in progress. Still black → text Darren. Don't touch the computer. | (1) SSH in, confirm logon completed. (2) `schtasks /run /tn "SSD-Resolume"` to relaunch Resolume. (3) Re-pin BenQ to 1920×1080 in Display Settings. (4) If wall still black, check `ndiin2.name` in TD for stale hostname. See Part 4 "Windows Update handling." |
 
 ### Audio problems
 
@@ -91,12 +92,19 @@
 
 **10:45 AM — walk-in check (5 min):**
 
-1. Look at the wall. Is it moving?
-2. Listen. Is sound playing?
-3. Stand back and take a photo of the installation.
-4. **If anything looks off → text Darren immediately** (gives us 15 min before opening).
+Tick each item. If any is ❌ → text Darren immediately (gives us 15 min before opening).
 
-**If you had to remote-reboot overnight:** allow 3–5 minutes for all services to come up before assessing.
+- [ ] **Walls moving?** — flowing marine imagery on both projection walls (not frozen, not black).
+- [ ] **Sound playing?** — gentle ambient audio audible from the gallery speakers.
+- [ ] **Photo taken?** — one wide shot of the installation for the morning record.
+- [ ] **Visitor QR working?** — scan the posted QR with your own phone, confirm the visitor page loads (no need to submit a prompt).
+
+**If anything looks off:**
+1. Wait 3 minutes. Watchdogs usually catch it.
+2. Still off → text Darren (518-210-2828) with a photo of the wall.
+3. Don't power-cycle the computer tower. Don't unplug anything.
+
+**If there was a Windows update overnight** (walls black at first look, but everything was working yesterday): see Part 2 row "Everything was fine yesterday, now all walls are black at opening." This is a known failure pattern — just text Darren and wait.
 
 ### During gallery hours
 
@@ -190,6 +198,37 @@ schtasks /run /tn "SSD-SSH-Tunnel"
 3. If preset 0 isn't the desired state, edit one line in `launch_autolume_autostart.bat` to `PRESET_DIR=...presets\1` and re-test.
 4. Once validated: re-point `SSD-Autolume` task action to `launch_autolume_autostart.bat`, enable the task, register the watchdog as `SSD-Autolume-Watchdog`.
 5. Cold-boot test.
+
+### Windows Update handling
+
+**Context:** On 2026-04-16, a Windows Update reboot overnight left all projectors dark at opening. Resolume restart fixed it, but we want this to not need Prav's hands.
+
+**Layered defence (apply in order):**
+
+1. **Pause updates for 7 days** (covers remaining exhibition window, April 20–26).
+   Settings → Windows Update → Pause updates → 7 days.
+   Reversible anytime (Resume updates).
+
+2. **Set Active Hours to 10:00–18:00** (prevents mid-visit reboots).
+   Settings → Windows Update → Advanced options → Active hours → Manually → 10:00 to 18:00.
+
+3. **`SSD-Post-Boot-Verify` task** — runs 60s after logon, checks:
+   - Resolume + TouchDesigner processes alive,
+   - BenQ display resolution is 1920×1080 (not 4K),
+   - NDI sources bound to current hostname (not stale `MSI`).
+   Writes to `C:\Users\user\post_boot_verify.log`. Log-only for now (upgrade to Telegram/WhatsApp if a real incident slips past).
+   Script: `scripts/post_boot_verify.ps1` in repo; register as Task Scheduler task with 60s logon delay.
+
+**Recovery playbook if a Windows Update still breaks the wall (docent sees black at opening):**
+
+| Step | Action |
+|------|--------|
+| 1 | Docent texts Darren + photo. Doesn't touch the tower. |
+| 2 | Darren/Prav SSH into 3090 (`ssh windows-desktop-remote`). Confirm logon completed (`Get-Process explorer`). |
+| 3 | Relaunch Resolume: `schtasks /run /tn "SSD-Resolume"`. Wait 30s. |
+| 4 | If wall still black: check BenQ resolution via Settings → Display → Advanced; re-pin to 1920×1080 if reverted to 4K. Re-map Resolume slice if needed. |
+| 5 | If wall still black: check TD `ndiin2.name` — should be `DESKTOP-37616PR (Autolume Live)`. If `MSI (*)`, re-apply runtime fix (see April 13 entry in change log). |
+| 6 | Once working: `Get-Content C:\Users\user\post_boot_verify.log -Tail 20` to see what the verify task saw (sanity-check for next time). |
 
 ### Known gaps (cold-boot test priorities — April 13)
 

@@ -72,6 +72,62 @@ Run in order. Each step independently valuable so we can stop at any point.
 
 ---
 
+## Schools / Band-Office variant — single-projector config
+
+Prav (April 15): "Eventually Carol Anne may want to tour Salish Sea Dreaming to schools and band offices in FN communities in the Salish Sea (with music mix and art styles from the nations here) so we may need to be able to send a computer and have it set up and kept running. Perhaps it's a simplified set up with one projector … so we don't have to worry about projectors flipping out, or we make sure we have a stable configuration of Epson projectors."
+
+**Constraints distinct from Mahon Hall / Impact:**
+- **One projector** (not two) — simpler signal chain, no multi-display mapping.
+- **Epson only** — no BenQ (BenQ was root cause of Resolume crashes at Mahon Hall, April 13).
+- **Locally-cached everything** — schools often have flaky outbound internet. No hard dependency on Cloudflare tunnel, external APIs, or remote KOI.
+- **Per-nation localization** — each stop swaps in music mix + visual style assets specific to the host nation.
+- **Receiving school provides:** wall/surface, room darkening, mains power. Nothing else.
+
+**Shippable bill of materials (first pass — collaborative fill with Prav + Shawn + Carol Anne):**
+
+| Category | Item | Notes |
+|----------|------|-------|
+| Compute | 1× render box (3090-class GPU, 64GB RAM) OR mini-PC + eGPU (TBD Prav preference) | Decision pending — see open questions. |
+| Projection | 1× Epson laser projector (4000+ lumen, 1080p native, short-throw if wall close) | Laser preferred — no lamp-replacement logistics on tour. |
+| Cables | HDMI 2.1 (3m + 10m), IEC power, spare of each | |
+| Display safety | EDID copy-from-source dongle | Belt-and-braces; prevents 4K-revert on reboot. |
+| Audio | 1× pair stereo powered speakers + stands, XLR/TRS cables | Or one mono sub if venue is tight. |
+| Audio interface | USB audio interface (if Ableton live mix travels with kit) | Optional — SoundPlayer .ps1 fallback if Ableton too heavy. |
+| Network | Small router + cellular LTE backup | Tunnel + visitor QR still work without school's WiFi. |
+| Control | 1× Akai MPK Mini (or equivalent) | For live performance mode. |
+| Visitor | Printed QR card, tablet (optional) | |
+| Transport | Pelican 1650 (or equivalent) for compute + projector; soft bag for cables | |
+| Spares | HDMI, power cables, USB-C cable, spare EDID dongle | |
+| Docs | Laminated docent card (nation-localized), install checklist, remote-support phone numbers | |
+
+**Localization pack (per-nation folder convention):**
+
+```
+touring-kits/
+  <nation-name>/
+    audio/             # ambient mix (Ableton session or .wav)
+    visual-presets/    # Autolume .pkl + TD preset state
+    credits.md         # nation-specific acknowledgements
+    launch-notes.md    # anything handoff-specific
+```
+
+One folder = one tour stop. Swap folder → re-launch → installation is localized.
+
+**Handoff checklist (receiving school):**
+- Darkenable room
+- Flat white or light wall, 3m+ clear throw distance
+- Mains power (1× 15A circuit)
+- Ethernet jack (helpful but not required)
+- One contact person who has read the docent one-pager
+
+**Open questions for Carol Anne / Prav:**
+- Budget envelope for kit #1 (1× vs 2× GPU, Epson model tier)?
+- Timeline: first tour stop target?
+- Who travels with it for the first deployment?
+- Does Ableton ship with it or is SoundPlayer fallback acceptable?
+
+---
+
 ## Equipment list — seed structure (for Horizon 2.1)
 
 To be filled in collaboratively w/ Prav + Shawn. Rough categories:
