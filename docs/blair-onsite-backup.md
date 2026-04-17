@@ -57,16 +57,9 @@ That's the whole sequence. If any step doesn't look right, stop and call Prav.
 
 ---
 
-## Display → projector map (reference only)
+## Displays
 
-If Prav asks "which display is the Back wall?" — this is the answer:
-
-| Wall | Display # |
-|---|---|
-| **Main** (front) | Display 1 |
-| **Right** | Display 2 |
-| **Left** | Display 3 |
-| **Back** | Display 4 |
+If Prav asks about a specific display or wall on the call, **he'll tell you what to click** — you don't need to know the mapping. The wall names (Main / Right / Left / Back) and display numbers (1–4) sit in the Resolume menus; Prav drives.
 
 ---
 
