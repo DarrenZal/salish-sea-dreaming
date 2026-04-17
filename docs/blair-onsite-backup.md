@@ -8,6 +8,8 @@
 
 **Call Prav first.** He'll loop in Darren. Do not touch the computer tower or cables.
 
+**If Prav or Darren says "we need to reboot" — stay on the line with us. Don't do anything until we tell you what to click.**
+
 | Who | How | When |
 |---|---|---|
 | **Prav** | phone call | Anything unexpected. First call, always. |
