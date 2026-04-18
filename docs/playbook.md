@@ -112,6 +112,14 @@ Tick each item. If any is ❌ → text Darren immediately (gives us 15 min befor
 - Log any visitor comments / questions in the notebook.
 - If the wall goes black mid-visit, smile at visitors and say "it's self-healing, give it a moment" — the watchdogs usually catch it within 2 minutes.
 
+### Overnight projector handling (operator habit — DO NOT change)
+
+Prav's end-of-day procedure keeps **HDMI handshakes alive overnight** on the three Epsons by using the remote's **A/V Mute** (a.k.a. Blank / Shutter) button rather than Power. The projector stays powered with the image blanked; the fan keeps running; Windows never sees the display disappear; Display IDs don't shift overnight on the Epson side.
+
+The **BenQ** has historically been powered fully off overnight (cold HDMI re-handshake every morning), which is why it's been the main source of display-ID shuffle + resolution revert. That's what the EDID dongle (installed 2026-04-18) is intended to solve.
+
+**Do not "correct" the Epson A/V-Mute habit to a full power-off.** It's accidentally-great architecture until every projector has an EDID dongle. Once all 4 are dongled, the difference won't matter.
+
 ### Closing (gallery closes 5:00 PM)
 
 - The **computer stays on overnight** — don't touch it, don't shut it down.

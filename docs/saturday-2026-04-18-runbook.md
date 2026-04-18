@@ -77,10 +77,14 @@ Two tests. One for BenQ stability (the thing we just fixed), one for Epson-side 
 - [ ] Reboot 3090. Re-run enumerations. Expected: BenQ still at 1080p, still same Display #.
 
 **Test B — Epson still shifts (no dongle), UIA rebind recovers it:**
-- [ ] Pick one Epson (e.g., Right wall). Power-cycle it: off 30 s → on.
-- [ ] Re-run enumerations. Likely: some Display # shift across the three Epsons.
+
+**Important**: Prav's normal overnight procedure on the Epsons is **A/V Mute** (blanks the image but keeps the projector powered on — HDMI handshake stays alive, so Display IDs don't shift). That's why the Epsons have been relatively stable despite no dongles. To simulate the dark-wall failure mode, we need a **full** power cycle — the A/V Mute button won't trigger it.
+
+- [ ] Pick one Epson (e.g., Right wall). Use the **Power** button on the remote (not A/V Mute / Blank) to fully power it off. Wait 30 s.
+- [ ] Power back on with Power button. Wait for warm-up to complete.
+- [ ] Re-run enumerations. Expected: some Display # shift across the three Epsons (Windows renumbered after re-handshake).
 - [ ] If the Epson wall goes dark: `ssh windows-desktop-remote "schtasks /run /tn SSD-Resolume-Rebind-UIA"` — this is the semantic test of last night's UIA work we've never been able to run against real-world failure. Expected: wall recovers within 10 s.
-- [ ] If the Epson wall stays lit on its own (possible — sometimes Windows re-handshakes cleanly): still a win, note for the week.
+- [ ] If the Epson wall stays lit on its own (Windows re-handshakes cleanly): still a win, note for the week.
 
 **Documentation:**
 - [ ] Record per-projector outcome: Prav's real wall mapping, BenQ stability post-dongle, which Epson (if any) had to be rebind'd, timing of each.
