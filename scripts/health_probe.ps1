@@ -54,12 +54,16 @@ function Test-RelayRunning {
 }
 
 function Test-GalleryServer {
-    try {
-        $r = Invoke-WebRequest -Uri "http://37.27.48.12:9000/health" -TimeoutSec 5 -UseBasicParsing
-        return $r.StatusCode -eq 200
-    } catch {
-        return $false
+    # Retry to absorb transient WAN blips (~166ms link to poly). First success
+    # short-circuits; only alert if all 3 attempts fail within ~21s worst case.
+    for ($i = 1; $i -le 3; $i++) {
+        try {
+            $r = Invoke-WebRequest -Uri "http://37.27.48.12:9000/health" -TimeoutSec 5 -UseBasicParsing
+            if ($r.StatusCode -eq 200) { return $true }
+        } catch { }
+        if ($i -lt 3) { Start-Sleep -Seconds 3 }
     }
+    return $false
 }
 
 function Test-SnapshotFresh {
