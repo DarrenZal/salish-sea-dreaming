@@ -21,6 +21,8 @@ assets/output/
 assets/reference/
 tmp/
 .env
+.ssd_secrets.ps1
+.ssd_alert_state.json
 
 # Collaborator source media and local extracts (large, not committed)
 media/collaborators/

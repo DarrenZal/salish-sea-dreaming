@@ -87,12 +87,28 @@ if ($autolume) {
     $Failures += "Autolume"
 }
 
-# Summary
+# Summary + Telegram push
 if ($Failures.Count -eq 0) {
     Write-Log "[RESULT] ALL GREEN"
+    # Optional: suppress notification on clean boot to avoid nightly noise.
+    # Uncomment if you want a green boot confirmation each morning:
+    # . C:\Users\user\ssd_notify.ps1; Send-SSDAlert -Key post_boot_result -Severity INFO -Message "Post-boot verify: all checks green" -CooldownMinutes 300
     exit 0
 } else {
     $failStr = $Failures -join ", "
     Write-Log "[RESULT] FAILED: $failStr"
+
+    # Push Telegram alert on any failure. 30 min cooldown default keeps
+    # the alert from spamming if a reboot is retrying quickly.
+    try {
+        . C:\Users\user\ssd_notify.ps1
+        Send-SSDAlert -Key post_boot_failures `
+            -Severity CRITICAL `
+            -Message "Post-boot verify FAILED after logon: $failStr. Check log at C:\Users\user\post_boot_verify.log"
+    } catch {
+        $errMsg = $_.Exception.Message
+        Write-Log "[WARN] Telegram notifier call errored: $errMsg"
+    }
+
     exit 1
 }
