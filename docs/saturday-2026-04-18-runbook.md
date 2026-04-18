@@ -32,16 +32,23 @@ Target: gallery looks ready before 11 AM opening. All work finishes before Blair
 
 Critical: last night's UIA probe only saw 4 displays because BenQ was off. With everything on there should be 5 (BenQ + 3 Epsons + terminal).
 
+**Important caveat — Windows is NOT deterministic about display IDs across projector power-cycles.** Each off/on can renumber the Arena "Display N" assignments. Post-EDID-install, IDs should stabilise because the dongles keep Windows seeing the EDID even when projector is off (no re-handshake, no re-enumeration). We verify that in Step 3. For now, this step captures *the mapping at this moment*.
+
 - [ ] Prav powers on **all** displays — BenQ + 3 Epsons + terminal monitor. Let them settle 2 min.
-- [ ] **Darren remote:**
+- [ ] **Darren remote — capture Arena's Display N view:**
   ```bash
   ssh windows-desktop-remote "schtasks /run /tn SSD-Resolume-UIA-Probe"
   sleep 6
   ssh windows-desktop-remote "type C:\Users\user\resolume_uia_probe.log"
   ```
-- [ ] Record each `Display N (WxH)` entry the probe sees (expect 5 now).
+- [ ] **Also capture Windows' DeviceName view (so we can verify stability separately from Arena's numbering):**
+  ```bash
+  ssh windows-desktop-remote "powershell -Command \"Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.Screen]::AllScreens | Select DeviceName, Bounds, Primary | Format-List\""
+  ```
+- [ ] Record every tuple `{Arena Display N ↔ Windows \\.\DISPLAY# ↔ resolution ↔ physical wall name}`. Expect 5 rows.
 - [ ] Prav: use Arena's **Output → Identify Displays** menu to visually confirm which Display N lights up on which physical wall + the terminal monitor.
 - [ ] Lock the mapping in `docs/resolume-display-rebind-research.md` — replace the night-of-4/17 "4 displays, BenQ off" observation with the real mapping.
+- [ ] **Stability pre-test (optional, if time):** power-cycle BenQ off → on, re-run both enumerations, see if the IDs shifted. Gives us a before/after baseline for what the dongles are supposed to fix.
 
 ### Step 1 — Dongle compatibility check
 
@@ -60,8 +67,10 @@ Critical: last night's UIA probe only saw 4 displays because BenQ was off. With 
 - [ ] `ssh windows-desktop-remote "shutdown /r /t 0 /f"` (Darren remote) — Prav watches walls.
 - [ ] Wait ~4 min for the full auto-start sequence.
 - [ ] Expected: every wall comes up at the correct resolution, playing content, no BenQ 4K revert, no manual Advanced Output click required.
-- [ ] If a wall is dark post-reboot: `ssh windows-desktop-remote "schtasks /run /tn SSD-Resolume-Rebind-UIA"` — this is the semantic test of last night's UIA work we've never been able to run.
-- [ ] Document outcome: which dongles worked, whether UIA rebind was ever needed, what Windows resolution each display reports.
+- [ ] **Re-run both enumerations from Step 0** (UIA probe + `[System.Windows.Forms.Screen]::AllScreens`). Expected: every `{Arena Display N ↔ \\.\DISPLAY# ↔ wall}` tuple matches pre-reboot. This is what the dongles are supposed to buy us.
+- [ ] **Power-cycle one projector** (e.g., BenQ off 30 s → back on). Re-run enumerations. Expected: IDs unchanged. If they shift → dongle didn't seat correctly or isn't compatible with that projector.
+- [ ] If a wall is dark post-reboot OR post-power-cycle: `ssh windows-desktop-remote "schtasks /run /tn SSD-Resolume-Rebind-UIA"` — this is the semantic test of last night's UIA work we've never been able to run.
+- [ ] Document outcome: which dongles worked, whether UIA rebind was ever needed, what Windows resolution each display reports, whether IDs were stable across the power-cycle test.
 
 ---
 
