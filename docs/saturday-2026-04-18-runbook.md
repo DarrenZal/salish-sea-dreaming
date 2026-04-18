@@ -28,6 +28,8 @@
 
 Target: gallery looks ready before 11 AM opening. All work finishes before Blair arrives.
 
+> **Scope note 2026-04-18:** Prav has **one** EDID dongle today (~$50 CAD). It goes on the **BenQ** — the known-problematic projector (resolution reverts to 4K, EDID drift, crashed Arena in prior weeks). The three Epsons stay un-dongled today; we'll evaluate whether to order three more based on how today's BenQ install performs. Epson-side display-ID shuffle is therefore still a risk this week; UIA rebind (`SSD-Resolume-Rebind-UIA`) remains the fallback for any Epson-side dark wall.
+
 ### Step 0 — Establish real display mapping (BEFORE any EDID install)
 
 Critical: last night's UIA probe only saw 4 displays because BenQ was off. With everything on there should be 5 (BenQ + 3 Epsons + terminal).
@@ -50,27 +52,39 @@ Critical: last night's UIA probe only saw 4 displays because BenQ was off. With 
 - [ ] Lock the mapping in `docs/resolume-display-rebind-research.md` — replace the night-of-4/17 "4 displays, BenQ off" observation with the real mapping.
 - [ ] **Stability pre-test (optional, if time):** power-cycle BenQ off → on, re-run both enumerations, see if the IDs shifted. Gives us a before/after baseline for what the dongles are supposed to fix.
 
-### Step 1 — Dongle compatibility check
+### Step 1 — Dongle compatibility check (BenQ only today)
 
-- [ ] Prav photos the label of each Epson model + BenQ model to Darren on Signal.
-- [ ] Darren cross-checks dongle EDID spec vs each model. Any mismatch → don't install that one; UIA rebind script is the fallback for that wall.
-- [ ] Only install on compatible projectors.
+- [ ] Prav photos the BenQ model label to Darren on Signal.
+- [ ] Prav photos the dongle itself (model + any spec sticker) to Darren.
+- [ ] Darren confirms dongle is HDMI 1.4+ EDID copy-from-source type compatible with BenQ. If mismatch → don't install; note for refund/exchange.
+- [ ] Also photo each **Epson model label** — not blocking today, but we'll use it to order the right dongles if BenQ install goes well.
 
-### Step 2 — EDID install
+### Step 2 — EDID install (BenQ)
 
-- [ ] Power off each projector before inline-dongle install (dongle goes between projector HDMI-in and the source cable).
-- [ ] Install one projector at a time, power it back on, confirm it shows content at its native resolution.
-- [ ] Move to the next projector.
+- [ ] Power off the BenQ projector.
+- [ ] Install the dongle inline between projector HDMI-in and the source cable. Follow any "capture" procedure the dongle needs (some EDID copiers require a learn-mode button press while the native signal is active).
+- [ ] Power the BenQ back on, confirm it shows content at 1920×1080, no 4K revert.
+- [ ] Reboot the 3090 (`ssh windows-desktop-remote "shutdown /r /t 0 /f"`) to test that BenQ stays at 1080p across reboots (this is the historical failure — Windows reverts the res to 4K on every boot without a dongle).
 
-### Step 3 — Reboot test with dongles in place
+### Step 3 — Verification with the BenQ dongle
 
-- [ ] `ssh windows-desktop-remote "shutdown /r /t 0 /f"` (Darren remote) — Prav watches walls.
-- [ ] Wait ~4 min for the full auto-start sequence.
-- [ ] Expected: every wall comes up at the correct resolution, playing content, no BenQ 4K revert, no manual Advanced Output click required.
-- [ ] **Re-run both enumerations from Step 0** (UIA probe + `[System.Windows.Forms.Screen]::AllScreens`). Expected: every `{Arena Display N ↔ \\.\DISPLAY# ↔ wall}` tuple matches pre-reboot. This is what the dongles are supposed to buy us.
-- [ ] **Power-cycle one projector** (e.g., BenQ off 30 s → back on). Re-run enumerations. Expected: IDs unchanged. If they shift → dongle didn't seat correctly or isn't compatible with that projector.
-- [ ] If a wall is dark post-reboot OR post-power-cycle: `ssh windows-desktop-remote "schtasks /run /tn SSD-Resolume-Rebind-UIA"` — this is the semantic test of last night's UIA work we've never been able to run.
-- [ ] Document outcome: which dongles worked, whether UIA rebind was ever needed, what Windows resolution each display reports, whether IDs were stable across the power-cycle test.
+Two tests. One for BenQ stability (the thing we just fixed), one for Epson-side instability (the thing we haven't fixed — to confirm UIA rebind still recovers it).
+
+**Test A — BenQ deterministic under power-cycle:**
+- [ ] Re-run both enumerations from Step 0 (UIA probe + `[System.Windows.Forms.Screen]::AllScreens`).
+- [ ] Power-cycle BenQ: off 30 s → on. Re-run enumerations.
+- [ ] Expected: BenQ's `{Arena Display N ↔ \\.\DISPLAY# ↔ 1920×1080}` tuple unchanged. If it shifts → dongle didn't seat correctly or isn't compatible.
+- [ ] Reboot 3090. Re-run enumerations. Expected: BenQ still at 1080p, still same Display #.
+
+**Test B — Epson still shifts (no dongle), UIA rebind recovers it:**
+- [ ] Pick one Epson (e.g., Right wall). Power-cycle it: off 30 s → on.
+- [ ] Re-run enumerations. Likely: some Display # shift across the three Epsons.
+- [ ] If the Epson wall goes dark: `ssh windows-desktop-remote "schtasks /run /tn SSD-Resolume-Rebind-UIA"` — this is the semantic test of last night's UIA work we've never been able to run against real-world failure. Expected: wall recovers within 10 s.
+- [ ] If the Epson wall stays lit on its own (possible — sometimes Windows re-handshakes cleanly): still a win, note for the week.
+
+**Documentation:**
+- [ ] Record per-projector outcome: Prav's real wall mapping, BenQ stability post-dongle, which Epson (if any) had to be rebind'd, timing of each.
+- [ ] If BenQ dongle works cleanly: order three more for the Epsons. Decision to be logged in `docs/tour-readiness-plan.md` (the touring BOM already assumed 4 dongles).
 
 ---
 
