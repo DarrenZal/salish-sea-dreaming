@@ -11,7 +11,7 @@ plan_type: strategic
 | Time | Event | Gap exposed |
 |------|-------|------------|
 | Apr 18 23:21 | Arena.exe heap-corruption crash | No Arena process watchdog. Sat dead 11h while Telegram fired same alert every 30 min |
-| Apr 19 ~06:40 | Windows Update bumped MSVC BuildTools v14.44 (requires CUDA 12.4+) | No update policy; no change-detection for toolchain shifts |
+| Apr 19 12:42 | Darren `Stop-Process -Force` on 3 Autolume procs → torch cache invalidated → rebuild attempt hit latent MSVC (Mar 19)+CUDA 11.8 incompatibility | No policy against force-kills on production processes; latent toolchain-compat check never ran because cached `.pyd` files preserved it |
 | Apr 19 10:07 | TouchDesigner closed during on-site troubleshooting (Zoe) | No protection against well-meaning human intervention |
 | Apr 19 ~10:25 | Arena restored by Prav+Zoe via 5-min WhatsApp call; Autolume never restarted | Recovery required synchronous human attention, not automated |
 | Apr 19 11:35 | Zoe reported "no audio" — mic pickup 0.00015 (functionally silent) | No silence detection until I built one today |
@@ -252,7 +252,9 @@ The gallery has three possible output paths: **room speakers** (RME USB audio de
 
 ### Phase 0 — Immediate (today, before Apr 20 9:45 AM opening)
 
-Goal: close the three worst holes Apr 19 exposed (Windows Update cascade, silent-death watchdogs, no Arena watchdog). Prefixed by a pre-flight audit that captures the environmental ground truth the rest of the plan needs.
+Goal: close the three worst holes Apr 19 exposed (silent-death watchdog pattern, no Arena watchdog, no guardrails against destructive ops like force-kill on production processes). Prefixed by a pre-flight audit that captures environmental ground truth the rest of the plan needs.
+
+**Note on Windows Update block (0.1 below):** originally framed as addressing the Apr 19 Autolume break. That diagnosis was wrong — MSVC BuildTools hasn't changed since March 19, and the Autolume break was caused by a force-kill invalidating torch's extension cache, not by any Windows Update. The update block IS still sound policy (the "updates are deliberate changes" invariant in the Approach section), just not for the reason originally given. Keeping it in Phase 0 on its own merits.
 
 0.0. **Pre-flight environment audit.** Captures seven current-state values that **intentionally cannot be pre-answered in the plan** — they are values that exist only on the live 3090 + poly + in Prav's head, and verifying them mid-plan would be speculation. Output: `docs/environment-audit-2026-04-19.md` committed to repo. Each value either (a) confirms a plan assumption, (b) updates a plan value in place (specifically: `$SSD_DEFAULT_OUTPUT_DEVICE_NAME`, `$SSD_SUBMISSION_DB_PATH`, Ableton-driver-mode, AudioDeviceCmdlets-install-path choice), or (c) triggers a documented plan-trim (move an item to Parking Lot + note here). Gate: Phase 0.1 onward does not start until this audit completes and each triggered trim is recorded in this plan.
 
@@ -350,7 +352,7 @@ Stored under `C:\Users\user\snapshots\YYYY-MM-DD\`. 30-day retention (cleanup ta
 
 ### Phase 2 — Recovery + restoration (Apr 22–26, quiet windows)
 
-Goal: restore full artistic stack (Autolume), replace Ableton in auto mode, verify system health.
+Goal: **restore Autolume (the dreaming / GAN layer — artistically central, not a nice-to-have)**, replace Ableton in auto mode, verify system health. Autolume is elevated from "post-show nice-to-have" to "must-restore" because the dreaming-layer input is part of the installation's narrative about subconscious / cognitive-reality emergence (per Prav, explicit Apr 19 correction to an earlier wrong framing that "SD on noise is producing imagery people like → Autolume fix can wait"). Until Autolume is back, the installation is operating in a creatively-degraded mode.
 
 2.1. **CUDA 12.4 install** side-by-side with 11.8. Set `CUDA_HOME`. Delete `torch_extensions` cache. Verify `nvcc --version`.
 
@@ -365,6 +367,28 @@ Goal: restore full artistic stack (Autolume), replace Ableton in auto mode, veri
 2.6. **Persist ndiin2 binding.** Current `DESKTOP-37616PR (Autolume Live)` binding is runtime-only. Save TD .toe so it survives restart. Add startup-time binding check in TD that auto-corrects hostname drift.
 
 2.7. **Apr 19 incident postmortem** in `playbook.md` appendix: timeline, root causes, fixes, lessons, new invariants. Cross-links to this plan + spec.
+
+### Autonomous-recovery roadmap — what "100% self-healing" actually requires
+
+Being explicit about what each phase contributes toward the target of an installation that runs without human babysitting:
+
+| Recovery property | Phase 0 (today) | Phase 1 (week) | Phase 2 (show end) | Phase 3 (post-show) |
+|---|---|---|---|---|
+| **Survives reboot** | AutoLogon confirmed ✓ + InteractiveToken tasks launch GUI apps post-login | heartbeats prove liveness of auto-started apps | Autolume included in auto-launch (with VRAM gate) | Macrium image = recovery from bare-metal |
+| **Detects dead processes** | Arena watchdog closes the biggest hole; meta-watchdog catches zombie-task pattern | Ableton watchdog + all 8 components contracted | Autolume watchdog with exponential backoff | N/A |
+| **Detects dead devices** (mic, speakers, projectors) | Hardware audit (Phase 0.0.b) identifies what's actually present | WASAPI output check + device-pin watchdog | Camera-based visual check (optional) | Tour-kit standardizes hardware |
+| **Detects broken routing** (NDI hostname, audio device default) | Manual fix deployed Apr 19; persistence deferred | NDI binding persisted in TD .toe; audio-device pin on every logon | Config-drift detector | Known-good config snapshot |
+| **Recovers crashed process** | Arena + TD watchdogs (add exponential backoff) | All 8 components | Autolume | N/A |
+| **Recovers degraded output** (audio muted, wrong device) | N/A | Ableton→WMP auto-failover | WMP pre-mixed WAV as interim source | N/A |
+| **Recovers from network loss** (poly outage, tunnel drop) | SSH tunnel already resilient | Alert buffering until tunnel restored | N/A | Tailscale secondary path |
+| **Avoids destructive ops** | **Gap** — this Apr 19 incident shows we don't have a policy | "No force-kill on production processes" rule codified in playbook; watchdog scripts use graceful termination first, force only after 30s grace | Pre-op VRAM check + maintenance-lock gate | Integration tests assert graceful-kill path |
+| **Alerts humans on unrecovered state** | Telegram for Darren; ✓ | Digest mode prevents spam; email path for Prav | Per-incident email for CRITICAL | SMS fallback if both channels down |
+| **Human-triggered remote recovery** | SSH + schtasks ✓ | Scripted one-button recovery commands | Gallery server move to 3090 (venue-portable) | Deploy-elsewhere package |
+| **Audit trail of interventions** | Git commits + logs ✓ | Manual-intervention log (ops annotations) | Daily snapshot preserves state | Full observability stack |
+
+**Key gap Phase 0 does not close:** no policy-level guardrail against destructive operations on production processes. The Apr 19 Autolume break was caused by me using `Stop-Process -Force` without understanding the downstream consequence (torch cache invalidation). Codifying this lesson as an explicit invariant is a **Phase 1** addition:
+
+**Invariant 7 (new): No destructive ops without documented reversal.** Before any action that could destroy production state (`Stop-Process -Force`, `Remove-Item -Recurse -Force`, `git checkout` that overwrites modified files, manual DB writes, etc.), the operator writes down the **exact revert path** and checks that it's actually available. If no revert exists, the op is a design change, not an intervention — and must be reviewed, not executed ad-hoc. Scripts enforce this by wrapping force-kill calls in a helper that requires a named "revert_procedure" argument + logs it.
 
 ### Phase 3 — Tour-readiness (post-show, Apr 27+)
 

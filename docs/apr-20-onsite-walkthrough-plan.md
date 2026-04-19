@@ -82,7 +82,7 @@ Adopting it: before any Phase 0/1 change declared "done based on home-rig tests,
 - 4.5 (Resolume watchdog tonight) → ship anyway — it's additive, low-risk, and the failure pattern is proven; Darren's ship decision if Prav explicitly deferred.
 - 4.6 (Zoe role) → update manual to Tier-A/Tier-B as default; Prav can override in follow-up.
 - 4.7 (governance 4) → defer to async Signal thread; no blocker.
-- 4.8 (Windows Update lockdown) → ship anyway (strictly protective, directly addresses Apr 19's root cause); Darren's ship decision.
+- 4.8 (Windows Update lockdown) → ship anyway (strictly protective; sound policy independent of Apr 19 — MSVC/Autolume break was a force-kill, not an update; but "updates are deliberate changes" is still the right invariant); Darren's ship decision.
 
 **Stability-freeze trigger.** Objective condition that moves us to "no changes, babysit through Apr 26": any of (a) ≥ 2 visitor-facing incidents in a single day caused by our own changes, (b) Prav explicitly requesting freeze, (c) discovery of a cascading dependency not in our model (e.g., TD update breaks SD loading). If triggered: all Phase 0/1 work halts; plan resumes post-show; focus shifts to on-site support + rapid-response only.
 
@@ -165,7 +165,7 @@ Not re-litigating; confirming shared understanding. 5 min max.
 
 2.1. **Apr 18 23:21 → Apr 19 10:25** — Arena overnight heap crash, 11-hour silent period, Telegram every 30 min. Zoe restarted via Advanced Output fix this morning.
 
-2.2. **Apr 19 ~6:40 AM** — Windows Update upgraded MSVC BuildTools → Autolume CUDA kernel compile broke.
+2.2. **Apr 19 12:42 PM** — Darren `Stop-Process -Force` on 3 Autolume processes. Torch cache invalidated. Rebuild attempt triggered. Exposed a latent MSVC (Mar 19) + CUDA 11.8 incompatibility that cached `.pyd` files had been hiding. Root cause is the force-kill, NOT a Windows Update (my earlier diagnosis was wrong; MSVC last changed March 19, weeks before the incident).
 
 2.3. **Apr 19 10:07** — TD died during on-site troubleshooting with Zoe.
 
