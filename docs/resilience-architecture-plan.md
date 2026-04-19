@@ -52,19 +52,26 @@ This plan depends on three people having parity of knowledge + authority to make
 
 **Poly-side exhibition-period change approval.** The SQLite-durable-queue + submissions-paused-banner bundle requires a gallery-server change during show week. **Decision: defer the full bundle to post-show (Horizon 3)** unless current gallery-server has a visitor-facing bug that actively needs fixing (none known). Apr 19 post-mortem showed the relay+server recovered cleanly from the 14-hour outage once TD came back; existing behavior is "good enough during show." Moving to Parking Lot item with (Impact: M) (Effort: M) (When: post-show). This resolves the review's concern about exhibition-period risk.
 
-**Matt's touring permission timeline.** Permission to use Matt's ambient WAV for touring is required before Phase 3.3 (deploy-elsewhere package) ships. Owner: Prav (has the working relationship). Timeline: target by May 15 (mid-Impact season). If permission not granted by Horizon 3 start, packaging proceeds without the WAV; venue gets a placeholder ambient track + note that the final mix arrives separately. Explicitly added to Parking Lot.
+**Matt's touring permission — already in place.** Confirmed per collaborator agreement; not an open item, no Parking Lot entry needed. Touring packaging includes the WAV as-is.
 
 **Human response rota during exhibition hours.**
-- **Primary (9:45 AM – 5:15 PM, daily except Friday):** Prav on-site. Direct visibility + phone reachable.
+- **Primary (9:45 AM – 5:15 PM, every day the gallery is open):** Prav on-site. Direct visibility + phone reachable. (Apr 17 Friday was a one-off absence, not a standing pattern; plan assumes Prav on-site every day the gallery is open.)
 - **Secondary (show hours):** Darren, via Telegram + phone (518-210-2828 per playbook).
-- **Friday coverage:** Prav off-site. Darren primary; Zoe eyes-on-ground reports to Darren. If both unreachable + something breaks — the system's fallback modes (noise input, Arena still running, WMP backup) maintain minimum-working; Zoe tells visitors "come back tomorrow" if things look wrong; no worse than Apr 19 this morning in terms of outcome.
-- **After 5:15 PM daily:** both off-site. Telegram alerts still fire. Either on-call can triage; automated watchdogs continue attempting recovery.
+- **Occasional Prav-off-site day (any):** Darren primary; Zoe eyes-on-ground reports to Darren. Fallback modes (noise input, Arena still running, WMP backup) maintain minimum-working even without either primary.
+- **After 5:15 PM daily:** both off-site. Alerts still fire (to Darren via Telegram; Prav via email if configured). Either on-call can triage; automated watchdogs continue attempting recovery.
+
+**Alert-channel split (important — not symmetric).**
+- **Darren receives real-time Telegram alerts** from `ssd_notify.ps1`. This is the primary incident channel.
+- **Prav does NOT use Telegram.** Prav's preferred channel is **email**. Implementation path: daily diagnostic script (already built) has Gmail SMTP stubbed in; when Prav provides a Gmail app password (added to `.ssd_secrets.ps1`), diagnostic email fires daily at 9:15 AM to Prav's address. Same mechanism can be extended to send per-incident email for CRITICAL-severity events; today both Darren and Prav get the daily digest via their respective channels but only Darren gets per-incident pings.
+- **Implication for incident triage during show hours:** if something goes wrong at 11:00 AM on a normal day, Darren sees the Telegram alert first and either triages remotely or calls Prav (who's on-site). Prav doesn't see the same real-time alert — he learns from either (a) visible gallery symptom, (b) Darren's phone call, or (c) next morning's diagnostic email. This is why same-day response from Darren is explicit in the rota.
+- **Prav-only-online days (Darren unreachable):** real-time Telegram becomes moot. Fallback: Prav learns of an incident via gallery symptom or visitor report; calls Darren when reachable. The system's own watchdogs continue attempting auto-recovery independently.
+- **Adding per-incident email to Prav is a Horizon 2 enhancement** (Phase 2.x to be added): extend `ssd_notify.ps1` with an optional Gmail SMTP path for severity=CRITICAL events, gated on Prav's explicit preference ("email me for everything" vs "email daily digest only, no per-incident"). Don't do this unilaterally — Prav decides the noise level he's OK with.
 
 **Reboot interim model if Autologon is NOT configured when Phase 0 deploys.** Before Autologon is fixed: avoid reboots. If a reboot happens anyway (power glitch, Windows hangs) and no human is available to log in, InteractiveToken tasks stall → walls black → alert fires → human sees alert → human instructs Zoe to log in on-site OR uses SSH to force `query session` + remote restart + on-site logon. This is strictly worse than post-Autologon operation; it's what Apr 19 morning looked like. Mitigation: Prav configures Autologon as the FIRST item of the Apr 21 window (5 min of the 15-min slot). Bridging the 1–2 day gap until Apr 21 call: don't voluntarily reboot; trust SSH-accessible recovery path for any involuntary reboot; if auto-login turns out already-enabled (likely per evidence — see Assumptions), this whole paragraph is moot.
 
 **Minimum-mode vs artistic-intent authority.** When the system falls into minimum mode (WMP + one projector), staying in minimum mode during show hours is always acceptable. Returning to optimal mode (all projectors + Ableton + headphones) during show hours requires Prav's judgment call — he's the one facing visitors + curators. Darren does NOT promote out of minimum mode remotely. This avoids the failure pattern of "automated re-optimization breaks during a window that was manageable in simple mode."
 
-**Touring-rights status (Horizon 3 dependency).** H1–H6 TELUS hero renders: rights confirmed per `docs/credits-attribution.md` on Apr 5 commit (sources + license chains tracked). Ambient WAV (Matt's 3-sound loop): attribution to Matt is in `docs/credits-attribution.md`; written permission for touring use TBD — **moved to Parking Lot** as "confirm Matt's touring permission" before Horizon 3 begins. Briony watercolors: not in the live auto-mode pipeline today (per memory note), so not a touring blocker until re-introduced. No third-party media currently unaccounted for.
+**Touring-rights status (Horizon 3 dependency).** H1–H6 TELUS hero renders: rights confirmed per `docs/credits-attribution.md` on Apr 5 commit (sources + license chains tracked). Ambient WAV (Matt's 3-sound loop): permission to use confirmed per collaborator agreement — covered for touring. Briony watercolors: not in the live auto-mode pipeline today (per memory note), so not a touring blocker until re-introduced. No third-party media currently unaccounted for — touring rights are not an open item.
 
 **Phase 2 go/no-go gate (objective criteria to defer to post-show).** Phase 2 proceeds ONLY if ALL of these hold on Apr 22 morning:
 - Phase 0 + Phase 1 green (all ACs signed off, no new CRITICAL alerts in prior 48h not already tracked).
@@ -139,7 +146,7 @@ Thresholds validated before Phase-0 synthetic tests fire: run each task for ≥ 
 ## Assumptions
 
 - SSH reverse tunnel (SSD-SSH-Tunnel task) stays up — infrastructure already hardened.
-- Telegram bot chat (TELEGRAM_CHAT_ID) is monitored by Darren + Prav during show hours.
+- Telegram bot chat (TELEGRAM_CHAT_ID) is monitored by **Darren only** during show hours (Prav uses email for summaries, not Telegram).
 - Prav reachable by phone during gallery hours (validated by Apr 19).
 - Windows Task Scheduler remains the task runner for this show (not switching mid-show).
 - GPU has ≥2 GB VRAM headroom for a new Autolume instance alongside running TD/SD — TBD, may need explicit budgeting in Phase 1.
