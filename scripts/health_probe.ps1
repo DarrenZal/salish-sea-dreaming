@@ -73,6 +73,36 @@ function Test-SnapshotFresh {
     return $ageSec -lt 600  # 10 min tolerance
 }
 
+# Threshold tuned from field data: Zoe reported "no audio" when /salish/audio/volume
+# read ~0.0001. A quiet gallery with speakers on + HVAC still exceeds ~0.005.
+# 0.002 is below any real-world gallery ambient but above hard silence.
+$script:SSDAudioSilenceThreshold = 0.002
+
+function Test-AudioMonitorAlive {
+    # Ensures gallery_audio.py is running + writing state.
+    $state = "C:\Users\user\ssd_audio_state.json"
+    if (-not (Test-Path $state)) { return $false }
+    $ageSec = ((Get-Date) - (Get-Item $state).LastWriteTime).TotalSeconds
+    return $ageSec -lt 30  # state file refreshed every 1s; 30s tolerance for GC hiccups
+}
+
+function Test-AudioHasSound {
+    # Silence detector: reads gallery_audio.py's rolling 60s window max volume.
+    # A quiet gallery with speakers playing Matt's loop still reads > threshold;
+    # true silence (no input, no speaker output, or muted mix) pins near 0.
+    $state = "C:\Users\user\ssd_audio_state.json"
+    if (-not (Test-Path $state)) { return $false }
+    try {
+        $data = Get-Content -Path $state -Raw | ConvertFrom-Json
+    } catch {
+        return $false
+    }
+    # Require the window to actually be full (>=30s of samples) before trusting
+    # a silence verdict; a freshly-started monitor shouldn't trigger alerts.
+    if ($data.samples_in_window -lt 300) { return $true }
+    return $data.vol_max_60s -ge $script:SSDAudioSilenceThreshold
+}
+
 # ---------------------------------------------------------------------------
 # Report helper: fire-or-clear alert for a single check
 # ---------------------------------------------------------------------------
@@ -128,5 +158,15 @@ Report-Check -Key "td_snapshot" `
     -Pass (Test-SnapshotFresh) `
     -FailMessage "td_snap.jpg is missing or older than 10 min -- render pipeline may be stalled" `
     -Severity WARN
+
+Report-Check -Key "audio_monitor" `
+    -Pass (Test-AudioMonitorAlive) `
+    -FailMessage "gallery_audio.py mic monitor has stopped updating ssd_audio_state.json (>30s stale) -- process may be dead" `
+    -Severity WARN
+
+Report-Check -Key "audio_silent" `
+    -Pass (Test-AudioHasSound) `
+    -FailMessage "Gallery audio silent for 60s -- check Ableton output routing, speakers, or WMP loop" `
+    -Severity CRITICAL
 
 Write-ProbeLog "--- probe complete ---"

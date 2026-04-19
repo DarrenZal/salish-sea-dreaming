@@ -18,6 +18,8 @@ Config (from .env):
 """
 
 import argparse
+import collections
+import json
 import os
 import threading
 import time
@@ -34,10 +36,17 @@ AUDIO_DEVICE_INDEX = int(os.getenv("AUDIO_DEVICE_INDEX", "0"))
 AUDIO_PEAK_REFERENCE = float(os.getenv("AUDIO_PEAK_REFERENCE", "0.1"))
 TD_HOST = os.getenv("TD_HOST", "127.0.0.1")
 TD_OSC_PORT = int(os.getenv("TD_OSC_PORT", "7000"))
+AUDIO_STATE_PATH = os.getenv("AUDIO_STATE_PATH", r"C:\Users\user\ssd_audio_state.json")
 
 SAMPLE_RATE = 44100
 BLOCK_SIZE = 4096  # ~93ms at 44100Hz
 EMA_ALPHA = 0.3    # Exponential moving average smoothing factor
+
+# Rolling window for silence detection: mic samples every ~100ms, keep last 60s
+_STATE_WINDOW_SECONDS = 60
+_STATE_WINDOW_SAMPLES = _STATE_WINDOW_SECONDS * 10  # ~10 writes/sec
+_vol_window: "collections.deque[float]" = collections.deque(maxlen=_STATE_WINDOW_SAMPLES)
+_eng_window: "collections.deque[float]" = collections.deque(maxlen=_STATE_WINDOW_SAMPLES)
 
 # Shared state protected by a lock
 _lock = threading.Lock()
@@ -128,6 +137,27 @@ def run_calibrate() -> None:
               f"Run with --list-devices to see available devices.\n{exc}")
 
 
+def _write_state_snapshot(vol: float, eng: float) -> None:
+    # Atomic write of a small JSON state file so the health probe can check
+    # monitor liveness + silence over the last 60s.
+    try:
+        snapshot = {
+            "updated_at": time.time(),
+            "volume": vol,
+            "energy": eng,
+            "vol_max_60s": max(_vol_window) if _vol_window else 0.0,
+            "eng_max_60s": max(_eng_window) if _eng_window else 0.0,
+            "samples_in_window": len(_vol_window),
+            "window_seconds": _STATE_WINDOW_SECONDS,
+        }
+        tmp = AUDIO_STATE_PATH + ".tmp"
+        with open(tmp, "w") as f:
+            json.dump(snapshot, f)
+        os.replace(tmp, AUDIO_STATE_PATH)
+    except Exception:
+        pass  # state file is best-effort; never break the audio loop
+
+
 def run_monitor() -> None:
     """Main monitoring loop: read mic, send OSC to TouchDesigner every 100ms."""
     import sounddevice as sd
@@ -139,6 +169,7 @@ def run_monitor() -> None:
     print(f"Audio device index: {device_index}  |  Peak reference: {AUDIO_PEAK_REFERENCE}")
     print("Sending /salish/audio/volume and /salish/audio/energy every 100ms. Ctrl+C to stop.\n")
 
+    state_tick = 0
     try:
         with sd.InputStream(
             device=device_index,
@@ -154,6 +185,16 @@ def run_monitor() -> None:
                     eng = _smoothed_energy
                 osc_client.send_message("/salish/audio/volume", float(vol))
                 osc_client.send_message("/salish/audio/energy", float(eng))
+
+                # Track rolling window for silence detection
+                _vol_window.append(float(vol))
+                _eng_window.append(float(eng))
+
+                # Write state snapshot every ~1s (tick every 100ms, write every 10th)
+                state_tick += 1
+                if state_tick >= 10:
+                    state_tick = 0
+                    _write_state_snapshot(float(vol), float(eng))
     except KeyboardInterrupt:
         print("\nAudio monitor stopped.")
     except Exception as exc:
