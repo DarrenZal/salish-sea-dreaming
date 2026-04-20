@@ -123,7 +123,11 @@ Structure the 60-min session as six time-boxed phases, in order of "ground truth
 
 ## Implementation Steps
 
-### Phase 0 (9:45–9:55) — Hardware reality check
+### Phase -1 (9:45 sharp, 2 min) — Restart SSH tunnel
+
+Tunnel died at 16:50 PDT Apr 19; no remote access since. First action when Prav arrives at the 3090 keyboard: `schtasks /run /tn "SSD-SSH-Tunnel"`, then verify port 2222 comes back on poly by `ssh` from Darren's Mac. If the scheduled-task route fails, Prav opens a PowerShell and runs `powershell -ExecutionPolicy Bypass -File C:\Users\user\ssd_ssh_tunnel.ps1` directly. Without this Phase -1 step, all of Phase 0 onward is blocked.
+
+### Phase 0 (9:47–9:57) — Hardware reality check
 
 Darren asks; Prav physically inspects. Answers land in session notes.
 
