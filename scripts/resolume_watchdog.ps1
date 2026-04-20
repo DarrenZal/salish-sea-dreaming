@@ -149,5 +149,14 @@ while ($true) {
     Write-Log "Triggered SSD-Resolume task at unix $now"
     Save-State $state
 
+    # Resolume on cold-restart does NOT auto-assign projectors until the
+    # Advanced Output panel is opened. Wait for Arena to finish booting,
+    # then fire the UI kick (Ctrl+Shift+A) via SSD-Resolume-Kick task
+    # which runs in the user session so SendKeys lands correctly.
+    Write-Log "Waiting 20s for Arena to boot before firing Advanced Output kick"
+    Start-Sleep -Seconds 20
+    & schtasks.exe /run /tn "SSD-Resolume-Kick" 2>&1 | Out-Null
+    Write-Log "Triggered SSD-Resolume-Kick (Advanced Output auto-assign)"
+
     Start-Sleep -Seconds $backoff
 }
