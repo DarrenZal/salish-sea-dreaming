@@ -215,7 +215,9 @@ Explicit list with thumbs or "defer." Each written into session notes + committe
    - Email vs Telegram rota
    - "Minimum-mode promotion" exception scope
 
-4.8. **Windows Update lockdown timing.** Proposed: tonight. Approval to proceed.
+4.8. **Windows Update lockdown timing.** Proposed: tomorrow evening post-close. Approval to proceed.
+
+4.9. **Tailscale as secondary remote-access path.** Today's SSH-tunnel outage (died 16:50 PDT, still down) demonstrates that the reverse-tunnel is a single point of failure for all remote ops. Proposal: activate Tailscale as a second, independent control plane. 3090 already has Tailscale installed (per existing SSH config entry `windows-desktop-tailscale` → 100.91.172.10). Steps: (a) at 3090 keyboard, `tailscale status` — confirm still logged in + running; (b) Prav shares/invites Darren's device into the tailnet (either via Prav's account adding a share, or by adding Darren's own Tailscale account); (c) from Darren's Mac: `ssh windows-desktop-tailscale` should work. ~5 min total during walkthrough. Once live, any future single-tunnel outage doesn't block remote ops. Also enables the existing `ssd_ssh_tunnel.ps1` "flaps every 5 min" inefficiency to be fixed (tuning) separately without fear of losing access during the tuning. Prav sign-off.
 
 ### Phase 5 (10:35–10:45) — Live verification + closeout
 
