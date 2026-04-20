@@ -2,7 +2,9 @@
 
 **Purpose:** the keyboard-and-eyes actions Prav (or Zoe, or whoever is at the gallery) performs Apr 20 morning. Darren supports remotely via Signal / voice the moment step 1 completes.
 
-**Time budget:** 5 min for the critical unblocking actions (steps 1–3). Everything else happens with Darren guiding remotely.
+**Time budget:** Prav on-site 9:30–10:30 AM only (catching 11:50 ferry to Vancouver Island for Carol Ann's SeaBed event; cat's ultrasound 8:30 AM). 5 min for critical unblocking (steps 1–3); remaining steps with Darren remote. Anything unfinished at 10:30, Darren does remotely after Prav leaves.
+
+**Prav-facing simple version:** `docs/apr20-prav-agenda.md` (numbered 1-2-3, no prose). This doc is the detailed operator version.
 
 ---
 
