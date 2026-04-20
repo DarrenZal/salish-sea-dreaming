@@ -28,9 +28,11 @@ Ferry at 11:50 — leave gallery by 10:30 latest.
 
 ---
 
-Darren is handling Tailscale entirely over SSH tomorrow (creating the
-tailnet on his own account, installing + auth'ing the 3090 remotely).
-No action from you needed on the Tailscale side.
+Darren is setting up a WireGuard backup path over SSH tomorrow (joining
+the 3090 to the existing wg-koi network — zero GUI, pure config file).
+No action from you needed on the backup-tunnel side. (Decided against
+Tailscale 2026-04-19 evening — its Mac client was too broken to work
+with.)
 
 If anything is weird or Darren can't reach you, call him: 518-210-2828.
 

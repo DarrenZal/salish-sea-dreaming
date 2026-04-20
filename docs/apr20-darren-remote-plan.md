@@ -5,19 +5,24 @@ Once Prav runs `schtasks /run /tn "SSD-SSH-Tunnel"` and I confirm
 of this happens in parallel with Prav doing dongle install + hardware
 walk-around.
 
-**Prereq Darren does himself tonight:**
+**Prereq Darren did on 2026-04-19 evening:**
 
-1. Sign up at tailscale.com with `zaldarren@gmail.com` (Google SSO, free
-   tier). This creates Darren's tailnet.
-2. admin.tailscale.com → Settings → Keys → Generate auth key. Reusable,
-   ephemeral off, 24h expiry. Copy the `tskey-auth-xxxxx` value — will
-   paste into step 2 below.
-3. Confirm Tailscale is installed + signed in on Darren's Mac (already
-   installed per Apr 19 screenshot; just sign in with the same Google
-   account).
+1. Decided against Tailscale (Mac GUI client broken; CLI needs running
+   GUI app; blocks Anthropic API when connected). Pivoted to WireGuard
+   via the existing `wg-koi` network on poly.
+2. Generated 3090 WireGuard keypair → stored at
+   `~/.config/ssd/wg/3090_private.key` (mode 600, outside any git repo).
+3. Wrote 3090's WireGuard config → `~/.config/ssd/wg/wg-koi-3090.conf`
+   (mode 600). 3090's assigned WG IP: `10.100.0.30`.
+4. Added 3090 as peer on poly — runtime (`sudo wg set`) + persistent
+   (appended to `/etc/wireguard/wg-koi.conf`, backup taken). Verified
+   via `sudo wg show wg-koi`.
+5. TODO tonight if not already done: bring up Mac's wg-koi and confirm
+   Mac ↔ poly reachability (`ping 10.100.0.1`). Needs Mac sudo once.
 
-No Prav involvement in Tailscale setup. The 3090 joins Darren's tailnet,
-not Prav's.
+No Prav involvement. Existing Tailscale auth key (memory file
+`project_tailscale_authkey_apr20.md`) is **unused** — can be revoked at
+admin.tailscale.com any time; it expires in 24h regardless.
 
 ---
 
@@ -44,31 +49,58 @@ powershell -ExecutionPolicy Bypass -File C:\Users\user\windows_update_block.ps1
 
 Verify: `gpresult /r | Select-String WindowsUpdate` → `NoAutoUpdate: 1`.
 
-### 2. Tailscale install + auth (5 min)
+### 2. WireGuard install + tunnel on 3090 (5 min)
 
-```powershell
-# Silent install (try winget first, fall back to direct MSI)
-winget install --id Tailscale.Tailscale -e --silent --accept-package-agreements --accept-source-agreements
-
-# If winget unavailable, fallback:
-# Invoke-WebRequest -Uri "https://pkgs.tailscale.com/stable/tailscale-setup-latest.exe" -OutFile "C:\Users\user\tailscale-setup.exe"
-# Start-Process -FilePath "C:\Users\user\tailscale-setup.exe" -ArgumentList "/S" -Wait
-
-# Auth using Prav's pre-generated key
-& "C:\Program Files\Tailscale\tailscale.exe" up --authkey=tskey-auth-REDACTED --accept-routes
-
-# Verify
-& "C:\Program Files\Tailscale\tailscale.exe" status
-```
-
-On my Mac in parallel: ensure Tailscale signed in with my account
-(already invited as user on Prav's tailnet), then:
+From Darren's Mac (after SSH tunnel back up via step 0):
 
 ```bash
-ssh user@<3090-tailscale-ip>
+# Copy the pre-written config to the 3090
+scp ~/.config/ssd/wg/wg-koi-3090.conf \
+    windows-desktop-remote:C:/Users/user/wg-koi.conf
 ```
 
-Add `windows-desktop-tailscale` to `~/.ssh/config`.
+Then on 3090 via SSH:
+
+```powershell
+# Download WireGuard for Windows (silent MSI install)
+Invoke-WebRequest -Uri "https://download.wireguard.com/windows-client/wireguard-installer.exe" -OutFile "C:\Users\user\wireguard-installer.exe"
+Start-Process -FilePath "C:\Users\user\wireguard-installer.exe" -ArgumentList "/S" -Wait
+
+# Install the tunnel as a Windows service (auto-start on boot)
+& "C:\Program Files\WireGuard\wireguard.exe" /installtunnelservice "C:\Users\user\wg-koi.conf"
+
+# Verify
+Get-Service WireGuardTunnel`$wg-koi
+& "C:\Program Files\WireGuard\wg.exe" show
+```
+
+From Darren's Mac, after confirming the tunnel is up on 3090:
+
+```bash
+# Test reachability over WG
+ping -c 3 10.100.0.30
+
+# Add SSH alias for the WG path
+cat >> ~/.ssh/config <<'EOF'
+
+# Backup path via WireGuard (wg-koi network through poly)
+Host windows-desktop-wg
+  HostName 10.100.0.30
+  User user
+  IdentityFile ~/.ssh/id_ed25519
+EOF
+
+# Test SSH over WireGuard (should work independent of the poly SSH tunnel)
+ssh windows-desktop-wg "hostname; whoami"
+```
+
+Now we have two independent paths:
+- **Primary:** `ssh windows-desktop-remote` (reverse SSH tunnel via poly:2222)
+- **Backup:** `ssh windows-desktop-wg` (WireGuard mesh via poly's wg-koi)
+
+Both depend on poly being up. If poly dies, both die. Considered
+acceptable for April; a second-VPS or cloudflared fallback is a
+post-show hardening item.
 
 ### 3. Daily diagnostic scheduled task (3 min)
 
@@ -128,7 +160,7 @@ Before Prav leaves at 10:30:
 - [ ] `Test-Path C:\Users\user\heartbeats\resolume_watchdog.hb` → True
 - [ ] `Get-Content C:\Users\user\Desktop\apr20_deploy.log` → PASS on synthetic
 - [ ] `gpresult /r | Select-String WindowsUpdate` → NoAutoUpdate: 1
-- [ ] `tailscale status` → 3090 online; Darren's Mac can `ssh windows-desktop-tailscale`
+- [ ] `ssh windows-desktop-wg "hostname"` succeeds → WireGuard backup path live
 - [ ] Visitor prompt smoke test → Prav confirms wall + audio
 - [ ] Daily diagnostic test message received on Telegram
 
