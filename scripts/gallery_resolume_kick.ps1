@@ -1,50 +1,38 @@
 # gallery_resolume_kick.ps1
-# Brings Resolume Arena to foreground and sends Ctrl+Shift+A to toggle the
-# Advanced Output panel. Used to remotely re-open the projector outputs after
-# Resolume comes up idle on cold boot (Prav's manual fix every morning).
+# Invokes resolume_kick.ahk (AutoHotkey v2) to send Ctrl+Shift+A to Arena.
 #
-# How to trigger remotely (any window with SSH access):
-#     ssh windows-desktop-remote "schtasks /run /tn SSD-Resolume-Kick"
+# Replaces the original System.Windows.Forms.SendKeys implementation
+# (which silently failed when fired from a hidden scheduled task because
+# Windows foreground-lock protection blocks SetForegroundWindow for
+# hidden background processes).
 #
-# This MUST run via Task Scheduler in the user's interactive session, NOT
-# directly over SSH -- SendKeys requires a real desktop, which a headless
-# SSH session doesn't have.
+# AHK uses AttachThreadInput + SendInput (hardware-level) to bypass
+# these restrictions. See C:\Users\user\resolume_kick.ahk.
 #
-# Logs to C:\Users\user\resolume_kick.log so we can audit when it fires.
-
-Add-Type -AssemblyName System.Windows.Forms
-Add-Type @"
-  using System;
-  using System.Runtime.InteropServices;
-  public class WinApi {
-    [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hWnd);
-    [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
-  }
-"@
+# This shim stays in place so the SSD-Resolume-Kick scheduled task
+# doesn't need its "Task To Run" path changed (that requires run-as
+# password). Behavior migration is internal.
+#
+# Logs to C:\Users\user\resolume_kick.log (legacy path preserved for
+# observability continuity) and C:\Users\user\resolume_kick_ahk.log
+# (AHK-specific log written by the .ahk itself).
 
 $LogPath = "C:\Users\user\resolume_kick.log"
 $Stamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-
 function Write-Log { param($msg) Add-Content -Path $LogPath -Value "[$Stamp] $msg" }
 
-$arena = Get-Process -Name "Arena" -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowHandle -ne [IntPtr]::Zero } | Select-Object -First 1
-if (-not $arena) {
-    Write-Log "[FAIL] Arena process not found or has no visible window"
+$AhkExe = "C:\Program Files\AutoHotkey\v2\AutoHotkey.exe"
+$AhkScript = "C:\Users\user\resolume_kick.ahk"
+
+if (-not (Test-Path $AhkExe)) {
+    Write-Log "[FAIL] AutoHotkey v2 not found at $AhkExe"
     exit 1
 }
+if (-not (Test-Path $AhkScript)) {
+    Write-Log "[FAIL] kick script not found at $AhkScript"
+    exit 2
+}
 
-$pidVal = $arena.Id
-$handle = $arena.MainWindowHandle
-Write-Log "[INFO] Found Arena PID=$pidVal handle=$handle"
-
-# SW_RESTORE = 9 (un-minimize if needed)
-[WinApi]::ShowWindow($handle, 9) | Out-Null
-[WinApi]::SetForegroundWindow($handle) | Out-Null
-
-Start-Sleep -Milliseconds 500
-
-# Send Ctrl+Shift+A (Resolume Advanced Output toggle)
-[System.Windows.Forms.SendKeys]::SendWait("^+a")
-
-Write-Log "[OK] Sent Ctrl+Shift+A to Arena"
-exit 0
+$proc = Start-Process -FilePath $AhkExe -ArgumentList "`"$AhkScript`"" -Wait -PassThru -WindowStyle Hidden
+Write-Log "[OK] AHK invoked resolume_kick.ahk (exit=$($proc.ExitCode))"
+exit $proc.ExitCode
