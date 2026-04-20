@@ -110,16 +110,15 @@ Darren's side: Darren opens Tailscale on his Mac, accepts invitation, tests `ssh
 
 ---
 
-## Step 7 — Hardware reality check (5–10 min, Darren-driven questions)
+## Step 7 — Hardware reality check (RESOLVED 2026-04-19 via Signal)
 
-Physical inspection Prav does while Darren watches remotely:
+No physical inspection needed tomorrow — Prav confirmed on Signal the evening of Apr 19:
 
-- **Any USB mic connected?** Check the back + front of the tower for any USB mic, 3.5mm jack, or wireless receiver. Report make/model if present.
-- **Where does computer audio-out go?** Trace the cable: splitter? Direct to one device? Photo helps.
-- **Wireless headphones:** Bluetooth-paired or analog through a transmitter?
-- **Camera:** any connected?
+- **No mic** connected (USB or 3.5mm).
+- **No camera** connected.
+- **Audio-out path:** 3.5mm → splitter → wired speakers + Bluetooth broadcaster (the BT transmitter pairs to external BT speakers).
 
-Answers feed directly into whether today's silence detector is monitoring real hardware.
+Implication: existing `gallery_audio.py` silence detector (`AUDIO_DEVICE_INDEX=0`, input-side) is architecturally wrong. Replace with WASAPI loopback on the default playback device (peak-detect the output signal actually going to the splitter). See `memory/project_3090_hardware_audio.md` for details + known BT-branch failure gap.
 
 ---
 

@@ -20,18 +20,11 @@ Ferry at 11:50 — leave gallery by 10:30 latest.
 
 3. **Install the new dongle.**
 
-4. **Hardware walk-around** — answer 4 questions while looking at the
-   tower:
-   - Any USB mic or 3.5mm mic connected?
-   - Where does audio-out go? (single cable? splitter?)
-   - Camera connected?
-   - Wireless headphones — Bluetooth or analog?
-
-5. **Smoke test before you leave:** Darren sends a visitor prompt from
+4. **Smoke test before you leave:** Darren sends a visitor prompt from
    his phone. You confirm: (a) wall shows a new image, (b) audio is
    audible in the gallery.
 
-6. **Leave for ferry.** Darren continues remaining work remotely.
+5. **Leave for ferry.** Darren continues remaining work remotely.
 
 ---
 

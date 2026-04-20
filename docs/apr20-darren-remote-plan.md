@@ -88,14 +88,27 @@ Start-Process -FilePath "cmd.exe" -ArgumentList "/c sfc /scannow > C:\Users\user
 
 Check later: `Get-Content C:\Users\user\Desktop\sfc_scan.log`.
 
-### 5. Answer Prav's hardware questions → update gallery_audio.py (5 min)
+### 5. Rewrite gallery_audio.py to WASAPI loopback (15 min)
 
-Based on Prav's walk-around answers (mic? audio-out path? camera?),
-either:
-- confirm current `AUDIO_DEVICE_INDEX=0` monitors a real mic (leave alone),
-- or switch the silence detector to a loopback / WASAPI output device.
+Hardware walk-around resolved ahead of time via Signal 2026-04-19:
+3090 has **no mic, no camera**; audio = 3.5mm → splitter → wired +
+Bluetooth broadcaster. The existing input-side silence detector
+(`AUDIO_DEVICE_INDEX=0`) is watching nothing meaningful.
 
-Patch `scripts/gallery_audio.py` on the 3090 as needed.
+Replacement approach: WASAPI loopback on the **default playback device**
+to peak-detect the signal actually going out to the splitter. Catches
+Ableton/WMP crashes, app silence, mute events. Does NOT catch
+BT-broadcaster pairing failures (known gap, not solving in April).
+
+Patch `scripts/gallery_audio.py`:
+- Replace `sounddevice.InputStream` with a WASAPI loopback stream via
+  `sounddevice.WasapiSettings(loopback=True)` on the default output
+  device, OR use `pyaudio` if `sounddevice` loopback is flaky on 3090.
+- Keep the existing rolling-window volume + `ssd_audio_state.json`
+  snapshot writer — just change the data source.
+- Re-test: `python gallery_audio.py --list-devices` → identify the
+  default output device → confirm loopback captures peak when audio is
+  playing.
 
 ### 6. Autolume cache revert (deferred to tomorrow evening)
 
