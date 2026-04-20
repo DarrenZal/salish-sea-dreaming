@@ -1,10 +1,10 @@
-# Apr 20 — Prav's morning at gallery (9:30–10:30)
+# Apr 20 — Prav's morning at gallery
 
 Darren on Signal + phone the whole time. This is just the things **you**
-(Prav) have to do physically. Everything else Darren runs remotely and
-will narrate over the phone.
+(Prav) have to do physically. Almost everything else Darren runs remotely
+over SSH.
 
-Ferry at 11:50 — leave gallery 10:30.
+Ferry at 11:50 — leave gallery by 10:30 latest.
 
 ---
 
@@ -12,33 +12,35 @@ Ferry at 11:50 — leave gallery 10:30.
    ```
    schtasks /run /tn "SSD-SSH-Tunnel"
    ```
-   Message Darren: "tunnel restarted." He'll confirm he's in within 30s.
+   Message Darren: "tunnel restarted." He's in within 30s.
 
-2. **Hand the keyboard over to Darren (remotely).** He'll deploy the
-   Arena watchdog + block Windows Updates. You just narrate what you see
-   on screen if he asks.
+2. **Hand-off** — Darren does the bulk of the deploy over SSH in the
+   background (watchdog, Tailscale, Windows Update block, etc.). You do
+   the physical items below in parallel.
 
-3. **Install the new dongle** when Darren says it's safe.
+3. **Install the new dongle.**
 
-4. **Tailscale:** open the Tailscale app on the 3090, make sure it's
-   signed in. Then on your phone or browser open admin.tailscale.com →
-   invite `zaldarren@gmail.com`. Darren will test on his end.
-
-5. **Answer Darren's hardware questions** (2 min, walk around the tower):
+4. **Hardware walk-around** — answer 4 questions while looking at the
+   tower:
    - Any USB mic or 3.5mm mic connected?
    - Where does audio-out go? (single cable? splitter?)
    - Camera connected?
    - Wireless headphones — Bluetooth or analog?
 
-6. **Smoke test before you leave:** Darren sends a visitor prompt from
-   his phone. You confirm on Signal: (a) wall shows a new image,
-   (b) audio is audible in the gallery.
+5. **Smoke test before you leave:** Darren sends a visitor prompt from
+   his phone. You confirm: (a) wall shows a new image, (b) audio is
+   audible in the gallery.
 
-7. **Leave for ferry at 10:30.** Darren continues any remaining work
-   remotely.
+6. **Leave for ferry.** Darren continues remaining work remotely.
 
 ---
 
+**Before bed tonight** — on admin.tailscale.com, generate a **reusable
+auth key** (24h expiry) and Signal it to Darren. That lets him install
+and authenticate Tailscale on the 3090 entirely over SSH tomorrow
+without you touching the keyboard.
+
 If anything is weird or Darren can't reach you, call him: 518-210-2828.
 
-Full detail (for Darren's reference, not yours): `docs/apr20-morning-checklist.md`.
+Full detail (for Darren's reference): `docs/apr20-morning-checklist.md`.
+Remote plan Darren runs in parallel: `docs/apr20-darren-remote-plan.md`.
