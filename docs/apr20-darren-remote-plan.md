@@ -5,8 +5,19 @@ Once Prav runs `schtasks /run /tn "SSD-SSH-Tunnel"` and I confirm
 of this happens in parallel with Prav doing dongle install + hardware
 walk-around.
 
-**Prereq from Prav (tonight, via Signal):** reusable Tailscale auth key
-from admin.tailscale.com, 24h expiry, format `tskey-auth-xxxxx`.
+**Prereq Darren does himself tonight:**
+
+1. Sign up at tailscale.com with `zaldarren@gmail.com` (Google SSO, free
+   tier). This creates Darren's tailnet.
+2. admin.tailscale.com → Settings → Keys → Generate auth key. Reusable,
+   ephemeral off, 24h expiry. Copy the `tskey-auth-xxxxx` value — will
+   paste into step 2 below.
+3. Confirm Tailscale is installed + signed in on Darren's Mac (already
+   installed per Apr 19 screenshot; just sign in with the same Google
+   account).
+
+No Prav involvement in Tailscale setup. The 3090 joins Darren's tailnet,
+not Prav's.
 
 ---
 

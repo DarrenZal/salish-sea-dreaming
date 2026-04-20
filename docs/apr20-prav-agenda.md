@@ -35,10 +35,9 @@ Ferry at 11:50 — leave gallery by 10:30 latest.
 
 ---
 
-**Before bed tonight** — on admin.tailscale.com, generate a **reusable
-auth key** (24h expiry) and Signal it to Darren. That lets him install
-and authenticate Tailscale on the 3090 entirely over SSH tomorrow
-without you touching the keyboard.
+Darren is handling Tailscale entirely over SSH tomorrow (creating the
+tailnet on his own account, installing + auth'ing the 3090 remotely).
+No action from you needed on the Tailscale side.
 
 If anything is weird or Darren can't reach you, call him: 518-210-2828.
 
