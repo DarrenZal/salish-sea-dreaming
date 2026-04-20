@@ -1,0 +1,71 @@
+{
+  "schema_version": "1",
+  "description": "Expected heartbeat files the meta-watchdog monitors. One entry per component. max_age_sec = how stale a .hb file can be before alert fires. Per scripts/heartbeat_manifest.json in the resilience-architecture plan.",
+  "updated": "2026-04-19",
+  "components": [
+    {
+      "name": "resolume_watchdog",
+      "file": "resolume_watchdog.hb",
+      "max_age_sec": 210,
+      "alert_key": "meta_resolume_watchdog_stalled",
+      "enabled": true,
+      "notes": "Written by resolume_watchdog.ps1 every ~120s loop tick. Deployed Apr 20."
+    },
+    {
+      "name": "td_watchdog",
+      "file": "td_watchdog.hb",
+      "max_age_sec": 210,
+      "alert_key": "meta_td_watchdog_stalled",
+      "enabled": false,
+      "notes": "Existing td_watchdog.ps1 does not yet write a .hb file. Extend in Phase 1."
+    },
+    {
+      "name": "autolume_watchdog",
+      "file": "autolume_watchdog.hb",
+      "max_age_sec": 210,
+      "alert_key": "meta_autolume_watchdog_stalled",
+      "enabled": false,
+      "notes": "Existing autolume_watchdog.ps1 does not yet write a .hb file. Extend when Autolume is restored in Phase 2."
+    },
+    {
+      "name": "gallery_audio",
+      "file": "gallery_audio.hb",
+      "max_age_sec": 30,
+      "alert_key": "meta_gallery_audio_stalled",
+      "enabled": false,
+      "notes": "gallery_audio.py already writes ssd_audio_state.json every 1s; extend to also touch heartbeats/gallery_audio.hb. Deploy in Phase 1."
+    },
+    {
+      "name": "ambient_audio",
+      "file": "ambient_audio.hb",
+      "max_age_sec": 7200,
+      "alert_key": "meta_ambient_audio_stalled",
+      "enabled": false,
+      "notes": "gallery_ambient_audio.ps1 currently logs hourly heartbeat-line to ssd_ambient_audio.log. Convert to a proper .hb file write."
+    },
+    {
+      "name": "td_relay",
+      "file": "td_relay.hb",
+      "max_age_sec": 90,
+      "alert_key": "meta_td_relay_stalled",
+      "enabled": false,
+      "notes": "td_relay.py to be extended to write .hb every 30s alongside its existing poll loop."
+    },
+    {
+      "name": "meta_watchdog",
+      "file": "meta_watchdog.hb",
+      "max_age_sec": 240,
+      "alert_key": "meta_watchdog_self_stalled",
+      "enabled": false,
+      "notes": "Meta-watchdog writes its own heartbeat. Detected by health_probe.ps1 as special case."
+    },
+    {
+      "name": "ssh_tunnel",
+      "file": "ssh_tunnel.hb",
+      "max_age_sec": 120,
+      "alert_key": "meta_ssh_tunnel_stalled",
+      "enabled": false,
+      "notes": "CRITICAL path. ssd_ssh_tunnel.ps1 must write .hb each reconnect (~5min). Also requires verifying the tunnel SOCKET is up (not just the process) — the Apr 19 outage showed the script can be running while the actual tunnel is broken. Phase 0 priority per plan."
+    }
+  ]
+}
