@@ -40,7 +40,7 @@ Type: person | Tier: 1
 
 Creative Director (MOVE37XR). TouchDesigner, AI visualization, immersive media. Studio: 108 Fraser Rd, Salt Spring.
 
-Connections: <- The Exhibition (contains)
+Connections: -> The Exhibition (conceptual), <- Artists & Witnesses (contains)
 
 ### Raf
 Type: person | Tier: 1
@@ -9336,7 +9336,7 @@ Type: person | Tier: 1
 
 Systems architect. Built training corpus, gallery server, data map, and knowledge pipeline.
 
-Connections: -> Dreaming GAN (conceptual), -> Gallery Server (conceptual), <- Knowledge & Research (contains)
+Connections: -> Dreaming GAN (conceptual), -> Gallery Server (conceptual), -> Knowledge & Research (conceptual), <- Artists & Witnesses (contains)
 
 ### Digital Ecologies: Mediating More-Than-Human Worlds
 Type: report | Tier: 1
@@ -9357,7 +9357,7 @@ Type: person | Tier: 1
 
 Herring data science package — 339 files of herring stock assessment analysis.
 
-Connections: -> Herring Data Science (contains), <- Knowledge & Research (contains)
+Connections: -> Herring Data Science Package (contains), -> Knowledge & Research (conceptual), <- Artists & Witnesses (contains)
 
 ### The Living Salish Sea
 Type: report | Tier: 1

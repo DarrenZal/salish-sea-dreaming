@@ -348,9 +348,9 @@ def build_graph():
         ("person:david-denning",    "David Denning",     "hub:artists",     "Photographer \u2014 long-term bioregional witnessing. 14 high-resolution photos used with collaborator permission."),
         ("person:eve-marenghi",     "Eve Marenghi",      "hub:artists",     "Data scientist, Regen Commons steward. HerringFest documentation."),
         ("person:carol-anne-hilton", "Carol Anne Hilton", "hub:exhibition",  "Indigenomics founder, vision holder. Framework for relational value and Indigenous economic design."),
-        ("person:prav-pillay",      "Pravin Pillay",     "hub:exhibition",  "Creative Director (MOVE37XR). TouchDesigner, AI visualization, immersive media. Studio: 108 Fraser Rd, Salt Spring."),
-        ("person:darren-zal",       "Darren Zal",        "hub:knowledge",   "Systems architect. Built training corpus, gallery server, data map, and knowledge pipeline."),
-        ("person:shawn-anderson",   "Shawn Anderson",    "hub:knowledge",   "Herring data science package \u2014 339 files of herring stock assessment analysis."),
+        ("person:prav-pillay",      "Pravin Pillay",     "hub:artists",     "Creative Director (MOVE37XR). TouchDesigner, AI visualization, immersive media. Studio: 108 Fraser Rd, Salt Spring."),
+        ("person:darren-zal",       "Darren Zal",        "hub:artists",     "Systems architect. Built training corpus, gallery server, data map, and knowledge pipeline."),
+        ("person:shawn-anderson",   "Shawn Anderson",    "hub:artists",     "Herring data science package \u2014 339 files of herring stock assessment analysis."),
         ("person:raf",              "Raf",               "hub:exhibition",  "Curator, Digital Ecologies exhibition at Mahon Hall."),
         ("person:brad-necyk",       "Brad Necyk",        "hub:artists",     "Artist and researcher, latent space concepts."),
         ("person:natalia-lebedinskaia", "Natalia Lebedinskaia", "hub:exhibition", "Panel moderation and contextual framing."),
@@ -373,6 +373,9 @@ def build_graph():
     links.append({"source": "person:darren-zal", "target": "artifact:dreaming-gan", "linkType": "conceptual"})
     links.append({"source": "person:darren-zal", "target": "node:gallery-server", "linkType": "conceptual"})
     links.append({"source": "person:zoe-zafiris-casey", "target": "hub:exhibition", "linkType": "conceptual"})
+    links.append({"source": "person:prav-pillay", "target": "hub:exhibition", "linkType": "conceptual"})
+    links.append({"source": "person:darren-zal", "target": "hub:knowledge", "linkType": "conceptual"})
+    links.append({"source": "person:shawn-anderson", "target": "hub:knowledge", "linkType": "conceptual"})
 
     # ── Signal chain (tier 1, machine hub — revealed on hub click) ─────────
     signal_chain = [

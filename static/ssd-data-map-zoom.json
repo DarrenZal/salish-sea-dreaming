@@ -135,7 +135,7 @@
       "name": "Pravin Pillay",
       "type": "person",
       "tier": 1,
-      "clusterHub": "hub:exhibition",
+      "clusterHub": "hub:artists",
       "bio": "Creative Director (MOVE37XR). TouchDesigner, AI visualization, immersive media. Studio: 108 Fraser Rd, Salt Spring."
     },
     {
@@ -143,7 +143,7 @@
       "name": "Darren Zal",
       "type": "person",
       "tier": 1,
-      "clusterHub": "hub:knowledge",
+      "clusterHub": "hub:artists",
       "bio": "Systems architect. Built training corpus, gallery server, data map, and knowledge pipeline."
     },
     {
@@ -151,7 +151,7 @@
       "name": "Shawn Anderson",
       "type": "person",
       "tier": 1,
-      "clusterHub": "hub:knowledge",
+      "clusterHub": "hub:artists",
       "bio": "Herring data science package — 339 files of herring stock assessment analysis."
     },
     {
@@ -13465,17 +13465,17 @@
       "linkType": "contains"
     },
     {
-      "source": "hub:exhibition",
+      "source": "hub:artists",
       "target": "person:prav-pillay",
       "linkType": "contains"
     },
     {
-      "source": "hub:knowledge",
+      "source": "hub:artists",
       "target": "person:darren-zal",
       "linkType": "contains"
     },
     {
-      "source": "hub:knowledge",
+      "source": "hub:artists",
       "target": "person:shawn-anderson",
       "linkType": "contains"
     },
@@ -20338,6 +20338,21 @@
       "source": "hub:exhibition",
       "target": "person:blair",
       "linkType": "contains"
+    },
+    {
+      "source": "person:prav-pillay",
+      "target": "hub:exhibition",
+      "linkType": "conceptual"
+    },
+    {
+      "source": "person:darren-zal",
+      "target": "hub:knowledge",
+      "linkType": "conceptual"
+    },
+    {
+      "source": "person:shawn-anderson",
+      "target": "hub:knowledge",
+      "linkType": "conceptual"
     }
   ],
   "theme_colors": {
@@ -20359,7 +20374,7 @@
     "version": "2.0",
     "total_nodes": 1334,
     "tier0_nodes": 12,
-    "total_links": 1396,
+    "total_links": 1399,
     "hub_count": 7,
     "species_count": 48,
     "corpus_images": 1223

@@ -190,7 +190,7 @@
       "ssd:nodeType": "person",
       "ssd:tier": 1,
       "schema:description": "Creative Director (MOVE37XR). TouchDesigner, AI visualization, immersive media. Studio: 108 Fraser Rd, Salt Spring.",
-      "schema:isPartOf": "ssd:hub-exhibition"
+      "schema:isPartOf": "ssd:hub-artists"
     },
     {
       "@id": "ssd:person-darren-zal",
@@ -199,7 +199,7 @@
       "ssd:nodeType": "person",
       "ssd:tier": 1,
       "schema:description": "Systems architect. Built training corpus, gallery server, data map, and knowledge pipeline.",
-      "schema:isPartOf": "ssd:hub-knowledge"
+      "schema:isPartOf": "ssd:hub-artists"
     },
     {
       "@id": "ssd:person-shawn-anderson",
@@ -208,7 +208,7 @@
       "ssd:nodeType": "person",
       "ssd:tier": 1,
       "schema:description": "Herring data science package — 339 files of herring stock assessment analysis.",
-      "schema:isPartOf": "ssd:hub-knowledge"
+      "schema:isPartOf": "ssd:hub-artists"
     },
     {
       "@id": "ssd:person-raf",
@@ -14850,19 +14850,19 @@
     },
     {
       "@type": "ssd:Edge",
-      "ssd:source": "ssd:hub-exhibition",
+      "ssd:source": "ssd:hub-artists",
       "ssd:target": "ssd:person-prav-pillay",
       "ssd:edgeType": "schema:hasPart"
     },
     {
       "@type": "ssd:Edge",
-      "ssd:source": "ssd:hub-knowledge",
+      "ssd:source": "ssd:hub-artists",
       "ssd:target": "ssd:person-darren-zal",
       "ssd:edgeType": "schema:hasPart"
     },
     {
       "@type": "ssd:Edge",
-      "ssd:source": "ssd:hub-knowledge",
+      "ssd:source": "ssd:hub-artists",
       "ssd:target": "ssd:person-shawn-anderson",
       "ssd:edgeType": "schema:hasPart"
     },
@@ -22953,6 +22953,24 @@
       "ssd:source": "ssd:datasrc-briony-penn",
       "ssd:target": "ssd:artifact-dreaming-corpus",
       "ssd:edgeType": "ssd:trainedBy"
+    },
+    {
+      "@type": "ssd:Edge",
+      "ssd:source": "ssd:person-prav-pillay",
+      "ssd:target": "ssd:hub-exhibition",
+      "ssd:edgeType": "ssd:relatedTo"
+    },
+    {
+      "@type": "ssd:Edge",
+      "ssd:source": "ssd:person-darren-zal",
+      "ssd:target": "ssd:hub-knowledge",
+      "ssd:edgeType": "ssd:relatedTo"
+    },
+    {
+      "@type": "ssd:Edge",
+      "ssd:source": "ssd:person-shawn-anderson",
+      "ssd:target": "ssd:hub-knowledge",
+      "ssd:edgeType": "ssd:relatedTo"
     }
   ]
 }
