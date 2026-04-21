@@ -146,8 +146,8 @@
     // ---- Auto-rotation ----
     function rotate() {
         if (!graph) { requestAnimationFrame(rotate); return; }
-        if (!playing && (!userInteracted || Date.now() - lastInteraction > 5000)) {
-            angle += 0.3;
+        if (!playing && !userInteracted) {
+            angle += 0.15;
             const d = 800;
             graph.cameraPosition({ x: d*Math.sin(angle*Math.PI/180), z: d*Math.cos(angle*Math.PI/180), y: 100 });
         }
@@ -441,6 +441,39 @@
         container.addEventListener('wheel', onInteraction);
         loadingEl.classList.add('hidden');
         rotate();
+
+        // Deep-link: ?dream=<id> focuses camera on that dream + opens its panel
+        const params = new URLSearchParams(location.search);
+        const deepDream = params.get('dream');
+        if (deepDream) {
+            const target = graphData.nodes.find(n => String(n.id) === deepDream);
+            if (target) {
+                onInteraction();  // stop auto-rotation
+                setTimeout(() => {
+                    showPanel(target);
+                    // Keep cluster color; distinguish via size + pulsing
+                    styleFish(target.id, target.color, 1.0, 2.4);
+                    graph.cameraPosition(
+                        { x: target.fx + 180, y: target.fy + 120, z: target.fz + 180 },
+                        { x: target.fx, y: target.fy, z: target.fz },
+                        1800
+                    );
+                    // Gentle pulse so the highlighted fish remains findable
+                    const fish = fishMap[target.id];
+                    if (fish) {
+                        const t0 = performance.now();
+                        (function pulse() {
+                            const f = fishMap[target.id];
+                            if (!f) return;  // fish removed
+                            const dt = (performance.now() - t0) / 1000;
+                            const s = 2.4 + Math.sin(dt * 2.2) * 0.35;
+                            f.scale.setScalar(s);
+                            requestAnimationFrame(pulse);
+                        })();
+                    }
+                }, 500);
+            }
+        }
 
         setInterval(async () => {
             if (playing) return;
