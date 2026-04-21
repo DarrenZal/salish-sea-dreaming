@@ -40,8 +40,8 @@
       "file": "gallery_audio.hb",
       "max_age_sec": 30,
       "alert_key": "meta_gallery_audio_stalled",
-      "enabled": false,
-      "notes": "gallery_audio.py already writes ssd_audio_state.json every 1s; extend to also touch heartbeats/gallery_audio.hb. Deploy in Phase 1."
+      "enabled": true,
+      "notes": "Rewritten as WASAPI loopback monitor 2026-04-20 evening; writes .hb every ~1s. Enable after Tue deploy."
     },
     {
       "name": "ambient_audio",
