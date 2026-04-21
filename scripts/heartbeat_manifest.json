@@ -1,7 +1,7 @@
 {
   "schema_version": "1",
   "description": "Expected heartbeat files the meta-watchdog monitors. One entry per component. max_age_sec = how stale a .hb file can be before alert fires. Per scripts/heartbeat_manifest.json in the resilience-architecture plan.",
-  "updated": "2026-04-19",
+  "updated": "2026-04-20",
   "components": [
     {
       "name": "resolume_watchdog",
@@ -16,16 +16,24 @@
       "file": "td_watchdog.hb",
       "max_age_sec": 210,
       "alert_key": "meta_td_watchdog_stalled",
-      "enabled": false,
-      "notes": "Existing td_watchdog.ps1 does not yet write a .hb file. Extend in Phase 1."
+      "enabled": true,
+      "notes": "Upgraded to v2 on Apr 20 evening; writes heartbeat every ~120s loop tick."
     },
     {
       "name": "autolume_watchdog",
       "file": "autolume_watchdog.hb",
       "max_age_sec": 210,
       "alert_key": "meta_autolume_watchdog_stalled",
-      "enabled": false,
-      "notes": "Existing autolume_watchdog.ps1 does not yet write a .hb file. Extend when Autolume is restored in Phase 2."
+      "enabled": true,
+      "notes": "Upgraded to v2 on Apr 20 evening; writes heartbeat every ~120s loop tick."
+    },
+    {
+      "name": "tunnel_watchdog",
+      "file": "tunnel_watchdog.hb",
+      "max_age_sec": 120,
+      "alert_key": "meta_tunnel_watchdog_stalled",
+      "enabled": true,
+      "notes": "Deployed Apr 20 evening. Writes heartbeat every 60s loop tick."
     },
     {
       "name": "gallery_audio",
@@ -54,10 +62,10 @@
     {
       "name": "meta_watchdog",
       "file": "meta_watchdog.hb",
-      "max_age_sec": 240,
+      "max_age_sec": 120,
       "alert_key": "meta_watchdog_self_stalled",
-      "enabled": false,
-      "notes": "Meta-watchdog writes its own heartbeat. Detected by health_probe.ps1 as special case."
+      "enabled": true,
+      "notes": "Meta-watchdog writes its own heartbeat every ~30s. Consumed by health_probe.ps1 as the self-check."
     },
     {
       "name": "ssh_tunnel",
