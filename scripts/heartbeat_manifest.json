@@ -48,8 +48,8 @@
       "file": "gallery_audio.hb",
       "max_age_sec": 30,
       "alert_key": "meta_gallery_audio_stalled",
-      "enabled": true,
-      "notes": "Rewritten as WASAPI loopback monitor 2026-04-20 evening; writes .hb every ~1s. Enable after Tue deploy."
+      "enabled": false,
+      "notes": "WASAPI-loopback rewrite ready in scripts/gallery_audio.py; flip enabled=true AFTER Tue deploy (the old deployed script doesn't write .hb)."
     },
     {
       "name": "ambient_audio",
