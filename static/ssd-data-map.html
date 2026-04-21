@@ -133,9 +133,17 @@
             font-size: 8px; letter-spacing: 0.1em; text-transform: uppercase;
             color: #3a5a6a; margin-bottom: 6px;
         }
+        .detail-conn-section { margin-bottom: 8px; }
+        .detail-conn-section:last-child { margin-bottom: 0; }
         .detail-conn-item {
             font-size: 10px; color: #5a7a9a; font-weight: 300; padding: 2px 0;
         }
+        .detail-conn-item.clickable {
+            cursor: pointer;
+            color: #7a9ab8;
+            transition: color 0.15s;
+        }
+        .detail-conn-item.clickable:hover { color: #b0d0e8; }
         .detail-links { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
         .detail-link {
             display: inline-block; padding: 4px 12px; border-radius: 14px;
@@ -415,7 +423,7 @@
             <div class="detail-species-list" id="detail-species-list"></div>
         </div>
         <div class="detail-connections" id="detail-connections">
-            <div class="detail-connections-label">connected to</div>
+            <!-- Section headings are rendered by showDetail() per predicate + direction. -->
             <div id="detail-conn-list"></div>
         </div>
         <div class="detail-footer">
@@ -437,7 +445,7 @@
     (async function() {
         // ── Load graph data ────────────────────────────────────
         let resp;
-        try { resp = await fetch('ssd-data-map-zoom.json'); }
+        try { resp = await fetch('ssd-data-map-zoom.json?v=20260422'); }
         catch (e) {
             document.getElementById('subtitle').textContent = 'network error \u2014 tap to reload';
             document.getElementById('subtitle').style.cursor = 'pointer';
@@ -451,6 +459,25 @@
             return;
         }
         const data = await resp.json();
+
+        // ── Edge vocabulary (predicate labels + colors) ───────
+        // Small derived lookup emitted by scripts/emit_edge_vocab.py from
+        // the canonical ontology at static/ontology/ssd-ontology.jsonld.
+        // Keyed by link.linkType. Missing fetch → empty vocab; panel falls
+        // back to "related to" bucket and edges use source-hub colour.
+        let edgeVocab = {};
+        try {
+            const vr = await fetch('ssd-edge-vocab.json?v=20260422');
+            if (vr.ok) edgeVocab = await vr.json();
+        } catch (e) { /* non-fatal */ }
+
+        // ── Fetch visitor dreams + clusters (non-fatal) ───────
+        let dreamsData = { nodes: [], clusters: [] };
+        try {
+            const dr = await fetch('/dreams/3d');
+            if (dr.ok) dreamsData = await dr.json();
+        } catch (e) { /* offline — continue without dreams */ }
+
         const isMobile = window.innerWidth <= 768;
         const themeColors = data.theme_colors;
         const extColors = data.ext_colors || {};
@@ -482,12 +509,14 @@
         let detailImageMap = {}; // node_id → high-res file path
         const thumbNodes = new Set();
 
-        fetch('ssd-cards.json')
+        fetch('ssd-cards.json?v=20260422')
             .then(r => r.ok ? r.json() : null)
             .then(d => {
                 if (!d) return;
-                cardData = d.cards || {};
-                speciesData = d.species || {};
+                // Merge instead of replace so visitor-dream cards populated in
+                // bootstrap aren't lost. ssd-cards.json has no visitor-* keys.
+                Object.assign(cardData, d.cards || {});
+                Object.assign(speciesData, d.species || {});
                 applyThumbnails();
             })
             .catch(() => {
@@ -495,7 +524,7 @@
             });
 
         // High-res detail images (individual files, loaded on demand)
-        fetch('ssd-detail-map.json')
+        fetch('ssd-detail-map.json?v=20260422')
             .then(r => r.ok ? r.json() : {})
             .then(d => { detailImageMap = d; })
             .catch(() => {});
@@ -524,15 +553,83 @@
         if (!data.nodes.find(n => n.id === 'hub:visitor-dreams')) {
             const hubNode = {
                 id: 'hub:visitor-dreams',
-                name: 'Visitor Voices',
+                name: 'Visitor Dreams',
                 type: 'hub',
                 theme: 'visitor',
                 size: 500,
                 isDir: true,
                 depth: 1,
+                tier: 0,
             };
             data.nodes.push(hubNode);
             nodeById['hub:visitor-dreams'] = hubNode;
+        }
+
+        // ── Visitor clusters + dreams (bootstrap from /dreams/3d) ────────
+        // Maps cluster_id (int) → cluster-summary node id (string)
+        const _visitorClusterMap = {};
+        function _addLink(source, target, linkType) {
+            const linkObj = { source, target };
+            if (linkType) linkObj.linkType = linkType;
+            data.links.push(linkObj);
+            if (!adjacency[source]) adjacency[source] = [];
+            adjacency[source].push(target);
+            if (!adjacency[target]) adjacency[target] = [];
+            adjacency[target].push(source);
+        }
+        for (const c of (dreamsData.clusters || [])) {
+            const cid = 'visitor-cluster-' + c.id;
+            if (nodeById[cid]) continue;
+            const clusterNode = {
+                id: cid,
+                name: c.label || ('Cluster ' + c.id),
+                type: 'cluster-summary',
+                theme: 'visitor',
+                clusterHub: 'hub:visitor-dreams',
+                _parentId: 'hub:visitor-dreams',
+                tier: 1,
+                color: c.color,
+            };
+            data.nodes.push(clusterNode);
+            nodeById[cid] = clusterNode;
+            _addLink(cid, 'hub:visitor-dreams', 'in-cluster');
+            _visitorClusterMap[c.id] = cid;
+        }
+        function _buildDreamCard(n, dreamId, parentId) {
+            const parentName = (_visitorClusterMap[n.cluster] && nodeById[_visitorClusterMap[n.cluster]]?.name) || '';
+            const bodyParts = [n.text];
+            if (parentName) bodyParts.push('Cluster: ' + parentName);
+            if (n.submitted_at) bodyParts.push('Submitted: ' + new Date(n.submitted_at + 'Z').toLocaleString());
+            return {
+                title: n.text,
+                body: bodyParts.filter(Boolean).join('\n\n'),
+                links: [
+                    { label: 'View in Dreamworld', url: '/graph-assets/dreamworld.html?dream=' + n.id },
+                ],
+            };
+        }
+        for (const n of (dreamsData.nodes || [])) {
+            const dreamId = 'visitor-' + n.id;
+            if (nodeById[dreamId]) continue;
+            const parentId = _visitorClusterMap[n.cluster] || 'hub:visitor-dreams';
+            const text = n.text || '';
+            const dreamNode = {
+                id: dreamId,
+                name: text.length > 40 ? text.slice(0, 40) + '…' : text,
+                fullText: text,
+                type: 'visitor',
+                theme: 'visitor',
+                clusterHub: 'hub:visitor-dreams',
+                _parentId: parentId,
+                tier: 2,
+                color: n.color,
+                submitted_at: n.submitted_at,
+                _dbId: n.id,
+            };
+            data.nodes.push(dreamNode);
+            nodeById[dreamId] = dreamNode;
+            _addLink(dreamId, parentId, 'in-cluster');
+            cardData[dreamId] = _buildDreamCard(n, dreamId, parentId);
         }
 
         // ── Legend ─────────────────────────────────────────────
@@ -595,6 +692,7 @@
             }
         }
         function fillColor(d) {
+            if (d.color) return d.color;
             const fn = NODE_COLORS[d.type];
             return fn ? fn(d) : '#555';
         }
@@ -621,7 +719,6 @@
 
         function isVisible(n) {
             if (n.type === 'hub') return true;
-            if (n.type === 'visitor') return true;
             if (n.tier === 0) return true;
             if (!expandedClusters.has(n.clusterHub)) return false;
             if (n.tier === 1) return true;           // tier 1 visible when hub expanded
@@ -650,7 +747,7 @@
                     const sid = d.source.id || d.source;
                     const tid = d.target.id || d.target;
                     const sn = nodeById[sid], tn = nodeById[tid];
-                    return (sn && tn && isVisible(sn) && isVisible(tn)) ? 0.4 : 0;
+                    return (sn && tn && isVisible(sn) && isVisible(tn)) ? 0.7 : 0;
                 });
             if (isMobile) {
                 mobileLabels.transition().duration(500)
@@ -686,6 +783,16 @@
             n.x = hp.x + (Math.random() - 0.5) * 60;
             n.y = hp.y + (Math.random() - 0.5) * 60;
         });
+        // The installation node links to every hub. Pin it above the hub cluster
+        // so its label has breathing room (hubs pack tightly around the center
+        // under the forceCenter pull). _pinX/_pinY let drag-end restore the pin.
+        const _install = nodeById['install:salish-sea-dreaming'];
+        if (_install) {
+            _install._pinX = w / 2;
+            _install._pinY = Math.max(110, h / 2 - 260);
+            _install.x = _install.fx = _install._pinX;
+            _install.y = _install.fy = _install._pinY;
+        }
 
         // Only simulate visible nodes — invisible nodes stay at their
         // pre-positioned coordinates and exert zero force.
@@ -728,19 +835,27 @@
             .force('collision', d3.forceCollide().radius(d => nodeR(d) + (isMobile ? 8 : 1)))
             .alphaDecay(0.06);
 
+        // Edge stroke colour is predicate-driven: lookup linkType in the
+        // edge vocabulary (ssd-edge-vocab.json). Untyped edges (linkType
+        // empty/missing) keep the legacy source-hub colour as a visual
+        // fallback so the existing "child-of-hub" affinity remains legible.
+        function linkStroke(d) {
+            const lt = d.linkType || '';
+            if (lt && edgeVocab[lt] && edgeVocab[lt].color) return edgeVocab[lt].color;
+            const sid = d.source.id || d.source;
+            const sn = nodeById[sid];
+            return sn && sn.type === 'hub' ? (HUB_COLORS[sn.id] || '#2a4a6a') : '#2a4a6a';
+        }
         const link = gEl.append('g').selectAll('line').data(data.links).join('line')
-            .attr('stroke', d => {
-                const sid = d.source.id || d.source;
-                const sn = nodeById[sid];
-                return sn && sn.type === 'hub' ? (HUB_COLORS[sn.id] || '#2a4a6a') : '#2a4a6a';
-            })
+            .attr('data-link-type', d => d.linkType || '')
+            .attr('stroke', linkStroke)
             .attr('stroke-opacity', d => {
                 const sid = d.source.id || d.source;
                 const tid = d.target.id || d.target;
                 const sn = nodeById[sid], tn = nodeById[tid];
-                return (sn && tn && isVisible(sn) && isVisible(tn)) ? 0.4 : 0;
+                return (sn && tn && isVisible(sn) && isVisible(tn)) ? 0.7 : 0;
             })
-            .attr('stroke-width', 0.7);
+            .attr('stroke-width', 1.1);
 
         const nodeEl = gEl.append('g').selectAll('circle').data(data.nodes).join('circle')
             .attr('r', d => isVisible(d) ? (d.type === 'hub' ? 28 : nodeR(d)) : 0)
@@ -781,7 +896,10 @@
             return name.length > max ? name.slice(0, max - 1) + '\u2026' : name;
         }
         const mobileNodes = data.nodes.filter(n =>
-            n.type !== 'hub' && n.type !== 'source'
+            // Exclude installation: the desktop `labels` selection already
+            // renders it on both platforms, and including it here duplicates
+            // the label on mobile.
+            n.type !== 'hub' && n.type !== 'source' && n.type !== 'installation'
         );
         const mobileLabels = gEl.append('g').selectAll('text')
             .data(mobileNodes).join('text')
@@ -828,7 +946,10 @@
             })
             .on('end', (e, d) => {
                 if (!e.active) simulation.alphaTarget(0);
-                d.fx = null; d.fy = null;
+                // Restore any standing pin (e.g. installation node) so clicks
+                // don't knock it out of position. Other nodes release normally.
+                if (d._pinX != null) { d.fx = d._pinX; d.fy = d._pinY; }
+                else { d.fx = null; d.fy = null; }
                 if (!_wasDragged) {
                     _suppressReset = true;
                     handleNodeClick(d);
@@ -839,7 +960,7 @@
         );
         function handleNodeClick(d) {
             // Hub click: toggle expansion + show detail
-            if (d.type === 'hub' && d.id !== 'hub:visitor-dreams') {
+            if (d.type === 'hub') {
                 if (expandedClusters.has(d.id)) {
                     expandedClusters.delete(d.id);
                     data.nodes.filter(n => n.clusterHub === d.id)
@@ -1023,23 +1144,117 @@
                 speciesEl.style.display = 'block';
             } else { speciesEl.style.display = 'none'; }
 
-            // Connections
+            // Connections — directed, typed, grouped by predicate.
+            // Each section is a <div data-section="<predicate>-out|in|related-to">
+            // with a heading styled like .detail-connections-label. Untyped edges
+            // (link.linkType empty/missing) bucket into data-section="related-to".
+            // Symmetric predicates (ssd:conceptual) route both directions into
+            // the `-out` bucket so the same edge isn't listed twice.
             const connList = document.getElementById('detail-conn-list');
             connList.textContent = '';
-            const neighbors = adjacency[d.id] || [];
-            const connected = new Set([d.id, ...neighbors]);
-            for (const nid of neighbors.slice(0, 15)) {
-                const neighbor = nodeById[nid];
-                if (!neighbor) continue;
-                const item = document.createElement('div'); item.className = 'detail-conn-item';
-                item.textContent = (cardData[nid] || {}).title || neighbor.name;
-                connList.append(item);
+
+            const SYMMETRIC_LINKTYPES = new Set(['conceptual']);
+            const UNTYPED_SECTION = 'related-to';
+            const UNTYPED_LABEL = 'related to';
+            const MAX_PER_SECTION = 15;
+
+            // Bucket structure: { sectionKey: { heading, neighbors: [nid, ...] } }
+            // Section keys: "<lt>-out", "<lt>-in", or "related-to".
+            const buckets = {};
+            const seen = new Set(); // (sectionKey + '|' + neighborId) dedupe
+            function addToBucket(sectionKey, heading, neighborId) {
+                const k = sectionKey + '|' + neighborId;
+                if (seen.has(k)) return;
+                seen.add(k);
+                if (!buckets[sectionKey]) buckets[sectionKey] = { heading, neighbors: [] };
+                buckets[sectionKey].neighbors.push(neighborId);
             }
-            if (neighbors.length > 15) {
-                const more = document.createElement('div');
-                more.className = 'detail-conn-item'; more.style.color = '#2a4a5a';
-                more.textContent = '+ ' + (neighbors.length - 15) + ' more';
-                connList.append(more);
+
+            for (const l of data.links) {
+                const sid = (l.source && typeof l.source === 'object') ? l.source.id : l.source;
+                const tid = (l.target && typeof l.target === 'object') ? l.target.id : l.target;
+                if (sid !== d.id && tid !== d.id) continue;
+
+                const lt = l.linkType || '';
+                const otherId = (sid === d.id) ? tid : sid;
+                const isOutgoing = (sid === d.id);
+
+                if (!lt) {
+                    addToBucket(UNTYPED_SECTION, UNTYPED_LABEL, otherId);
+                    continue;
+                }
+
+                const vocab = edgeVocab[lt];
+                if (!vocab) {
+                    // linkType present but vocab missing (vocab fetch failed, or
+                    // a new linkType not yet in the ontology) — treat as untyped
+                    // so the neighbour is still reachable.
+                    addToBucket(UNTYPED_SECTION, UNTYPED_LABEL, otherId);
+                    continue;
+                }
+
+                if (SYMMETRIC_LINKTYPES.has(lt)) {
+                    // Symmetric: one bucket, both directions.
+                    addToBucket(lt + '-out', vocab.forward_label, otherId);
+                    continue;
+                }
+                if (isOutgoing) {
+                    addToBucket(lt + '-out', vocab.forward_label, otherId);
+                } else {
+                    addToBucket(lt + '-in', vocab.inverse_label, otherId);
+                }
+            }
+
+            // Render sections in a stable, human-friendly order:
+            // outgoing predicates first (alphabetical by key), then incoming,
+            // then the untyped fallback at the bottom.
+            const allKeys = Object.keys(buckets);
+            const outKeys = allKeys.filter(k => k.endsWith('-out')).sort();
+            const inKeys = allKeys.filter(k => k.endsWith('-in')).sort();
+            const relatedKeys = allKeys.filter(k => k === UNTYPED_SECTION);
+            const orderedKeys = [...outKeys, ...inKeys, ...relatedKeys];
+
+            const connected = new Set([d.id]);
+            for (const sectionKey of orderedKeys) {
+                const bucket = buckets[sectionKey];
+                const section = document.createElement('div');
+                section.className = 'detail-conn-section';
+                section.setAttribute('data-section', sectionKey);
+
+                const heading = document.createElement('div');
+                heading.className = 'detail-connections-label';
+                heading.textContent = bucket.heading;
+                section.append(heading);
+
+                const shown = bucket.neighbors.slice(0, MAX_PER_SECTION);
+                for (const nid of shown) {
+                    connected.add(nid);
+                    const neighbor = nodeById[nid];
+                    if (!neighbor) continue;
+                    const item = document.createElement('div');
+                    item.className = 'detail-conn-item clickable';
+                    item.textContent = (cardData[nid] || {}).title || neighbor.name;
+                    item.addEventListener('click', () => {
+                        if (neighbor.clusterHub && !expandedClusters.has(neighbor.clusterHub)) {
+                            expandedClusters.add(neighbor.clusterHub);
+                        }
+                        if (neighbor._parentId && neighbor._parentId !== neighbor.clusterHub
+                            && !expandedDirs.has(neighbor._parentId)) {
+                            expandedDirs.add(neighbor._parentId);
+                        }
+                        redraw();
+                        showDetail(neighbor);
+                    });
+                    section.append(item);
+                }
+                if (bucket.neighbors.length > MAX_PER_SECTION) {
+                    const more = document.createElement('div');
+                    more.className = 'detail-conn-item';
+                    more.style.color = '#2a4a5a';
+                    more.textContent = '+ ' + (bucket.neighbors.length - MAX_PER_SECTION) + ' more';
+                    section.append(more);
+                }
+                connList.append(section);
             }
 
             // Footer
@@ -1164,6 +1379,10 @@
         const _visitorCircles = [];
         const _visitorLabels = [];
         const _visitorLinks = [];
+        // dreamId → link DOM element (for migrating to cluster on reconcile)
+        const _visitorLinkByDreamId = {};
+        // clusterId → cluster-summary DOM circle (for dynamically added clusters)
+        const _clusterSummaryCircles = {};
         const _linkGroup = d3.select(link.node().parentNode);
         const _nodeGroup = d3.select(nodeEl.node().parentNode);
         const _labelGroup = labels.node() ? d3.select(labels.node().parentNode) : _nodeGroup;
@@ -1201,12 +1420,17 @@
             const newNode = {
                 id: nodeId,
                 name: evt.text.length > 40 ? evt.text.slice(0, 40) + '\u2026' : evt.text,
+                fullText: evt.text,
                 type: 'visitor',
                 theme: 'visitor',
                 size: 200,
                 ext: '',
                 isDir: false,
                 depth: 2,
+                // Pending: not clustered yet -- sits at hub until reconcile
+                tier: 1,
+                clusterHub: 'hub:visitor-dreams',
+                _parentId: 'hub:visitor-dreams',
             };
 
             // Position near hub
@@ -1218,7 +1442,7 @@
 
             data.nodes.push(newNode);
             nodeById[newNode.id] = newNode;
-            const newLinkData = { source: nodeId, target: 'hub:visitor-dreams' };
+            const newLinkData = { source: nodeId, target: 'hub:visitor-dreams', linkType: 'in-cluster' };
             data.links.push(newLinkData);
 
             // Update adjacency
@@ -1231,13 +1455,20 @@
             cardData[nodeId] = {
                 title: evt.text,
                 body: 'Visitor offering \u00b7 ' + evt.source,
+                links: [
+                    { label: 'View in Dreamworld', url: '/graph-assets/dreamworld.html?dream=' + evt.id },
+                ],
             };
+            newNode._dbId = evt.id;
 
-            // Add link line
+            // Add link line (tracked so reconcile can re-target to cluster later)
             const newLinkEl = _linkGroup.append('line')
                 .datum(newLinkData)
-                .attr('stroke', '#7fffb2').attr('stroke-opacity', 0.4).attr('stroke-width', 0.6);
+                .attr('data-link-type', 'in-cluster')
+                .attr('stroke', linkStroke(newLinkData))
+                .attr('stroke-opacity', 0.7).attr('stroke-width', 1.0);
             _visitorLinks.push(newLinkEl);
+            _visitorLinkByDreamId[nodeId] = newLinkEl;
 
             // Add circle with entry animation
             const newCircle = _nodeGroup.append('circle')
@@ -1307,6 +1538,117 @@
             simulation.alpha(0.25).restart();
         }
 
+        // ── Reconcile: poll /dreams/3d and migrate pending dreams to clusters ───
+        function addClusterSummaryDom(c) {
+            const cid = 'visitor-cluster-' + c.id;
+            if (nodeById[cid]) return nodeById[cid];
+            const hub = nodeById['hub:visitor-dreams'];
+            const node = {
+                id: cid,
+                name: c.label || ('Cluster ' + c.id),
+                type: 'cluster-summary',
+                theme: 'visitor',
+                clusterHub: 'hub:visitor-dreams',
+                _parentId: 'hub:visitor-dreams',
+                tier: 1,
+                color: c.color,
+                x: hub && hub.x != null ? hub.x + (Math.random() - 0.5) * 120 : 0,
+                y: hub && hub.y != null ? hub.y + (Math.random() - 0.5) * 120 : 0,
+            };
+            data.nodes.push(node);
+            nodeById[cid] = node;
+            const linkData = { source: cid, target: 'hub:visitor-dreams', linkType: 'in-cluster' };
+            data.links.push(linkData);
+            if (!adjacency[cid]) adjacency[cid] = [];
+            adjacency[cid].push('hub:visitor-dreams');
+            adjacency['hub:visitor-dreams'].push(cid);
+            // Manual DOM (same pattern as addVisitorNode)
+            const linkEl = _linkGroup.append('line').datum(linkData)
+                .attr('data-link-type', 'in-cluster')
+                .attr('stroke', linkStroke(linkData))
+                .attr('stroke-opacity', 0.7).attr('stroke-width', 1.0);
+            _visitorLinks.push(linkEl);
+            const circle = _nodeGroup.append('circle').datum(node)
+                .attr('r', 10).attr('cx', node.x).attr('cy', node.y)
+                .attr('fill', c.color || '#7a6aaa').attr('fill-opacity', 0.85)
+                .attr('stroke', '#fff').attr('stroke-width', 1)
+                .style('cursor', 'pointer')
+                .on('mouseenter', (e, d) => showMiniCard(e.clientX, e.clientY, d))
+                .on('mouseleave', hideMiniCard)
+                .on('click', (e, d) => { handleNodeClick(d); showDetail(d); });
+            _visitorCircles.push(circle);
+            _clusterSummaryCircles[cid] = circle;
+            const label = _labelGroup.append('text').datum(node)
+                .attr('font-size', '10px').attr('fill', c.color || '#7a6aaa')
+                .attr('text-anchor', 'middle').attr('dy', 22)
+                .attr('pointer-events', 'none').text(node.name);
+            _visitorLabels.push(label);
+            cardData[cid] = {
+                title: node.name,
+                body: 'Emergent cluster of visitor dreams',
+            };
+            simulation.nodes(data.nodes);
+            simulation.force('link').links(data.links);
+            simulation.alpha(0.2).restart();
+            return node;
+        }
+
+        function migrateDreamToCluster(dreamId, newParentId) {
+            const node = nodeById[dreamId];
+            if (!node || node._parentId === newParentId) return;
+            node._parentId = newParentId;
+            node.tier = 2;
+            // Update the pending link's target
+            const linkEl = _visitorLinkByDreamId[dreamId];
+            if (linkEl) {
+                const datum = linkEl.datum();
+                datum.target = newParentId;
+            }
+            for (const l of data.links) {
+                const sid = l.source && (l.source.id != null ? l.source.id : l.source);
+                if (sid === dreamId) { l.target = newParentId; break; }
+            }
+            // Adjacency swap: remove hub link, add cluster link
+            if (adjacency[dreamId]) {
+                adjacency[dreamId] = adjacency[dreamId].filter(x => x !== 'hub:visitor-dreams');
+                if (!adjacency[dreamId].includes(newParentId)) adjacency[dreamId].push(newParentId);
+            }
+            if (adjacency['hub:visitor-dreams']) {
+                adjacency['hub:visitor-dreams'] = adjacency['hub:visitor-dreams'].filter(x => x !== dreamId);
+            }
+            if (!adjacency[newParentId]) adjacency[newParentId] = [];
+            if (!adjacency[newParentId].includes(dreamId)) adjacency[newParentId].push(dreamId);
+            // Re-resolve link source/target strings
+            simulation.force('link').links(data.links);
+            simulation.alpha(0.25).restart();
+        }
+
+        let _reconcileInFlight = false;
+        async function reconcileVisitorDreams() {
+            if (_reconcileInFlight) return;
+            _reconcileInFlight = true;
+            try {
+                const r = await fetch('/dreams/3d');
+                if (!r.ok) return;
+                const dd = await r.json();
+                for (const c of (dd.clusters || [])) {
+                    const cid = 'visitor-cluster-' + c.id;
+                    if (!nodeById[cid]) addClusterSummaryDom(c);
+                    _visitorClusterMap[c.id] = cid;
+                }
+                for (const n of (dd.nodes || [])) {
+                    const dreamId = 'visitor-' + n.id;
+                    const existing = nodeById[dreamId];
+                    const desiredParent = _visitorClusterMap[n.cluster] || 'hub:visitor-dreams';
+                    if (existing && existing._parentId !== desiredParent) {
+                        migrateDreamToCluster(dreamId, desiredParent);
+                    }
+                }
+            } catch (e) { /* ignore */ }
+            finally { _reconcileInFlight = false; }
+        }
+        setInterval(reconcileVisitorDreams, 30000);
+
         // Connect to /graph/stream SSE for live visitor prompts
         (function connectGraphStream() {
             const base = window.location.origin;
@@ -1315,7 +1657,11 @@
                 if (!e.data || e.data === 'ping') return;
                 try {
                     const d = JSON.parse(e.data);
-                    if (d.type === 'visitor') addVisitorNode(d);
+                    if (d.type === 'visitor') {
+                        addVisitorNode(d);
+                        // Give backend time to embed + cluster, then reconcile
+                        setTimeout(reconcileVisitorDreams, 20000);
+                    }
                 } catch(err) {}
             };
             es.onerror = function() {
@@ -1323,6 +1669,16 @@
                 setTimeout(connectGraphStream, 5000);
             };
         })();
+
+        // ── Expose graph state for the Playwright verifier ────────
+        // Read-only handle on the live graph so `scripts/verify_kg_panel.py`
+        // can inspect links/nodes and invoke runtime mutators (AC4c, AC8)
+        // without a debug endpoint. The KG is already public; no new surface.
+        window.__ssd_kg = {
+            data, nodeById, edgeVocab,
+            addVisitorNode, addClusterSummaryDom,
+            showDetail, handleNodeClick,
+        };
 
     // ── Deep-link ──────────────────────────────────────────
     (function() {
