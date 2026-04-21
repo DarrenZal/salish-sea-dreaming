@@ -945,17 +945,26 @@
             const sn = nodeById[sid];
             return sn && sn.type === 'hub' ? (HUB_COLORS[sn.id] || '#2a4a6a') : '#2a4a6a';
         }
-        const link = gEl.append('g').selectAll('line').data(data.links).join('line')
+        const linkLayer = gEl.append('g');
+        // Wide invisible hit layer — 1.1 px visible strokes are tiny hover
+        // targets. A parallel transparent line with a 12 px stroke catches
+        // the cursor reliably without changing the look. The visible `link`
+        // selection is painted on top of this hit layer.
+        const linkHit = linkLayer.append('g').selectAll('line').data(data.links).join('line')
+            .attr('stroke', 'rgba(0,0,0,0)')
+            .attr('stroke-width', 14)
+            .attr('pointer-events', 'stroke')
+            .style('cursor', 'help');
+        _attachEdgeHover(linkHit);
+        const link = linkLayer.append('g').selectAll('line').data(data.links).join('line')
             .attr('data-link-type', d => d.linkType || '')
             .attr('stroke', linkStroke)
             .attr('stroke-opacity', d => _linkEndpointsVisible(d) ? 0.7 : 0)
             .attr('stroke-width', 1.1)
+            .attr('pointer-events', 'none')
             // Arrowhead only when both endpoints visible — SVG markers ignore
             // stroke-opacity so nulling marker-end is the only way to hide them.
             .attr('marker-end', _linkMarkerEnd);
-        // Instant custom tooltip on hover: "Source predicate Target".
-        // Native <title> has ~500 ms delay; mouseenter-driven div is ≤ 60 ms.
-        _attachEdgeHover(link);
 
         const nodeEl = gEl.append('g').selectAll('circle').data(data.nodes).join('circle')
             .attr('r', d => isVisible(d) ? (d.type === 'hub' ? 28 : nodeR(d)) : 0)
@@ -1034,6 +1043,10 @@
             link.attr('x1', d => d.source.x).attr('y1', d => d.source.y)
                 .attr('x2', d => _shortenEndpoint(d).x)
                 .attr('y2', d => _shortenEndpoint(d).y);
+            // Hit layer mirrors the visible line's geometry, full-length
+            // so hover works even right at the source node.
+            linkHit.attr('x1', d => d.source.x).attr('y1', d => d.source.y)
+                   .attr('x2', d => d.target.x).attr('y2', d => d.target.y);
             nodeEl.attr('cx', d => d.x).attr('cy', d => d.y);
             labels.attr('x', d => d.x).attr('y', d => d.y);
             hubLabels.attr('x', d => d.x).attr('y', d => d.y);
@@ -1493,6 +1506,7 @@
         const _visitorCircles = [];
         const _visitorLabels = [];
         const _visitorLinks = [];
+        const _visitorLinkHits = [];  // wide invisible hit lines, shadow visible ones
         // dreamId → link DOM element (for migrating to cluster on reconcile)
         const _visitorLinkByDreamId = {};
         // clusterId → cluster-summary DOM circle (for dynamically added clusters)
@@ -1519,6 +1533,12 @@
                 const end = _shortenEndpoint(d);
                 ln.attr('x1', d.source.x).attr('y1', d.source.y)
                   .attr('x2', end.x).attr('y2', end.y);
+            }
+            for (const ln of _visitorLinkHits) {
+                const d = ln.datum();
+                // Hit layer is full-length (no shortening) for generous hover.
+                ln.attr('x1', d.source.x).attr('y1', d.source.y)
+                  .attr('x2', d.target.x).attr('y2', d.target.y);
             }
             // Also update hub label position
             if (_hubNode) {
@@ -1577,14 +1597,23 @@
             newNode._dbId = evt.id;
 
             // Add link line (tracked so reconcile can re-target to cluster later)
+            // Hit layer (wide, transparent) for easy hover; then the visible line.
+            const newHitEl = _linkGroup.append('line')
+                .datum(newLinkData)
+                .attr('stroke', 'rgba(0,0,0,0)')
+                .attr('stroke-width', 14)
+                .attr('pointer-events', 'stroke')
+                .style('cursor', 'help');
+            _attachEdgeHover(newHitEl);
             const newLinkEl = _linkGroup.append('line')
                 .datum(newLinkData)
                 .attr('data-link-type', 'in-cluster')
                 .attr('stroke', linkStroke(newLinkData))
                 .attr('stroke-opacity', 0.7).attr('stroke-width', 1.0)
+                .attr('pointer-events', 'none')
                 .attr('marker-end', 'url(#arrow-end)');
-            _attachEdgeHover(newLinkEl);
             _visitorLinks.push(newLinkEl);
+            _visitorLinkHits.push(newHitEl);
             _visitorLinkByDreamId[nodeId] = newLinkEl;
 
             // Add circle with entry animation
@@ -1679,14 +1708,21 @@
             if (!adjacency[cid]) adjacency[cid] = [];
             adjacency[cid].push('hub:visitor-dreams');
             adjacency['hub:visitor-dreams'].push(cid);
-            // Manual DOM (same pattern as addVisitorNode)
+            // Manual DOM (same pattern as addVisitorNode): hit layer + visible line.
+            const hitEl = _linkGroup.append('line').datum(linkData)
+                .attr('stroke', 'rgba(0,0,0,0)')
+                .attr('stroke-width', 14)
+                .attr('pointer-events', 'stroke')
+                .style('cursor', 'help');
+            _attachEdgeHover(hitEl);
             const linkEl = _linkGroup.append('line').datum(linkData)
                 .attr('data-link-type', 'in-cluster')
                 .attr('stroke', linkStroke(linkData))
                 .attr('stroke-opacity', 0.7).attr('stroke-width', 1.0)
+                .attr('pointer-events', 'none')
                 .attr('marker-end', 'url(#arrow-end)');
-            _attachEdgeHover(linkEl);
             _visitorLinks.push(linkEl);
+            _visitorLinkHits.push(hitEl);
             const circle = _nodeGroup.append('circle').datum(node)
                 .attr('r', 10).attr('cx', node.x).attr('cy', node.y)
                 .attr('fill', c.color || '#7a6aaa').attr('fill-opacity', 0.85)
