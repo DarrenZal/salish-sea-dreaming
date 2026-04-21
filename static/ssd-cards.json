@@ -44,14 +44,6 @@
       "subtitle": "Western science + Indigenous knowledge + the land itself",
       "body": "Three-Eyed Seeing integrates Western scientific observation, Indigenous Traditional Knowledge, and direct perception from the land itself. Not a hierarchy but a braiding — each eye sees what the others cannot."
     },
-    "install:digital-ecologies": {
-      "title": "Digital Ecologies",
-      "subtitle": "Salt Spring Art Show — Mahon Hall, Apr 10–26, 2026",
-      "body": "An interactive AI art installation exploring the Salish Sea ecosystem. The vision: not humans looking at nature through technology, but the Salish Sea using technology to perceive itself. Curated by Raf for the Digital Ecologies show.",
-      "tags": [
-        "exhibition"
-      ]
-    },
     "person:briony-penn": {
       "title": "Briony Penn",
       "body": "Naturalist, illustrator — watercolors and ecological storytelling. Her art is the visual language of the Salish Sea.",
@@ -10605,6 +10597,21 @@
     "person:zoe-zafiris-casey": {
       "title": "Zoe Zafiris-Casey",
       "body": "Curator and art consultant. Curatorial Director, Salt Spring National Art Prize (ssartprize); Gallery Curator, ArtSpring. On-site lead for the Digital Ecologies show at Mahon Hall — daily human presence during the installation run, and collaborator on the public-presentation hardening work. Past curatorial work includes Confluence: The Bateman Collection (2024) and Vox, contemporary Canadian photography at ArtSpring.",
+      "tags": [
+        "person"
+      ]
+    },
+    "install:salish-sea-dreaming": {
+      "title": "Salish Sea Dreaming",
+      "subtitle": "Salt Spring Art Show — Mahon Hall, Apr 10–26, 2026",
+      "body": "An interactive AI art installation exploring the Salish Sea ecosystem. The vision: not humans looking at nature through technology, but the Salish Sea using technology to perceive itself. Curated by Raf for the Digital Ecologies show.",
+      "tags": [
+        "exhibition"
+      ]
+    },
+    "person:blair": {
+      "title": "Blair",
+      "body": "On-site backup at Mahon Hall during the Digital Ecologies run. Physical access to the venue — called in as fallback when additional hands are needed, including morning standby windows and Autoloom restart sequences. The steady second body that lets the installation keep running when the tech team is remote.",
       "tags": [
         "person"
       ]

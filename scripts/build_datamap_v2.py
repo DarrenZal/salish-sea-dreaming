@@ -323,20 +323,20 @@ def build_graph():
 
     # ── Exhibition (tier 0) ──────────────────────────────────────────────────
     nodes.append({
-        "id": "install:digital-ecologies",
-        "name": "Digital Ecologies",
+        "id": "install:salish-sea-dreaming",
+        "name": "Salish Sea Dreaming",
         "type": "installation",
         "tier": 0,
         "clusterHub": "hub:exhibition",
         "subtitle": "Salt Spring Art Show \u2014 Mahon Hall, Apr 10\u201326, 2026",
     })
-    links.append({"source": "hub:exhibition", "target": "install:digital-ecologies", "linkType": "contains"})
+    links.append({"source": "hub:exhibition", "target": "install:salish-sea-dreaming", "linkType": "contains"})
 
     # Faint radial edges from exhibition to all other hubs
     for hub_id, _, _ in HUB_DEFS:
         if hub_id != "hub:exhibition":
             links.append({
-                "source": "install:digital-ecologies",
+                "source": "install:salish-sea-dreaming",
                 "target": hub_id,
                 "linkType": "conceptual",
             })
@@ -355,6 +355,7 @@ def build_graph():
         ("person:brad-necyk",       "Brad Necyk",        "hub:artists",     "Artist and researcher, latent space concepts."),
         ("person:natalia-lebedinskaia", "Natalia Lebedinskaia", "hub:exhibition", "Panel moderation and contextual framing."),
         ("person:zoe-zafiris-casey", "Zoe Zafiris-Casey", "hub:artists",     "Curator and art consultant. Curatorial Director, Salt Spring National Art Prize (ssartprize); Gallery Curator, ArtSpring. On-site lead for the Digital Ecologies show at Mahon Hall — daily human presence during the installation run, and collaborator on the public-presentation hardening work. Past curatorial work includes Confluence: The Bateman Collection (2024) and Vox, contemporary Canadian photography at ArtSpring."),
+        ("person:blair",            "Blair",             "hub:exhibition",  "On-site backup at Mahon Hall during the Digital Ecologies run. Physical access to the venue — called in as fallback when additional hands are needed, including morning standby windows and Autoloom restart sequences. The steady second body that lets the installation keep running when the tech team is remote."),
     ]
     for pid, pname, phub, pbio in people:
         nodes.append({
@@ -648,7 +649,7 @@ def build_graph():
         "subtitle": "CC BY 4.0 \u2014 Turnbull, Searle, Anderson-Elliott, Giraud (eds.), Manchester University Press, 2024",
     })
     links.append({"source": "hub:knowledge", "target": "doc:digital-ecologies-book", "linkType": "contains"})
-    links.append({"source": "doc:digital-ecologies-book", "target": "install:digital-ecologies", "linkType": "conceptual"})
+    links.append({"source": "doc:digital-ecologies-book", "target": "install:salish-sea-dreaming", "linkType": "conceptual"})
 
     # ── Briony in Training Corpus (54 images distributed across categories) ──
     # Her images are "artist permission" in provenance, already in the corpus

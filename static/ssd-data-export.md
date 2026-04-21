@@ -164,6 +164,13 @@ Curator and art consultant. Curatorial Director, Salt Spring National Art Prize 
 
 Connections: -> The Exhibition (conceptual), <- Artists & Witnesses (contains)
 
+### Blair
+Type: person | Tier: 1
+
+On-site backup at Mahon Hall during the Digital Ecologies run. Physical access to the venue — called in as fallback when additional hands are needed, including morning standby windows and Autoloom restart sequences. The steady second body that lets the installation keep running when the tech team is remote.
+
+Connections: <- The Exhibition (contains)
+
 
 ## Training Corpus
 

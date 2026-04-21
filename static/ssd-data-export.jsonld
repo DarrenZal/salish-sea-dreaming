@@ -247,6 +247,15 @@
       "schema:isPartOf": "ssd:hub-artists"
     },
     {
+      "@id": "ssd:person-blair",
+      "@type": "schema:Person",
+      "schema:name": "Blair",
+      "ssd:nodeType": "person",
+      "ssd:tier": 1,
+      "schema:description": "On-site backup at Mahon Hall during the Digital Ecologies run. Physical access to the venue — called in as fallback when additional hands are needed, including morning standby windows and Autoloom restart sequences. The steady second body that lets the installation keep running when the tech team is remote.",
+      "schema:isPartOf": "ssd:hub-exhibition"
+    },
+    {
       "@id": "ssd:artifact-dreaming-gan",
       "@type": "schema:SoftwareApplication",
       "schema:name": "Dreaming GAN",
@@ -14873,6 +14882,12 @@
       "@type": "ssd:Edge",
       "ssd:source": "ssd:hub-exhibition",
       "ssd:target": "ssd:person-natalia-lebedinskaia",
+      "ssd:edgeType": "schema:hasPart"
+    },
+    {
+      "@type": "ssd:Edge",
+      "ssd:source": "ssd:hub-exhibition",
+      "ssd:target": "ssd:person-blair",
       "ssd:edgeType": "schema:hasPart"
     },
     {

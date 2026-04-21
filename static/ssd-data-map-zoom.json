@@ -81,8 +81,8 @@
       "py": 0.5712066988660206
     },
     {
-      "id": "install:digital-ecologies",
-      "name": "Digital Ecologies",
+      "id": "install:salish-sea-dreaming",
+      "name": "Salish Sea Dreaming",
       "type": "installation",
       "tier": 0,
       "clusterHub": "hub:exhibition",
@@ -185,6 +185,14 @@
       "tier": 1,
       "clusterHub": "hub:artists",
       "bio": "Curator and art consultant. Curatorial Director, Salt Spring National Art Prize (ssartprize); Gallery Curator, ArtSpring. On-site lead for the Digital Ecologies show at Mahon Hall — daily human presence during the installation run, and collaborator on the public-presentation hardening work. Past curatorial work includes Confluence: The Bateman Collection (2024) and Vox, contemporary Canadian photography at ArtSpring."
+    },
+    {
+      "id": "person:blair",
+      "name": "Blair",
+      "type": "person",
+      "tier": 1,
+      "clusterHub": "hub:exhibition",
+      "bio": "On-site backup at Mahon Hall during the Digital Ecologies run. Physical access to the venue — called in as fallback when additional hands are needed, including morning standby windows and Autoloom restart sequences. The steady second body that lets the installation keep running when the tech team is remote."
     },
     {
       "id": "artifact:dreaming-gan",
@@ -13398,36 +13406,36 @@
     },
     {
       "source": "hub:exhibition",
-      "target": "install:digital-ecologies",
+      "target": "install:salish-sea-dreaming",
       "linkType": "contains"
     },
     {
-      "source": "install:digital-ecologies",
+      "source": "install:salish-sea-dreaming",
       "target": "hub:ecosystem",
       "linkType": "conceptual"
     },
     {
-      "source": "install:digital-ecologies",
+      "source": "install:salish-sea-dreaming",
       "target": "hub:artists",
       "linkType": "conceptual"
     },
     {
-      "source": "install:digital-ecologies",
+      "source": "install:salish-sea-dreaming",
       "target": "hub:training",
       "linkType": "conceptual"
     },
     {
-      "source": "install:digital-ecologies",
+      "source": "install:salish-sea-dreaming",
       "target": "hub:machine",
       "linkType": "conceptual"
     },
     {
-      "source": "install:digital-ecologies",
+      "source": "install:salish-sea-dreaming",
       "target": "hub:visitor-dreams",
       "linkType": "conceptual"
     },
     {
-      "source": "install:digital-ecologies",
+      "source": "install:salish-sea-dreaming",
       "target": "hub:knowledge",
       "linkType": "conceptual"
     },
@@ -20163,7 +20171,7 @@
     },
     {
       "source": "doc:digital-ecologies-book",
-      "target": "install:digital-ecologies",
+      "target": "install:salish-sea-dreaming",
       "linkType": "conceptual"
     },
     {
@@ -20282,7 +20290,7 @@
     },
     {
       "source": "concept:ecomedia-cubitt",
-      "target": "install:digital-ecologies"
+      "target": "install:salish-sea-dreaming"
     },
     {
       "source": "doc:digital-ecologies-book",
@@ -20290,7 +20298,7 @@
     },
     {
       "source": "concept:more-than-human-worlds",
-      "target": "install:digital-ecologies"
+      "target": "install:salish-sea-dreaming"
     },
     {
       "source": "doc:digital-ecologies-book",
@@ -20298,7 +20306,7 @@
     },
     {
       "source": "concept:three-ecologies-guattari",
-      "target": "install:digital-ecologies"
+      "target": "install:salish-sea-dreaming"
     },
     {
       "source": "de:ch02-sonic-ecologies",
@@ -20314,7 +20322,7 @@
     },
     {
       "source": "doc:visual-politics-conference",
-      "target": "install:digital-ecologies"
+      "target": "install:salish-sea-dreaming"
     },
     {
       "source": "hub:artists",
@@ -20325,6 +20333,11 @@
       "source": "person:zoe-zafiris-casey",
       "target": "hub:exhibition",
       "linkType": "conceptual"
+    },
+    {
+      "source": "hub:exhibition",
+      "target": "person:blair",
+      "linkType": "contains"
     }
   ],
   "theme_colors": {
@@ -20344,9 +20357,9 @@
   "meta": {
     "generated": "2026-04-09",
     "version": "2.0",
-    "total_nodes": 1333,
+    "total_nodes": 1334,
     "tier0_nodes": 12,
-    "total_links": 1395,
+    "total_links": 1396,
     "hub_count": 7,
     "species_count": 48,
     "corpus_images": 1223
