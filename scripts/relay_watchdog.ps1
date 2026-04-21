@@ -34,9 +34,11 @@ $HeartbeatDir  = "C:\Users\user\heartbeats"
 $HeartbeatFile = Join-Path $HeartbeatDir "relay_watchdog.hb"
 $StateFile     = "C:\Users\user\relay_watchdog_state.json"
 
-$MaxRestartsPerHour = 5
-$BackoffSchedule    = @(60, 120, 300, 600)
-$StableThresholdSec = 600
+$MaxRestartsPerHour  = 5
+$BackoffSchedule     = @(60, 120, 300, 600)
+$StableThresholdSec  = 600
+$RestartAfterFails   = 2   # consecutive failed detections before restart
+                            # (Get-CimInstance can flake; require confirmation)
 
 function Write-Log($msg) {
     $ts = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
@@ -73,7 +75,7 @@ function Load-State {
             }
         } catch {}
     }
-    return @{ restart_timestamps = @(); consecutive_restarts = 0; disabled_until_human = $false }
+    return @{ restart_timestamps = @(); consecutive_restarts = 0; disabled_until_human = $false; consecutive_fails = 0 }
 }
 
 function Save-State($state) {
@@ -115,9 +117,22 @@ while ($true) {
     }
 
     if (Test-RelayRunning) {
+        if ($state.consecutive_fails -gt 0) {
+            Write-Log "relay re-detected as running after $($state.consecutive_fails) transient fail(s); clearing fail counter"
+            $state.consecutive_fails = 0
+        }
         Save-State $state
         continue
     }
+
+    # Not running: increment fail counter, require N consecutive before restart
+    $state.consecutive_fails = $state.consecutive_fails + 1
+    Write-Log "td_relay not detected (consecutive_fails=$($state.consecutive_fails), threshold=$RestartAfterFails)"
+    if ($state.consecutive_fails -lt $RestartAfterFails) {
+        Save-State $state
+        continue
+    }
+    $state.consecutive_fails = 0
 
     if ($state.restart_timestamps.Count -ge $MaxRestartsPerHour) {
         Write-Log "crash loop detected: $($state.restart_timestamps.Count) restarts in last hour - DISABLING further restarts"
