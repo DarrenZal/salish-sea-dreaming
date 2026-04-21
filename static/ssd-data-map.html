@@ -762,6 +762,24 @@
             .attr('width', w).attr('height', h)
             .attr('role', 'img')
             .attr('aria-label', 'Salish Sea Dreaming data map');
+        // Arrow marker — fill: context-stroke inherits each line's own stroke colour
+        // so typed edges get arrows in their predicate colour. Placed at top of SVG
+        // so both the main link selection and manually-appended visitor lines can
+        // reference it via marker-end="url(#arrow-end)".
+        const _arrowDefs = svg.append('defs');
+        _arrowDefs.append('marker')
+            .attr('id', 'arrow-end')
+            .attr('viewBox', '0 -4 8 8')
+            .attr('refX', 7)
+            .attr('refY', 0)
+            .attr('markerWidth', 6)
+            .attr('markerHeight', 6)
+            .attr('orient', 'auto')
+            .attr('markerUnits', 'userSpaceOnUse')
+            .append('path')
+            .attr('d', 'M0,-3.5L7,0L0,3.5Z')
+            .attr('fill', 'context-stroke');
+
         const gEl = svg.append('g');
         svg.call(d3.zoom().scaleExtent([0.1, 8])
             .on('zoom', e => gEl.attr('transform', e.transform)));
@@ -855,7 +873,8 @@
                 const sn = nodeById[sid], tn = nodeById[tid];
                 return (sn && tn && isVisible(sn) && isVisible(tn)) ? 0.7 : 0;
             })
-            .attr('stroke-width', 1.1);
+            .attr('stroke-width', 1.1)
+            .attr('marker-end', 'url(#arrow-end)');
 
         const nodeEl = gEl.append('g').selectAll('circle').data(data.nodes).join('circle')
             .attr('r', d => isVisible(d) ? (d.type === 'hub' ? 28 : nodeR(d)) : 0)
@@ -912,10 +931,28 @@
             .attr('opacity', d => isMobile && isVisible(d) ? 0.85 : 0)
             .text(d => truncName(d.name, 18));
 
+        // Shorten a line so its endpoint lands at the edge of the target node's
+        // circle (+ a small gap) rather than the target centre. Keeps the arrowhead
+        // visible instead of hidden behind the target node.
+        function _shortenEndpoint(d) {
+            const tr = (d.target && typeof d.target === 'object') ? nodeR(d.target) : 8;
+            const gap = 4;
+            const dx = d.target.x - d.source.x;
+            const dy = d.target.y - d.source.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < tr + gap + 0.5) return { x: d.target.x, y: d.target.y };
+            const k = (dist - tr - gap) / dist;
+            return {
+                x: d.source.x + dx * k,
+                y: d.source.y + dy * k,
+            };
+        }
+
         // ── Tick ───────────────────────────────────────────────
         simulation.on('tick', () => {
             link.attr('x1', d => d.source.x).attr('y1', d => d.source.y)
-                .attr('x2', d => d.target.x).attr('y2', d => d.target.y);
+                .attr('x2', d => _shortenEndpoint(d).x)
+                .attr('y2', d => _shortenEndpoint(d).y);
             nodeEl.attr('cx', d => d.x).attr('cy', d => d.y);
             labels.attr('x', d => d.x).attr('y', d => d.y);
             hubLabels.attr('x', d => d.x).attr('y', d => d.y);
@@ -1402,8 +1439,9 @@
             }
             for (const ln of _visitorLinks) {
                 const d = ln.datum();
+                const end = _shortenEndpoint(d);
                 ln.attr('x1', d.source.x).attr('y1', d.source.y)
-                  .attr('x2', d.target.x).attr('y2', d.target.y);
+                  .attr('x2', end.x).attr('y2', end.y);
             }
             // Also update hub label position
             if (_hubNode) {
@@ -1466,7 +1504,8 @@
                 .datum(newLinkData)
                 .attr('data-link-type', 'in-cluster')
                 .attr('stroke', linkStroke(newLinkData))
-                .attr('stroke-opacity', 0.7).attr('stroke-width', 1.0);
+                .attr('stroke-opacity', 0.7).attr('stroke-width', 1.0)
+                .attr('marker-end', 'url(#arrow-end)');
             _visitorLinks.push(newLinkEl);
             _visitorLinkByDreamId[nodeId] = newLinkEl;
 
@@ -1566,7 +1605,8 @@
             const linkEl = _linkGroup.append('line').datum(linkData)
                 .attr('data-link-type', 'in-cluster')
                 .attr('stroke', linkStroke(linkData))
-                .attr('stroke-opacity', 0.7).attr('stroke-width', 1.0);
+                .attr('stroke-opacity', 0.7).attr('stroke-width', 1.0)
+                .attr('marker-end', 'url(#arrow-end)');
             _visitorLinks.push(linkEl);
             const circle = _nodeGroup.append('circle').datum(node)
                 .attr('r', 10).attr('cx', node.x).attr('cy', node.y)
