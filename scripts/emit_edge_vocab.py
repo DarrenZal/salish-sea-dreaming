@@ -38,6 +38,16 @@ def _require(entry: dict, key: str) -> str:
     return val
 
 
+def _is_symmetric(entry: dict) -> bool:
+    # Either explicit ssd:symmetric flag or owl:SymmetricProperty in @type list
+    if entry.get("ssd:symmetric") is True:
+        return True
+    t = entry.get("@type")
+    if isinstance(t, list) and "owl:SymmetricProperty" in t:
+        return True
+    return False
+
+
 def build_vocab() -> dict:
     ontology = json.loads(ONTOLOGY_PATH.read_text(encoding="utf-8"))
     vocab: dict[str, dict] = {}
@@ -52,13 +62,18 @@ def build_vocab() -> dict:
         # non-branching lookup here.
         inverse_label = _require(entry, "ssd:inverseLabel")
         comment = entry.get("rdfs:comment", "")
-        vocab[link_type_key] = {
+        entry_vocab: dict = {
             "forward_label": forward_label,
             "inverse_label": inverse_label,
             "color": ui_color,
             "description": comment if isinstance(comment, str) else "",
             "iri": entry.get("@id", ""),
         }
+        if _is_symmetric(entry):
+            entry_vocab["symmetric"] = True
+        if entry.get("ssd:deprecated") is True:
+            entry_vocab["deprecated"] = True
+        vocab[link_type_key] = entry_vocab
     return vocab
 
 

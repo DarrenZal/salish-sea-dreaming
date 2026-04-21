@@ -1,10 +1,12 @@
 {
   "conceptual": {
     "color": "hsl(280, 40%, 65%)",
-    "description": "Symmetric thematic link between two nodes — neither is subordinate to the other; they share a concept, frame, or lineage.",
-    "forward_label": "conceptually related to",
-    "inverse_label": "conceptually related to",
-    "iri": "ssd:conceptual"
+    "deprecated": true,
+    "description": "Symmetric catch-all link retained for backward compatibility. v2 retyping (2026-04-21) replaced all in-use `conceptual` edges with specific predicates (studies, inspires, subjectOf, involves). New data should prefer a specific predicate.",
+    "forward_label": "related to",
+    "inverse_label": "related to",
+    "iri": "ssd:conceptual",
+    "symmetric": true
   },
   "contains": {
     "color": "hsl(200, 45%, 62%)",
@@ -13,12 +15,40 @@
     "inverse_label": "part of",
     "iri": "ssd:contains"
   },
+  "contributesTo": {
+    "color": "hsl(95, 45%, 55%)",
+    "description": "Subject (artists, witnesses, collaborators) supply material or attention to the object (a training corpus or shared artifact).",
+    "forward_label": "contributes to",
+    "inverse_label": "receives contribution from",
+    "iri": "ssd:contributesTo"
+  },
   "in-cluster": {
     "color": "hsl(85, 40%, 60%)",
     "description": "Runtime membership — a visitor dream or cluster-summary sits in a k-means cluster of semantically-similar prompts. Added dynamically as prompts arrive.",
     "forward_label": "in cluster",
     "inverse_label": "cluster contains",
     "iri": "ssd:inCluster"
+  },
+  "inspires": {
+    "color": "hsl(320, 55%, 62%)",
+    "description": "Subject (typically the Salish Sea ecosystem) is the imaginative or generative source for the object (visitor dreams, the dreaming machine's outputs).",
+    "forward_label": "inspires",
+    "inverse_label": "inspired by",
+    "iri": "ssd:inspires"
+  },
+  "involves": {
+    "color": "hsl(175, 45%, 58%)",
+    "description": "Subject (an installation or project) integrates or touches the object (a subsystem). Radial predicate from install:salish-sea-dreaming outward to each subsystem hub.",
+    "forward_label": "involves",
+    "inverse_label": "involved in",
+    "iri": "ssd:involves"
+  },
+  "sampledBy": {
+    "color": "hsl(45, 55%, 60%)",
+    "description": "Subject (an ecosystem or population) is sampled by the object (a training corpus). Fixes v1's backwards ssd:training direction.",
+    "forward_label": "sampled by",
+    "inverse_label": "samples",
+    "iri": "ssd:sampledBy"
   },
   "signal": {
     "color": "hsl(155, 45%, 55%)",
@@ -27,12 +57,27 @@
     "inverse_label": "signalled by",
     "iri": "ssd:signals"
   },
+  "studies": {
+    "color": "hsl(210, 55%, 60%)",
+    "description": "Subject (knowledge, research, reports) investigates or documents the object (a subject matter, usually an ecosystem or concept).",
+    "forward_label": "studies",
+    "inverse_label": "studied by",
+    "iri": "ssd:studies"
+  },
+  "subjectOf": {
+    "color": "hsl(260, 50%, 65%)",
+    "description": "Subject is the thing depicted or featured; object is the work that depicts it (ecosystem → exhibition, ecosystem → report).",
+    "forward_label": "subject of",
+    "inverse_label": "features",
+    "iri": "ssd:subjectOf"
+  },
   "training": {
     "color": "hsl(35, 55%, 60%)",
-    "description": "Subject (dataset, photo, source) supplies training data to the object (model, artifact).",
-    "forward_label": "trains",
-    "inverse_label": "trained by",
-    "iri": "ssd:trains"
+    "deprecated": true,
+    "description": "Deprecated catch-all used in v1 for training-corpus edges regardless of direction. v2 retyping (2026-04-21) split it into ssd:sampledBy, ssd:contributesTo, and ssd:trains with correct direction.",
+    "forward_label": "training",
+    "inverse_label": "training source for",
+    "iri": "ssd:training"
   },
   "training-lora": {
     "color": "hsl(340, 50%, 62%)",
@@ -40,6 +85,13 @@
     "forward_label": "LoRA-trains",
     "inverse_label": "LoRA-trained by",
     "iri": "ssd:trainingLora"
+  },
+  "trains": {
+    "color": "hsl(20, 55%, 60%)",
+    "description": "Subject (training corpus, dataset) supplies training data that teaches the object (model, dreaming machine).",
+    "forward_label": "trains",
+    "inverse_label": "trained by",
+    "iri": "ssd:trains"
   },
   "visitor-signal": {
     "color": "hsl(120, 55%, 60%)",

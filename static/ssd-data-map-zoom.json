@@ -13352,17 +13352,17 @@
     {
       "source": "hub:ecosystem",
       "target": "hub:training",
-      "linkType": "training"
+      "linkType": "sampledBy"
     },
     {
       "source": "hub:artists",
       "target": "hub:training",
-      "linkType": "training"
+      "linkType": "contributesTo"
     },
     {
       "source": "hub:training",
       "target": "hub:machine",
-      "linkType": "signal"
+      "linkType": "trains"
     },
     {
       "source": "hub:visitor-dreams",
@@ -13377,7 +13377,7 @@
     {
       "source": "hub:knowledge",
       "target": "hub:ecosystem",
-      "linkType": "conceptual"
+      "linkType": "studies"
     },
     {
       "source": "hub:exhibition",
@@ -13387,17 +13387,17 @@
     {
       "source": "hub:ecosystem",
       "target": "hub:machine",
-      "linkType": "conceptual"
+      "linkType": "inspires"
     },
     {
       "source": "hub:ecosystem",
       "target": "hub:exhibition",
-      "linkType": "conceptual"
+      "linkType": "subjectOf"
     },
     {
       "source": "hub:ecosystem",
       "target": "hub:visitor-dreams",
-      "linkType": "conceptual"
+      "linkType": "inspires"
     },
     {
       "source": "hub:knowledge",
@@ -13412,32 +13412,32 @@
     {
       "source": "install:salish-sea-dreaming",
       "target": "hub:ecosystem",
-      "linkType": "conceptual"
+      "linkType": "involves"
     },
     {
       "source": "install:salish-sea-dreaming",
       "target": "hub:artists",
-      "linkType": "conceptual"
+      "linkType": "involves"
     },
     {
       "source": "install:salish-sea-dreaming",
       "target": "hub:training",
-      "linkType": "conceptual"
+      "linkType": "involves"
     },
     {
       "source": "install:salish-sea-dreaming",
       "target": "hub:machine",
-      "linkType": "conceptual"
+      "linkType": "involves"
     },
     {
       "source": "install:salish-sea-dreaming",
       "target": "hub:visitor-dreams",
-      "linkType": "conceptual"
+      "linkType": "involves"
     },
     {
       "source": "install:salish-sea-dreaming",
       "target": "hub:knowledge",
-      "linkType": "conceptual"
+      "linkType": "involves"
     },
     {
       "source": "hub:artists",
@@ -13502,12 +13502,12 @@
     {
       "source": "person:darren-zal",
       "target": "artifact:dreaming-gan",
-      "linkType": "conceptual"
+      "linkType": "contributesTo"
     },
     {
       "source": "person:darren-zal",
       "target": "node:gallery-server",
-      "linkType": "conceptual"
+      "linkType": "contributesTo"
     },
     {
       "source": "hub:machine",
@@ -13662,7 +13662,7 @@
     {
       "source": "cluster:salmon-forage",
       "target": "artifact:dreaming-gan",
-      "linkType": "training"
+      "linkType": "trains"
     },
     {
       "source": "cluster:salmon-forage",
@@ -15002,7 +15002,7 @@
     {
       "source": "cluster:marine-mammals",
       "target": "artifact:dreaming-gan",
-      "linkType": "training"
+      "linkType": "trains"
     },
     {
       "source": "cluster:marine-mammals",
@@ -15377,7 +15377,7 @@
     {
       "source": "cluster:seabirds",
       "target": "artifact:dreaming-gan",
-      "linkType": "training"
+      "linkType": "trains"
     },
     {
       "source": "cluster:seabirds",
@@ -16807,7 +16807,7 @@
     {
       "source": "cluster:kelp-seagrass",
       "target": "artifact:dreaming-gan",
-      "linkType": "training"
+      "linkType": "trains"
     },
     {
       "source": "cluster:kelp-seagrass",
@@ -17327,7 +17327,7 @@
     {
       "source": "cluster:intertidal",
       "target": "artifact:dreaming-gan",
-      "linkType": "training"
+      "linkType": "trains"
     },
     {
       "source": "cluster:intertidal",
@@ -19137,7 +19137,7 @@
     {
       "source": "cluster:cephalopods",
       "target": "artifact:dreaming-gan",
-      "linkType": "training"
+      "linkType": "trains"
     },
     {
       "source": "cluster:cephalopods",
@@ -19447,7 +19447,7 @@
     {
       "source": "cluster:rockfish-reef",
       "target": "artifact:dreaming-gan",
-      "linkType": "training"
+      "linkType": "trains"
     },
     {
       "source": "cluster:rockfish-reef",
@@ -19882,7 +19882,7 @@
     {
       "source": "cluster:bears",
       "target": "artifact:dreaming-gan",
-      "linkType": "training"
+      "linkType": "trains"
     },
     {
       "source": "cluster:bears",
@@ -20097,7 +20097,7 @@
     {
       "source": "artifact:dreaming-corpus",
       "target": "artifact:dreaming-gan",
-      "linkType": "training"
+      "linkType": "trains"
     },
     {
       "source": "hub:artists",
@@ -20122,7 +20122,7 @@
     {
       "source": "cluster:moonfish-footage",
       "target": "hub:training",
-      "linkType": "training"
+      "linkType": "contributesTo"
     },
     {
       "source": "hub:artists",
@@ -20137,7 +20137,7 @@
     {
       "source": "cluster:denning-photos",
       "target": "hub:training",
-      "linkType": "training"
+      "linkType": "contributesTo"
     },
     {
       "source": "hub:artists",
@@ -20182,7 +20182,7 @@
     {
       "source": "datasrc:inaturalist",
       "target": "artifact:dreaming-corpus",
-      "linkType": "training"
+      "linkType": "contributesTo"
     },
     {
       "source": "hub:training",
@@ -20192,7 +20192,7 @@
     {
       "source": "datasrc:openverse",
       "target": "artifact:dreaming-corpus",
-      "linkType": "training"
+      "linkType": "contributesTo"
     },
     {
       "source": "hub:training",
@@ -20202,7 +20202,7 @@
     {
       "source": "datasrc:briony-penn",
       "target": "artifact:dreaming-corpus",
-      "linkType": "training"
+      "linkType": "contributesTo"
     },
     {
       "source": "hub:knowledge",
@@ -20332,7 +20332,7 @@
     {
       "source": "person:zoe-zafiris-casey",
       "target": "hub:exhibition",
-      "linkType": "conceptual"
+      "linkType": "contributesTo"
     },
     {
       "source": "hub:exhibition",
@@ -20342,17 +20342,17 @@
     {
       "source": "person:prav-pillay",
       "target": "hub:exhibition",
-      "linkType": "conceptual"
+      "linkType": "contributesTo"
     },
     {
       "source": "person:darren-zal",
       "target": "hub:knowledge",
-      "linkType": "conceptual"
+      "linkType": "contributesTo"
     },
     {
       "source": "person:shawn-anderson",
       "target": "hub:knowledge",
-      "linkType": "conceptual"
+      "linkType": "contributesTo"
     }
   ],
   "theme_colors": {

@@ -260,21 +260,23 @@ def build_graph():
             "color": hub_color,
         })
 
-    # Hub-to-hub narrative flow edges (visible even when children are hidden)
+    # Hub-to-hub narrative flow edges (visible even when children are hidden).
+    # v2 retyping 2026-04-21: replaced generic conceptual/training with specific
+    # predicates defined in static/ontology/ssd-ontology.jsonld.
     hub_flow = [
-        ("hub:ecosystem",      "hub:training",       "training",        "Ecosystem species become training data"),
-        ("hub:artists",        "hub:training",       "training",        "Artist contributions feed the corpus"),
-        ("hub:training",       "hub:machine",        "signal",          "Corpus trains the dreaming machine"),
+        ("hub:ecosystem",      "hub:training",       "sampledBy",       "Training corpus samples the ecosystem"),
+        ("hub:artists",        "hub:training",       "contributesTo",   "Artists contribute material to the corpus"),
+        ("hub:training",       "hub:machine",        "trains",          "Corpus trains the dreaming machine"),
         # Bidirectional visitor ↔ machine
         ("hub:visitor-dreams", "hub:machine",        "visitor-signal",  "Visitors submit dreams to the machine"),
         ("hub:machine",        "hub:visitor-dreams",  "signal",          "Machine renders visitor dreams"),
         # Knowledge + Exhibition
-        ("hub:knowledge",      "hub:ecosystem",      "conceptual",      "Research grounds the ecosystem story"),
+        ("hub:knowledge",      "hub:ecosystem",      "studies",         "Research studies the ecosystem"),
         ("hub:exhibition",     "hub:machine",        "signal",          "Exhibition hosts the dreaming machine"),
-        # Salish Sea as visual center
-        ("hub:ecosystem",      "hub:machine",        "conceptual",      "The Salish Sea dreams through the machine"),
-        ("hub:ecosystem",      "hub:exhibition",     "conceptual",      "The Salish Sea is exhibited"),
-        ("hub:ecosystem",      "hub:visitor-dreams",  "conceptual",      "Visitors dream of the Salish Sea"),
+        # Salish Sea as subject + muse
+        ("hub:ecosystem",      "hub:machine",        "inspires",        "The Salish Sea inspires the machine's dreams"),
+        ("hub:ecosystem",      "hub:exhibition",     "subjectOf",       "The Salish Sea is the exhibition's subject"),
+        ("hub:ecosystem",      "hub:visitor-dreams",  "inspires",        "Visitors dream of the Salish Sea"),
     ]
     for src, tgt, lt, _desc in hub_flow:
         links.append({"source": src, "target": tgt, "linkType": lt})
@@ -294,20 +296,21 @@ def build_graph():
             "target": thread["id"],
             "linkType": "contains",
         })
-        # Conceptual edges to categories/hubs
+        # Thread → category/hub: the thread is inspired by those clusters
+        # (salmon thread ← salmon-forage images, etc). v2 retyping.
         for conn in thread["connections"]:
             links.append({
                 "source": thread["id"],
                 "target": conn,
-                "linkType": "conceptual",
+                "linkType": "inspires",
             })
-        # Direct conceptual edges to individual species
+        # Thread → species: the thread is about those species.
         for sp in thread.get("species", []):
             sp_id = f"species:{sp}"
             links.append({
                 "source": thread["id"],
                 "target": sp_id,
-                "linkType": "conceptual",
+                "linkType": "subjectOf",
             })
 
     # ── Knowledge concepts (tier 0) ──────────────────────────────────────────
@@ -332,13 +335,14 @@ def build_graph():
     })
     links.append({"source": "hub:exhibition", "target": "install:salish-sea-dreaming", "linkType": "contains"})
 
-    # Faint radial edges from exhibition to all other hubs
+    # Faint radial edges from the installation to every subsystem hub.
+    # v2 retyping: "involves" captures the installation integrating each hub.
     for hub_id, _, _ in HUB_DEFS:
         if hub_id != "hub:exhibition":
             links.append({
                 "source": "install:salish-sea-dreaming",
                 "target": hub_id,
-                "linkType": "conceptual",
+                "linkType": "involves",
             })
 
     # ── Person nodes (tier 1) ────────────────────────────────────────────────
@@ -370,12 +374,12 @@ def build_graph():
 
     # Extra people edges
     links.append({"source": "person:shawn-anderson", "target": "cluster:herring-data-science", "linkType": "contains"})
-    links.append({"source": "person:darren-zal", "target": "artifact:dreaming-gan", "linkType": "conceptual"})
-    links.append({"source": "person:darren-zal", "target": "node:gallery-server", "linkType": "conceptual"})
-    links.append({"source": "person:zoe-zafiris-casey", "target": "hub:exhibition", "linkType": "conceptual"})
-    links.append({"source": "person:prav-pillay", "target": "hub:exhibition", "linkType": "conceptual"})
-    links.append({"source": "person:darren-zal", "target": "hub:knowledge", "linkType": "conceptual"})
-    links.append({"source": "person:shawn-anderson", "target": "hub:knowledge", "linkType": "conceptual"})
+    links.append({"source": "person:darren-zal", "target": "artifact:dreaming-gan", "linkType": "contributesTo"})
+    links.append({"source": "person:darren-zal", "target": "node:gallery-server", "linkType": "contributesTo"})
+    links.append({"source": "person:zoe-zafiris-casey", "target": "hub:exhibition", "linkType": "contributesTo"})
+    links.append({"source": "person:prav-pillay", "target": "hub:exhibition", "linkType": "contributesTo"})
+    links.append({"source": "person:darren-zal", "target": "hub:knowledge", "linkType": "contributesTo"})
+    links.append({"source": "person:shawn-anderson", "target": "hub:knowledge", "linkType": "contributesTo"})
 
     # ── Signal chain (tier 1, machine hub — revealed on hub click) ─────────
     signal_chain = [
@@ -509,7 +513,7 @@ def build_graph():
         links.append({"source": "hub:training", "target": cat_id, "linkType": "contains"})
 
         # Training flow: category → GAN
-        links.append({"source": cat_id, "target": "artifact:dreaming-gan", "linkType": "training"})
+        links.append({"source": cat_id, "target": "artifact:dreaming-gan", "linkType": "trains"})
 
         # Species nodes (tier 2 under category) + photo nodes (tier 3)
         for sp in cat["species"]:
@@ -557,7 +561,7 @@ def build_graph():
     })
     links.append({"source": "hub:training", "target": "artifact:dreaming-corpus", "linkType": "contains"})
     # Corpus → GAN training edge
-    links.append({"source": "artifact:dreaming-corpus", "target": "artifact:dreaming-gan", "linkType": "training"})
+    links.append({"source": "artifact:dreaming-corpus", "target": "artifact:dreaming-gan", "linkType": "trains"})
 
     # ── Artists hub content ──────────────────────────────────────────────────
 
@@ -590,7 +594,7 @@ def build_graph():
     links.append({"source": "hub:artists", "target": "cluster:moonfish-footage", "linkType": "contains"})
     links.append({"source": "person:moonfish-media", "target": "cluster:moonfish-footage", "linkType": "contains"})
     # Training flow from Moonfish → corpus
-    links.append({"source": "cluster:moonfish-footage", "target": "hub:training", "linkType": "training"})
+    links.append({"source": "cluster:moonfish-footage", "target": "hub:training", "linkType": "contributesTo"})
 
     # Denning photos cluster (tier 1)
     nodes.append({
@@ -606,7 +610,7 @@ def build_graph():
     })
     links.append({"source": "hub:artists", "target": "cluster:denning-photos", "linkType": "contains"})
     links.append({"source": "person:david-denning", "target": "cluster:denning-photos", "linkType": "contains"})
-    links.append({"source": "cluster:denning-photos", "target": "hub:training", "linkType": "training"})
+    links.append({"source": "cluster:denning-photos", "target": "hub:training", "linkType": "contributesTo"})
 
     # HerringFest cluster (tier 1)
     nodes.append({
@@ -680,7 +684,7 @@ def build_graph():
             "subtitle": dslic,
         })
         links.append({"source": "hub:training", "target": dsid, "linkType": "contains"})
-        links.append({"source": dsid, "target": "artifact:dreaming-corpus", "linkType": "training"})
+        links.append({"source": dsid, "target": "artifact:dreaming-corpus", "linkType": "contributesTo"})
 
     # ── Precompute tier-0 positions (normalized 0–1) ────────────────────────
     import math
