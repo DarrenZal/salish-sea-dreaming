@@ -36,6 +36,14 @@
       "notes": "Deployed Apr 20 evening. Writes heartbeat every 60s loop tick."
     },
     {
+      "name": "relay_watchdog",
+      "file": "relay_watchdog.hb",
+      "max_age_sec": 210,
+      "alert_key": "meta_relay_watchdog_stalled",
+      "enabled": true,
+      "notes": "Deployed Apr 21 00:59 PDT after td_relay died silently ~23:43 on Apr 20. Writes heartbeat every 120s."
+    },
+    {
       "name": "gallery_audio",
       "file": "gallery_audio.hb",
       "max_age_sec": 30,
