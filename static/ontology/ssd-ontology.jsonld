@@ -1,0 +1,209 @@
+{
+  "@context": {
+    "ssd": "https://salishseadreaming.art/ontology/",
+    "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+    "owl": "http://www.w3.org/2002/07/owl#",
+    "schema": "https://schema.org/"
+  },
+  "@id": "https://salishseadreaming.art/ontology/",
+  "rdfs:label": "Salish Sea Dreaming Ontology",
+  "rdfs:comment": "Descriptive vocabulary for the Salish Sea Dreaming knowledge graph — the node classes and relationship predicates used in the public force-directed graph at /graph-assets/ssd-data-map.html. Not a SHACL/OWL enforcement surface; published for human readers and RDF tooling interop.",
+  "@graph": [
+    {
+      "@id": "ssd:Hub",
+      "@type": "owl:Class",
+      "rdfs:label": "Hub",
+      "rdfs:comment": "Top-level organisational ring node; groups a cluster of related content under one theme (ecosystem, artists, training, machine, visitor-dreams, knowledge, exhibition).",
+      "rdfs:subClassOf": { "@id": "schema:Thing" }
+    },
+    {
+      "@id": "ssd:Installation",
+      "@type": "owl:Class",
+      "rdfs:label": "Installation",
+      "rdfs:comment": "The physical exhibition itself. Currently a single instance: Salish Sea Dreaming at Mahon Hall, April 2026.",
+      "rdfs:subClassOf": { "@id": "schema:Thing" }
+    },
+    {
+      "@id": "ssd:Concept",
+      "@type": "owl:Class",
+      "rdfs:label": "Concept",
+      "rdfs:comment": "Abstract idea, theme, or theoretical frame that organises other graph content (e.g., three-eyed-seeing, Kwaxala, shifting-baselines).",
+      "rdfs:subClassOf": { "@id": "schema:Thing" }
+    },
+    {
+      "@id": "ssd:Person",
+      "@type": "owl:Class",
+      "rdfs:label": "Person",
+      "rdfs:comment": "Human collaborator or referenced individual — artist, researcher, curator, or witness.",
+      "rdfs:subClassOf": { "@id": "schema:Person" }
+    },
+    {
+      "@id": "ssd:Artifact",
+      "@type": "owl:Class",
+      "rdfs:label": "Artifact",
+      "rdfs:comment": "Material or digital object produced in the project — datasets, models, checkpoints, physical print, TouchDesigner patch file.",
+      "rdfs:subClassOf": { "@id": "schema:CreativeWork" }
+    },
+    {
+      "@id": "ssd:Software",
+      "@type": "owl:Class",
+      "rdfs:label": "Software",
+      "rdfs:comment": "Runtime software component in the installation stack (Autolume, StreamDiffusion, TouchDesigner, Resolume).",
+      "rdfs:subClassOf": { "@id": "schema:SoftwareApplication" }
+    },
+    {
+      "@id": "ssd:Output",
+      "@type": "owl:Class",
+      "rdfs:label": "Output",
+      "rdfs:comment": "Rendered artefact produced by the pipeline — typically an audiovisual result shown in the gallery.",
+      "rdfs:subClassOf": { "@id": "schema:CreativeWork" }
+    },
+    {
+      "@id": "ssd:Interface",
+      "@type": "owl:Class",
+      "rdfs:label": "Interface",
+      "rdfs:comment": "Human-facing entry point to the installation — the visitor prompt web app, QR code handoff, projector wall.",
+      "rdfs:subClassOf": { "@id": "schema:Thing" }
+    },
+    {
+      "@id": "ssd:TdInternal",
+      "@type": "owl:Class",
+      "rdfs:label": "TouchDesigner Internal",
+      "rdfs:comment": "A node or operator inside the TouchDesigner patch — TOPs, CHOPs, DATs that compose the live visual pipeline.",
+      "rdfs:subClassOf": { "@id": "schema:Thing" }
+    },
+    {
+      "@id": "ssd:Species",
+      "@type": "owl:Class",
+      "rdfs:label": "Species",
+      "rdfs:comment": "A biological species present in the Salish Sea bioregion and referenced by the training corpus or installation content.",
+      "rdfs:subClassOf": { "@id": "schema:Thing" }
+    },
+    {
+      "@id": "ssd:ClusterSummary",
+      "@type": "owl:Class",
+      "rdfs:label": "Cluster Summary",
+      "rdfs:comment": "A k-means cluster label standing in for a group of semantically-related visitor dreams; emergent, recomputed as new prompts arrive.",
+      "rdfs:subClassOf": { "@id": "schema:Thing" }
+    },
+    {
+      "@id": "ssd:Photo",
+      "@type": "owl:Class",
+      "rdfs:label": "Photograph",
+      "rdfs:comment": "A single photographic image in the training corpus or reference set — iNaturalist observation, Denning archive, or Moonfish still.",
+      "rdfs:subClassOf": { "@id": "schema:Photograph" }
+    },
+    {
+      "@id": "ssd:Report",
+      "@type": "owl:Class",
+      "rdfs:label": "Report",
+      "rdfs:comment": "A long-form written document published as part of the project (e.g., Salish Sea Herring report, Living Salish Sea report).",
+      "rdfs:subClassOf": { "@id": "schema:Report" }
+    },
+    {
+      "@id": "ssd:MlSource",
+      "@type": "owl:Class",
+      "rdfs:label": "Machine-Learning Source",
+      "rdfs:comment": "External upstream source for ML training data or pretrained weights — a dataset, a model, or a collaborator-supplied corpus.",
+      "rdfs:subClassOf": { "@id": "schema:Dataset" }
+    },
+    {
+      "@id": "ssd:Visitor",
+      "@type": "owl:Class",
+      "rdfs:label": "Visitor Dream",
+      "rdfs:comment": "A single visitor-submitted prompt, captured live at the installation and embedded into the dreamworld cluster space.",
+      "rdfs:subClassOf": { "@id": "schema:Thing" }
+    },
+
+    {
+      "@id": "ssd:contains",
+      "@type": "owl:ObjectProperty",
+      "ssd:linkTypeKey": "contains",
+      "ssd:forwardLabel": "contains",
+      "ssd:inverseLabel": "part of",
+      "ssd:uiColor": "hsl(200, 45%, 62%)",
+      "owl:inverseOf": { "@id": "ssd:partOf" },
+      "rdfs:label": "contains",
+      "rdfs:comment": "Subject is a structural parent of the object — hub → child node, cluster → member, installation → exhibited component.",
+      "rdfs:domain": { "@id": "ssd:Hub" },
+      "rdfs:range": { "@id": "schema:Thing" }
+    },
+    {
+      "@id": "ssd:conceptual",
+      "@type": [ "owl:ObjectProperty", "owl:SymmetricProperty" ],
+      "ssd:linkTypeKey": "conceptual",
+      "ssd:forwardLabel": "conceptually related to",
+      "ssd:inverseLabel": "conceptually related to",
+      "ssd:uiColor": "hsl(280, 40%, 65%)",
+      "rdfs:label": "conceptually related to",
+      "rdfs:comment": "Symmetric thematic link between two nodes — neither is subordinate to the other; they share a concept, frame, or lineage.",
+      "rdfs:domain": { "@id": "schema:Thing" },
+      "rdfs:range": { "@id": "schema:Thing" }
+    },
+    {
+      "@id": "ssd:trains",
+      "@type": "owl:ObjectProperty",
+      "ssd:linkTypeKey": "training",
+      "ssd:forwardLabel": "trains",
+      "ssd:inverseLabel": "trained by",
+      "ssd:uiColor": "hsl(35, 55%, 60%)",
+      "owl:inverseOf": { "@id": "ssd:trainedBy" },
+      "rdfs:label": "trains",
+      "rdfs:comment": "Subject (dataset, photo, source) supplies training data to the object (model, artifact).",
+      "rdfs:domain": { "@id": "schema:Thing" },
+      "rdfs:range": { "@id": "ssd:Artifact" }
+    },
+    {
+      "@id": "ssd:signals",
+      "@type": "owl:ObjectProperty",
+      "ssd:linkTypeKey": "signal",
+      "ssd:forwardLabel": "signals",
+      "ssd:inverseLabel": "signalled by",
+      "ssd:uiColor": "hsl(155, 45%, 55%)",
+      "owl:inverseOf": { "@id": "ssd:signalledBy" },
+      "rdfs:label": "signals",
+      "rdfs:comment": "Subject sends a runtime signal or data stream to the object — OSC, SSE, MIDI control, or similar inter-process channel.",
+      "rdfs:domain": { "@id": "schema:Thing" },
+      "rdfs:range": { "@id": "schema:Thing" }
+    },
+    {
+      "@id": "ssd:visitorSignal",
+      "@type": "owl:ObjectProperty",
+      "ssd:linkTypeKey": "visitor-signal",
+      "ssd:forwardLabel": "visitor-signals",
+      "ssd:inverseLabel": "visitor-signalled by",
+      "ssd:uiColor": "hsl(120, 55%, 60%)",
+      "owl:inverseOf": { "@id": "ssd:visitorSignalledBy" },
+      "rdfs:label": "visitor-signals",
+      "rdfs:comment": "A visitor-originated signal path — typically the prompt pipeline from the browser interface to the live visual system.",
+      "rdfs:domain": { "@id": "ssd:Interface" },
+      "rdfs:range": { "@id": "schema:Thing" }
+    },
+    {
+      "@id": "ssd:trainingLora",
+      "@type": "owl:ObjectProperty",
+      "ssd:linkTypeKey": "training-lora",
+      "ssd:forwardLabel": "LoRA-trains",
+      "ssd:inverseLabel": "LoRA-trained by",
+      "ssd:uiColor": "hsl(340, 50%, 62%)",
+      "owl:inverseOf": { "@id": "ssd:trainedByLora" },
+      "rdfs:label": "LoRA-trains",
+      "rdfs:comment": "Subject supplies LoRA fine-tuning data to the object. A narrower specialisation of ssd:trains used for style-transfer LoRAs (e.g., Briony watercolors).",
+      "rdfs:domain": { "@id": "schema:Thing" },
+      "rdfs:range": { "@id": "ssd:Artifact" }
+    },
+    {
+      "@id": "ssd:inCluster",
+      "@type": "owl:ObjectProperty",
+      "ssd:linkTypeKey": "in-cluster",
+      "ssd:forwardLabel": "in cluster",
+      "ssd:inverseLabel": "cluster contains",
+      "ssd:uiColor": "hsl(85, 40%, 60%)",
+      "owl:inverseOf": { "@id": "ssd:clusterContains" },
+      "rdfs:label": "in cluster",
+      "rdfs:comment": "Runtime membership — a visitor dream or cluster-summary sits in a k-means cluster of semantically-similar prompts. Added dynamically as prompts arrive.",
+      "rdfs:domain": { "@id": "ssd:Visitor" },
+      "rdfs:range": { "@id": "ssd:ClusterSummary" }
+    }
+  ]
+}
