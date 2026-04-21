@@ -354,6 +354,7 @@ def build_graph():
         ("person:raf",              "Raf",               "hub:exhibition",  "Curator, Digital Ecologies exhibition at Mahon Hall."),
         ("person:brad-necyk",       "Brad Necyk",        "hub:artists",     "Artist and researcher, latent space concepts."),
         ("person:natalia-lebedinskaia", "Natalia Lebedinskaia", "hub:exhibition", "Panel moderation and contextual framing."),
+        ("person:zoe-zafiris-casey", "Zoe Zafiris-Casey", "hub:artists",     "Curator and art consultant. Curatorial Director, Salt Spring National Art Prize (ssartprize); Gallery Curator, ArtSpring. On-site lead for the Digital Ecologies show at Mahon Hall — daily human presence during the installation run, and collaborator on the public-presentation hardening work. Past curatorial work includes Confluence: The Bateman Collection (2024) and Vox, contemporary Canadian photography at ArtSpring."),
     ]
     for pid, pname, phub, pbio in people:
         nodes.append({
@@ -370,6 +371,7 @@ def build_graph():
     links.append({"source": "person:shawn-anderson", "target": "cluster:herring-data-science", "linkType": "contains"})
     links.append({"source": "person:darren-zal", "target": "artifact:dreaming-gan", "linkType": "conceptual"})
     links.append({"source": "person:darren-zal", "target": "node:gallery-server", "linkType": "conceptual"})
+    links.append({"source": "person:zoe-zafiris-casey", "target": "hub:exhibition", "linkType": "conceptual"})
 
     # ── Signal chain (tier 1, machine hub — revealed on hub click) ─────────
     signal_chain = [

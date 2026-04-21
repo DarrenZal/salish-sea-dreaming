@@ -157,6 +157,13 @@ Underwater cinematography team capturing herring, salmon, and marine habitats. 1
 
 Connections: -> Moonfish Footage (contains), <- Artists & Witnesses (contains)
 
+### Zoe Zafiris-Casey
+Type: person | Tier: 1
+
+Curator and art consultant. Curatorial Director, Salt Spring National Art Prize (ssartprize); Gallery Curator, ArtSpring. On-site lead for the Digital Ecologies show at Mahon Hall — daily human presence during the installation run, and collaborator on the public-presentation hardening work. Past curatorial work includes Confluence: The Bateman Collection (2024) and Vox, contemporary Canadian photography at ArtSpring.
+
+Connections: -> The Exhibition (conceptual), <- Artists & Witnesses (contains)
+
 
 ## Training Corpus
 

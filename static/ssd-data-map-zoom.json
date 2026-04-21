@@ -179,6 +179,14 @@
       "bio": "Panel moderation and contextual framing."
     },
     {
+      "id": "person:zoe-zafiris-casey",
+      "name": "Zoe Zafiris-Casey",
+      "type": "person",
+      "tier": 1,
+      "clusterHub": "hub:artists",
+      "bio": "Curator and art consultant. Curatorial Director, Salt Spring National Art Prize (ssartprize); Gallery Curator, ArtSpring. On-site lead for the Digital Ecologies show at Mahon Hall — daily human presence during the installation run, and collaborator on the public-presentation hardening work. Past curatorial work includes Confluence: The Bateman Collection (2024) and Vox, contemporary Canadian photography at ArtSpring."
+    },
+    {
       "id": "artifact:dreaming-gan",
       "name": "Dreaming GAN",
       "type": "artifact",
@@ -20307,6 +20315,16 @@
     {
       "source": "doc:visual-politics-conference",
       "target": "install:digital-ecologies"
+    },
+    {
+      "source": "hub:artists",
+      "target": "person:zoe-zafiris-casey",
+      "linkType": "contains"
+    },
+    {
+      "source": "person:zoe-zafiris-casey",
+      "target": "hub:exhibition",
+      "linkType": "conceptual"
     }
   ],
   "theme_colors": {
@@ -20326,9 +20344,9 @@
   "meta": {
     "generated": "2026-04-09",
     "version": "2.0",
-    "total_nodes": 1332,
+    "total_nodes": 1333,
     "tier0_nodes": 12,
-    "total_links": 1393,
+    "total_links": 1395,
     "hub_count": 7,
     "species_count": 48,
     "corpus_images": 1223
