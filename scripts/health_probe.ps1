@@ -164,9 +164,13 @@ Report-Check -Key "audio_monitor" `
     -FailMessage "gallery_audio.py mic monitor has stopped updating ssd_audio_state.json (>30s stale) -- process may be dead" `
     -Severity WARN
 
-Report-Check -Key "audio_silent" `
-    -Pass (Test-AudioHasSound) `
-    -FailMessage "Gallery audio silent for 60s -- check Ableton output routing, speakers, or WMP loop" `
-    -Severity CRITICAL
+# audio_silent check DISABLED 2026-04-20 evening -- was firing false positives
+# every 30 min because it reads an input-side mic that doesn't exist on this 3090
+# (confirmed by Prav Signal: no mic, audio is 3.5mm out only). Re-enable once the
+# WASAPI loopback rewrite of gallery_audio.py lands (see scripts/wip/).
+# Report-Check -Key "audio_silent" `
+#     -Pass (Test-AudioHasSound) `
+#     -FailMessage "Gallery audio silent for 60s -- check Ableton output routing, speakers, or WMP loop" `
+#     -Severity CRITICAL
 
 Write-ProbeLog "--- probe complete ---"
