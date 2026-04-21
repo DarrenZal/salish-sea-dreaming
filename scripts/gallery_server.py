@@ -1495,7 +1495,7 @@ async def get_dreams_3d():
             "SELECT id, raw_text, enriched_text, dreamworld_text, "
             "submitted_at, source, x, y, z, cluster_id, cluster_label, "
             "dir_x, dir_y, dir_z, orientation_mode "
-            "FROM prompts WHERE x IS NOT NULL "
+            "FROM prompts WHERE x IS NOT NULL AND source != 'seed' "
             "ORDER BY submitted_at"
         )
 
@@ -1841,6 +1841,24 @@ async def visitor_redirect():
 
 
 # ---------------------------------------------------------------------------
+# Ontology route (explicit — guarantees application/ld+json content-type).
+# Must be registered BEFORE the /ontology StaticFiles mount so the root path
+# hits the typed FileResponse handler rather than StaticFiles' default text/plain.
+# ---------------------------------------------------------------------------
+
+_ontology_path = BASE_DIR / "static" / "ontology" / "ssd-ontology.jsonld"
+
+
+@app.api_route("/ontology/", methods=["GET", "HEAD"], include_in_schema=False)
+@app.api_route("/ontology", methods=["GET", "HEAD"], include_in_schema=False)
+async def ontology_root():
+    from fastapi.responses import FileResponse
+    if not _ontology_path.exists():
+        raise HTTPException(status_code=404, detail="Ontology file not found")
+    return FileResponse(_ontology_path, media_type="application/ld+json")
+
+
+# ---------------------------------------------------------------------------
 # Static files (LAST — after all API routes)
 # ---------------------------------------------------------------------------
 
@@ -1849,6 +1867,10 @@ if _graph_dir.exists():
     app.mount("/graph-assets", StaticFiles(directory=str(_graph_dir)), name="graph-assets")
 else:
     logger.warning("static/ dir not found — /graph will not be served")
+
+_ontology_dir = BASE_DIR / "static" / "ontology"
+if _ontology_dir.exists():
+    app.mount("/ontology", StaticFiles(directory=str(_ontology_dir), html=False), name="ontology")
 
 _web_dir = BASE_DIR / "web"
 if _web_dir.exists():
