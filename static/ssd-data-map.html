@@ -740,6 +740,22 @@
             return _linkEndpointsVisible(l) ? 'url(#arrow-end)' : null;
         }
 
+        // Native SVG hover tooltip text for an edge. Format:
+        //   "<sourceName> <forward-label> <targetName>"
+        //   e.g. "Salish Sea Dreaming contains The Exhibition"
+        // Falls back to "related to" for untyped edges.
+        function _linkTooltip(l) {
+            const sid = l.source.id || l.source;
+            const tid = l.target.id || l.target;
+            const sn = nodeById[sid], tn = nodeById[tid];
+            const sName = (sn && (sn.name || sn.id)) || sid;
+            const tName = (tn && (tn.name || tn.id)) || tid;
+            const lt = l.linkType || '';
+            const vocab = lt && edgeVocab && edgeVocab[lt];
+            const label = (vocab && (vocab.forward_label || vocab.forwardLabel)) || 'related to';
+            return `${sName} ${label} ${tName}`;
+        }
+
         function redraw() {
             // Rebuild simulation with only visible nodes + their links
             const sd = _getSimData();
@@ -882,6 +898,8 @@
             // Arrowhead only when both endpoints visible — SVG markers ignore
             // stroke-opacity so nulling marker-end is the only way to hide them.
             .attr('marker-end', _linkMarkerEnd);
+        // Native browser tooltip on hover: "Source forward-label Target"
+        link.append('title').text(_linkTooltip);
 
         const nodeEl = gEl.append('g').selectAll('circle').data(data.nodes).join('circle')
             .attr('r', d => isVisible(d) ? (d.type === 'hub' ? 28 : nodeR(d)) : 0)
@@ -1509,6 +1527,7 @@
                 .attr('stroke', linkStroke(newLinkData))
                 .attr('stroke-opacity', 0.7).attr('stroke-width', 1.0)
                 .attr('marker-end', 'url(#arrow-end)');
+            newLinkEl.append('title').text(_linkTooltip(newLinkData));
             _visitorLinks.push(newLinkEl);
             _visitorLinkByDreamId[nodeId] = newLinkEl;
 
@@ -1610,6 +1629,7 @@
                 .attr('stroke', linkStroke(linkData))
                 .attr('stroke-opacity', 0.7).attr('stroke-width', 1.0)
                 .attr('marker-end', 'url(#arrow-end)');
+            linkEl.append('title').text(_linkTooltip(linkData));
             _visitorLinks.push(linkEl);
             const circle = _nodeGroup.append('circle').datum(node)
                 .attr('r', 10).attr('cx', node.x).attr('cy', node.y)
@@ -1641,11 +1661,13 @@
             if (!node || node._parentId === newParentId) return;
             node._parentId = newParentId;
             node.tier = 2;
-            // Update the pending link's target
+            // Update the pending link's target + refresh its hover tooltip
             const linkEl = _visitorLinkByDreamId[dreamId];
             if (linkEl) {
                 const datum = linkEl.datum();
                 datum.target = newParentId;
+                const titleSel = linkEl.select('title');
+                if (titleSel.node()) titleSel.text(_linkTooltip(datum));
             }
             for (const l of data.links) {
                 const sid = l.source && (l.source.id != null ? l.source.id : l.source);
