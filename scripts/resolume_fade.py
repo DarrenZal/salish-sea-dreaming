@@ -44,17 +44,23 @@ class ResolumeFader:
         layer: int = 1,
         fade_duration: float = 2.0,
         fade_steps: int = 20,
+        fade_in_target: float = 1.0,
+        fade_out_target: float = 0.0,
+        clip_index: int = 0,   # 0 = don't trigger a clip; >0 = trigger that clip on fade_in
     ):
         self.host = host
         self.port = port
         self.layer = layer
         self.fade_duration = fade_duration
         self.fade_steps = fade_steps
+        self.fade_in_target = fade_in_target
+        self.fade_out_target = fade_out_target
+        self.clip_index = clip_index
         self.osc = udp_client.SimpleUDPClient(host, port)
         self._current_opacity = 0.0
         self._fade_lock = threading.Lock()
         self._cancel_event = threading.Event()
-        log.info(f"ResolumeFader: layer={layer} target={host}:{port} fade={fade_duration}s")
+        log.info(f"ResolumeFader: layer={layer} clip={clip_index} target={host}:{port} fade={fade_duration}s")
 
     @property
     def _osc_address(self) -> str:
@@ -84,23 +90,34 @@ class ResolumeFader:
                 if i < self.fade_steps:
                     time.sleep(interval)
 
+    def trigger_clip(self) -> None:
+        """If clip_index is set, send Resolume OSC to start that clip on our layer.
+        Does nothing if clip_index == 0 (i.e., caller didn't configure a clip)."""
+        if self.clip_index <= 0:
+            return
+        addr = f"/composition/layers/{self.layer}/clips/{self.clip_index}/connect"
+        # Resolume "connect" expects an int param = 1 to trigger (0 would disconnect).
+        self.osc.send_message(addr, 1)
+        log.info(f"Resolume layer {self.layer} clip {self.clip_index}: connect triggered ({addr})")
+
     def fade_in(self, blocking: bool = False) -> None:
-        """Fade layer opacity to 1.0. Non-blocking by default."""
+        """Trigger the configured clip (if any) then fade layer opacity to fade_in_target."""
+        self.trigger_clip()
         self._cancel_event.set()  # cancel any in-progress fade
         if blocking:
-            self._ramp(1.0)
+            self._ramp(self.fade_in_target)
         else:
-            threading.Thread(target=self._ramp, args=(1.0,), daemon=True).start()
-        log.info(f"Resolume layer {self.layer}: fade IN")
+            threading.Thread(target=self._ramp, args=(self.fade_in_target,), daemon=True).start()
+        log.info(f"Resolume layer {self.layer}: fade IN to {self.fade_in_target}")
 
     def fade_out(self, blocking: bool = False) -> None:
-        """Fade layer opacity to 0.0. Non-blocking by default."""
+        """Fade layer opacity to self.fade_out_target. Non-blocking by default."""
         self._cancel_event.set()  # cancel any in-progress fade
         if blocking:
-            self._ramp(0.0)
+            self._ramp(self.fade_out_target)
         else:
-            threading.Thread(target=self._ramp, args=(0.0,), daemon=True).start()
-        log.info(f"Resolume layer {self.layer}: fade OUT")
+            threading.Thread(target=self._ramp, args=(self.fade_out_target,), daemon=True).start()
+        log.info(f"Resolume layer {self.layer}: fade OUT to {self.fade_out_target}")
 
     def set_opacity(self, value: float) -> None:
         """Immediately set opacity (no fade)."""

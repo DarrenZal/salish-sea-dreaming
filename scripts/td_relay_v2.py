@@ -123,10 +123,13 @@ log.info(f"Gallery poll: {GALLERY_URL}/td/next  interval={POLL_INTERVAL}s")
 # ---------------------------------------------------------------------------
 
 RESOLUME_OSC_PORT = int(os.getenv("RESOLUME_OSC_PORT", "7001"))
-RESOLUME_TD_LAYER = int(os.getenv("RESOLUME_TD_LAYER", "4"))
-FADE_IN_SECS = float(os.getenv("FADE_IN_SECS", "2.0"))
-FADE_OUT_SECS = float(os.getenv("FADE_OUT_SECS", "2.0"))
-PROMPT_DWELL_SECS = float(os.getenv("PROMPT_DWELL_SECS", "30"))
+RESOLUME_TD_LAYER = int(os.getenv("RESOLUME_TD_LAYER", "5"))   # Prav wired TD to layer 5 (dedicated visitor slot) on 2026-04-21
+RESOLUME_TD_CLIP  = int(os.getenv("RESOLUME_TD_CLIP", "1"))    # Column index of the TD clip on that layer (connect on fade_in)
+FADE_IN_SECS = float(os.getenv("FADE_IN_SECS", "3.0"))          # Prav: gentle fade-in
+FADE_OUT_SECS = float(os.getenv("FADE_OUT_SECS", "3.0"))
+FADE_IN_TARGET = float(os.getenv("FADE_IN_TARGET", "0.8"))      # Prav: 0.8 so ambient blends through
+FADE_OUT_TARGET = float(os.getenv("FADE_OUT_TARGET", "0.0"))    # Layer 5 is dedicated; baseline = 0 = invisible
+PROMPT_DWELL_SECS = float(os.getenv("PROMPT_DWELL_SECS", "30")) # Prav: 30s hold
 MODE_PORT = int(os.getenv("MODE_PORT", "7002"))
 
 fader = ResolumeFader(
@@ -134,6 +137,9 @@ fader = ResolumeFader(
     port=RESOLUME_OSC_PORT,
     layer=RESOLUME_TD_LAYER,
     fade_duration=FADE_IN_SECS,
+    fade_in_target=FADE_IN_TARGET,
+    fade_out_target=FADE_OUT_TARGET,
+    clip_index=RESOLUME_TD_CLIP,
 )
 _mode = "auto"  # "auto" or "live"
 _prompt_arrived_at = 0.0  # wall-clock time of last visitor prompt
