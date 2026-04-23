@@ -42,33 +42,23 @@ scp scripts/gallery_audio.py windows-desktop:C:/Users/user/gallery_audio.py
 
 ## Current Status
 
-**Date:** 2026-04-06
-**Status:** 4 days to exhibition opening. Visitor prompt pipeline end-to-end verified. Production hardening complete. v5 LoRA training running on TELUS. Setup day April 9 at Prav's studio.
+**Date:** 2026-04-22
+**Status:** EXHIBITION LIVE (Apr 10–26) — final 4 days. Auto-heal + fade-in proven live. ~99% self-healing. Sat Apr 26 = closing day, Prav wants live VJ/DJ mixing session.
 
 **License Policy:** COMMERCIAL USE — CC0, CC BY, CC BY-SA only. Artist fee at exhibition = commercial under CC terms. CC BY-NC excluded. Collaborator materials (Moonfish, Denning) under `collaborator permission` — see `training-data/licenses-collaborators.md`. Full credits: `docs/credits-attribution.md`.
 
 **What's Done:**
-- **Relay SSE→polling fix** (April 6, commit d4f2983): `td_relay.py` rewritten to poll `/td/next?after=N` every 2s instead of SSE streaming. Root cause: `requests.iter_content()` dies silently on Windows after 1-2 events (socket buffering). Gallery server gains `/td/next` endpoint backed by monotonic `td_prompt_seq` counter. Exponential backoff on errors (5s×n, cap 60s). Deploy: `git pull` on 3090 then restart relay.
-- **Production hardening** (April 6): td_relay.py hardened (singleton PID lock, timestamps, auto-reconnect). NSSM service setup script (`scripts/setup_nssm.bat`) — registers ssd-server, ssd-relay, ssd-audio, ssd-tunnel with auto-restart. PowerShell watchdog fallback (`scripts/relay_watchdog.ps1`). `start_gallery.bat` now launches relay too.
-- **End-to-end prompt pipeline verified** (April 6): Web app → FastAPI → polling relay → OSC → TouchDesigner slot 22 confirmed working. Atomic relay replacement prevents duplicate instances on server side. Relay PID lock prevents duplicate instances on client side.
-- **v5 LoRA training** (April 6): Fixed syntax error in train_v5.py (unterminated f-string line 131) and relaunched on TELUS H200. Rank 64, 5000 steps, text encoder included. Check: `curl https://model-deployment-0b50s.paas.ai.telus.com/api/contents/train_v5.log?token=8f6ceea09691892cf2d19dc7466669ea`
-- **Visitor web app + prompt pipeline** (April 5): QR code → browser → text/voice → FastAPI → OSC → StreamDiffusion. Commit 2750cd6. Files: `scripts/gallery_server.py`, `web/visitor.html`, `scripts/gallery_audio.py`, `scripts/start_gallery.sh/.bat`, `tools/qr_generate.py`.
-- **StreamDiffusion 30fps in TD** (March 28): Leo + Prav session — real-time style transfer working. StreamDiffusionTD_0.3.0.tox shared.
-- **Shawn's ComfyUI/RAVE handoff** (March 30): 16 files on shared Drive (7 stills, 8 videos). Video 48 = hero for curator demo.
-- **Moonfish + Denning integration** (March 26-27): 13 Moonfish videos (4.7 GB). 8 hero segments subclipped. 14 Denning high-res photos curated.
-- **Intent field concept** (March 30): `docs/intent-field-installation.md` — Boids + visitor voices.
-- **Corpus QC'd and finalized** (March 25): 1,254 images, 50 species.
+- **Full production stack live**: Autolume (120 kimg abstract aesthetic) + StreamDiffusion (sd-turbo) + Resolume Arena + visitor web app (QR → prompt → OSC). Auto-heal chain proven live with Prav (Apr 21).
+- **Visitor fade-in**: Resolume layer 5, clip 1, target opacity 0.7, 30s dwell. Validated live.
+- **Health monitoring**: `health_probe.ps1` on 3090 → Telegram alerts. `audio_monitor` + `audio_silent` checks disabled (3090 has no mic — 3.5mm out only). All other checks (TD, Resolume, Autolume, relay, gallery server, snapshot) active.
+- **Relay**: `td_relay.py` polls `/td/next?after=N` every 2s, exponential backoff, PID singleton lock.
+- **Audio**: Ableton looping `Matt - file 2 Mp3.mp3`. Silence detector disabled (no loopback mic).
+- **Remote access**: SSH reverse tunnel through poly (`windows-desktop-remote`). `SSD-SSH-Tunnel` task on 3090.
 
-**What's Left (Setup Day April 9):**
-1. `pip install sounddevice numpy "qrcode[pil]"` on Prav's Windows machine
-2. `python scripts/gallery_audio.py --list-devices` → set `AUDIO_DEVICE_INDEX` in `.env`
-3. Set `ADMIN_PASSWORD` in `.env`
-4. `cloudflared tunnel create ssd-gallery` → set `TUNNEL_URL` in `.env` → print QR code
-5. Add **OSC In DAT** (port 7000) + **Execute DAT** in TD `.toe` for prompt routing
-6. Run `scripts\setup_nssm.bat` as Administrator → registers ssd-server, ssd-relay, ssd-audio, ssd-tunnel
-7. Resolve Briony style transfer for StreamDiffusion (see options below)
-8. Cellular + WiFi test of full visitor loop before opening
-9. **Credits/attribution confirmations** — Written permission needed from Moonfish Media and David Denning. See `docs/credits-attribution.md`.
+**What's Left:**
+1. **Sat Apr 26 live VJ/DJ mixing** — Prav wants audio-reactive TD + 3 controllers + possibly Darren's laptop as additional NDI source. Plan this before Saturday.
+2. **Known quirks** (non-blocking): visitor-app chat-mode bug; SD generates literal food prompts occasionally.
+3. **WASAPI loopback rewrite** of `gallery_audio.py` — deferred post-show; would re-enable audio silence detection via speaker output monitoring.
 
 ## Briony Style Transfer — Options for StreamDiffusion
 
@@ -301,3 +291,4 @@ curl http://localhost:8351/health  # check if KOI backend running
 | `c2152579` | 2026-03-24–25 | Dreaming corpus assembly | Assembled 1,600-image corpus (57 species) from iNat + Openverse. Built Openverse scraper. Agent QC pipeline (pre-filter → user verify). Expanded v1: birds + bears + orca video frames. Balance script (interface-weighted). Server-side QC persistence. Animation techniques (AnimateDiff, prompt travel). Signal update sent. Corpus in team review. |
 | `5d61ad00` | 2026-03-25 | QC + finalization | Manual QC of all 50 species (1,600→1,254 images, 478 rejects). Fixed QC app species parsing bug (hex/UUID IDs). Supplement scrape for 4 thin species (+132 images: GPO, herring spawn, murrelet, orca). Corpus finalized and synced. Signal update drafted for team review + David/Moonfish image ask. |
 | `4337d388` | 2026-03-26–27 | Moonfish + Denning integration | Strategic pivot: video as primary exhibition material, not just corpus input. 8 hero segments subclipped, 3 uploaded to Drive for Prav. 416 underwater frames extracted. Shotlist + render packet sent to Prav. Two-track plan: Track A (exhibition lock by April 1) + Track B (TELUS training, subordinate). New scripts: extract_video_frames.py, contact_sheet.py. |
+| `af3eb5d9` | 2026-04-22 | ops | Silence false-positive Telegram alert: disabled `audio_monitor` health probe check in `health_probe.ps1` (3090 has no mic; `audio_silent` was already disabled Apr 20 for same reason). Deployed to 3090 via scp, committed + pushed. |
