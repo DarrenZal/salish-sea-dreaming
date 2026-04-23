@@ -47,11 +47,14 @@ audio_vals.par.renameto   = 'volume energy'
 VOL = "(op('/project1/audio_vals').chan('volume')[0] if op('/project1/audio_vals').chan('volume') else 0)"
 ENG = "(op('/project1/audio_vals').chan('energy')[0] if op('/project1/audio_vals').chan('energy') else 0)"
 
-# --- Rebuild scene ---------------------------------------------------------
-if op('/project1/salish'):
-    op('/project1/salish').destroy()
+# --- Rebuild scene (non-destructive — only touches 'salish_audio') -------
+# Note: we deliberately do NOT touch a pre-existing 'salish' container
+# (the original mycelium.py scene), so both can coexist while testing.
+_existing = op('/project1/salish_audio')
+if _existing:
+    _existing.destroy()
 
-container = project.create(baseCOMP, 'salish')
+container = project.create(baseCOMP, 'salish_audio')
 
 # === STATIC NETWORK ===
 network_noise = container.create(noiseTOP, 'network_noise')
