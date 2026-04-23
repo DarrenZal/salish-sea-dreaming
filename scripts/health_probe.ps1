@@ -159,15 +159,15 @@ Report-Check -Key "td_snapshot" `
     -FailMessage "td_snap.jpg is missing or older than 10 min -- render pipeline may be stalled" `
     -Severity WARN
 
-Report-Check -Key "audio_monitor" `
-    -Pass (Test-AudioMonitorAlive) `
-    -FailMessage "gallery_audio.py mic monitor has stopped updating ssd_audio_state.json (>30s stale) -- process may be dead" `
-    -Severity WARN
+# audio_monitor check DISABLED 2026-04-22 -- 3090 has no mic (audio = 3.5mm out only,
+# confirmed Prav Signal). gallery_audio.py is not running and doesn't need to be.
+# Re-enable both checks once WASAPI loopback rewrite lands (see scripts/wip/).
+# Report-Check -Key "audio_monitor" `
+#     -Pass (Test-AudioMonitorAlive) `
+#     -FailMessage "gallery_audio.py mic monitor has stopped updating ssd_audio_state.json (>30s stale) -- process may be dead" `
+#     -Severity WARN
 
-# audio_silent check DISABLED 2026-04-20 evening -- was firing false positives
-# every 30 min because it reads an input-side mic that doesn't exist on this 3090
-# (confirmed by Prav Signal: no mic, audio is 3.5mm out only). Re-enable once the
-# WASAPI loopback rewrite of gallery_audio.py lands (see scripts/wip/).
+# audio_silent check DISABLED 2026-04-20 evening -- same root cause (no mic on 3090).
 # Report-Check -Key "audio_silent" `
 #     -Pass (Test-AudioHasSound) `
 #     -FailMessage "Gallery audio silent for 60s -- check Ableton output routing, speakers, or WMP loop" `
