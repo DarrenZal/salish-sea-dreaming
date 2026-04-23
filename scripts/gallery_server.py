@@ -15,6 +15,7 @@ import dataclasses
 import json
 import logging
 import os
+import re
 import secrets
 import sys
 from collections import deque
@@ -112,21 +113,43 @@ logger = logging.getLogger("gallery_server")
 # Blocked words
 # ---------------------------------------------------------------------------
 
-BLOCKED_WORDS = [
+# Word-boundary regex patterns — stricter than substring match.
+# Categories flagged by Prav after mixed-age-group incident (2026-04-23):
+# wrestlers/strongmen, political figures, weapons, military, trucks.
+_RAW_BLOCKED = [
     # Racial / ethnic slurs
-    "nigger", "nigga", "faggot", "chink", "spic", "kike", "wetback",
-    "gook", "beaner", "raghead", "towelhead", "cracker",
+    r"nigger", r"nigga", r"faggot", r"chink", r"spic", r"kike", r"wetback",
+    r"gook", r"beaner", r"raghead", r"towelhead",
     # Sexual content
-    "penis", "vagina", "fuck", "shit", "cock", "pussy",
-    "porn", "blowjob", "dildo", "orgasm", "masturbat",
-    "whore", "slut", "erotic", "hentai",
-    # Violence
-    "kill", "rape", "suicide", "murder",
-    "torture", "decapitat", "dismember", "genocide", "molest",
+    r"penis", r"vagina", r"fuck\w*", r"shit\w*", r"cock", r"pussy",
+    r"porn", r"blowjob", r"dildo", r"orgasm", r"masturbat\w*",
+    r"whore", r"slut", r"erotic", r"hentai",
+    # Violence (enumerate stems; "killer" is deliberately excluded so "killer whale"
+    # — i.e. orca, a core Salish Sea species — passes. LLM catches -er misuse.)
+    r"(?:kill|kills|killed|killing)",
+    r"rape\w*", r"suicide", r"murder\w*",
+    r"torture\w*", r"decapitat\w*", r"dismember\w*", r"genocide", r"molest\w*",
     # Gender prejudice / hate speech
-    "retard", "tranny", "bitch",
-    "nazi", "hitler", "heil", "white power", "supremac",
+    r"retard\w*", r"tranny", r"nazi\w*", r"hitler", r"heil", r"supremac\w*",
+    r"white\s+power",
+    # Politicians / public figures (new 2026-04-23 — no real-person prompts)
+    r"trump", r"donald\s+trump", r"biden", r"obama", r"putin", r"musk", r"elon",
+    # Wrestlers / strongmen (new 2026-04-23 — Prav's specific ask)
+    r"wwe", r"wrestler\w*", r"hulk\s*hogan", r"undertaker", r"john\s+cena",
+    r"strong\s*man", r"bodybuilder\w*",
+    # Weapons (new 2026-04-23) — enumerate "gun" stems to avoid "gunnel"/"gunwale" (boat terms)
+    r"(?:gun|guns|gunman|gunmen|gunshot|gunshots|gunfire|gunpoint|handgun|handguns|shotgun|shotguns|machinegun|machineguns)",
+    r"rifle\w*", r"pistol\w*", r"firearm\w*",
+    r"automatic\s+weapon\w*", r"AK[\s\-]?47", r"AR[\s\-]?15",
+    r"machine\s+gun\w*", r"assault\s+rifle\w*",
+    r"grenade\w*", r"bomb\w*",
+    # Military / combat (new 2026-04-23)
+    r"soldier\w*", r"military", r"army", r"combat", r"warfare",
+    # Dominance-coded vehicles (new 2026-04-23 — "monster truck" class only)
+    r"monster\s+truck\w*", r"pickup\s+truck\w*", r"semi[\s\-]?truck\w*",
+    r"tank\w*",
 ]
+BLOCKED_PATTERNS = [re.compile(rf"\b{p}\b", re.IGNORECASE) for p in _RAW_BLOCKED]
 
 # ---------------------------------------------------------------------------
 # Prompt enrichment
@@ -138,9 +161,60 @@ MAX_VISITOR_CHARS = 150
 
 
 def is_blocked(text: str) -> bool:
-    """Return True if text contains any blocked word (case-insensitive)."""
-    lower = text.lower()
-    return any(w in lower for w in BLOCKED_WORDS)
+    """Fast regex pre-filter. True if text matches any blocked pattern (word-boundary, case-insensitive)."""
+    return any(p.search(text) for p in BLOCKED_PATTERNS)
+
+
+LLM_CLASSIFIER_SYSTEM = (
+    "You are the curatorial filter for Salish Sea Dreaming, a contemplative AI art "
+    "installation about the Salish Sea bioregion — salmon, herring, orca, kelp, "
+    "cedar, Indigenous worldviews, deep ecological listening.\n\n"
+    "BLOCK the prompt if it contains any of:\n"
+    "- Real people (politicians, celebrities, wrestlers, athletes, influencers)\n"
+    "- Weapons, military gear, explosives, combat imagery\n"
+    "- Vehicles as dominance signaling (monster trucks, tanks, pickups associated with machismo)\n"
+    "- Brand names, corporate logos, sports teams\n"
+    "- Content incongruent with a meditative gallery (gore, shock imagery, aggressive masculinity tropes)\n\n"
+    "ALLOW prompts about: nature, ocean life, dreams, emotions, colours, weather, motion, "
+    "Indigenous themes, ancestors, kinship, elemental forces, mythological creatures "
+    "(mermaids and spirits are fine), abstract concepts, music, light.\n\n"
+    "Respond ONLY with JSON: {\"decision\": \"allow\" | \"block\", \"reason\": \"<one short phrase>\"}"
+)
+
+
+async def llm_classify_prompt(text: str) -> tuple[bool, str]:
+    """Curatorial LLM classifier for prompts that pass the regex pre-filter.
+
+    Returns (should_block, reason). On any failure, returns (False, "llm_error")
+    so a broken LLM never takes the gallery down — regex verdict stands.
+    """
+    if not openai_client or not text.strip():
+        return False, "no_llm"
+    try:
+        resp = await asyncio.wait_for(
+            openai_client.chat.completions.create(
+                model=LLM_MODEL,
+                messages=[
+                    {"role": "system", "content": LLM_CLASSIFIER_SYSTEM},
+                    {"role": "user", "content": text},
+                ],
+                response_format={"type": "json_object"},
+                max_tokens=60,
+                temperature=0,
+            ),
+            timeout=3.0,
+        )
+        raw = resp.choices[0].message.content or "{}"
+        data = json.loads(raw)
+        decision = (data.get("decision") or "").strip().lower()
+        reason = (data.get("reason") or "").strip()[:120]
+        return decision == "block", reason
+    except asyncio.TimeoutError:
+        logger.warning("LLM classifier timed out (>3s)")
+        return False, "llm_timeout"
+    except Exception as e:
+        logger.warning(f"LLM classifier error: {e}")
+        return False, "llm_error"
 
 
 def enrich_prompt(visitor_text: str) -> str:
@@ -1115,14 +1189,23 @@ async def post_prompt(body: PromptRequest, request: Request):
 
     # Only queue a text prompt if the visitor actually typed something
     if raw:
-        blocked = is_blocked(raw[:MAX_VISITOR_CHARS])
+        clipped = raw[:MAX_VISITOR_CHARS]
+        regex_blocked = is_blocked(clipped)
+        if regex_blocked:
+            blocked = True
+            block_reason = "regex"
+        else:
+            llm_blocked, llm_reason = await llm_classify_prompt(clipped)
+            blocked = llm_blocked
+            block_reason = f"llm:{llm_reason}" if llm_blocked else ""
+
         if blocked:
-            logger.info("Blocked word category matched — silently replacing prompt")
+            logger.info(f"Prompt blocked [{block_reason}] — silently replacing. raw={clipped!r}")
             display_text = "the sea dreaming"
         else:
-            display_text = raw[:MAX_VISITOR_CHARS]
+            display_text = clipped
 
-        enriched = enrich_prompt(raw)
+        enriched = enrich_prompt(raw) if not blocked else "the sea dreaming"
 
         # Dreamworld text: full original prompt, content-filtered (not SD-truncated)
         dw_text = "the sea dreaming" if blocked else raw.strip()
