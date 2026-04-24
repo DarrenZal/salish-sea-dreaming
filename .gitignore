@@ -129,3 +129,4 @@ stylegan2/
 
 # Generated school-marketing output (regenerable from scripts/generate_school_marketing*.py)
 output/school-marketing/
+tools/mediapipe/*.tox
