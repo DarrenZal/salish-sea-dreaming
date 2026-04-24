@@ -42,23 +42,27 @@ scp scripts/gallery_audio.py windows-desktop:C:/Users/user/gallery_audio.py
 
 ## Current Status
 
-**Date:** 2026-04-22
-**Status:** EXHIBITION LIVE (Apr 10–26) — final 4 days. Auto-heal + fade-in proven live. ~99% self-healing. Sat Apr 26 = closing day, Prav wants live VJ/DJ mixing session.
+**Date:** 2026-04-24
+**Status:** EXHIBITION LIVE (Apr 10–26) — final 2 days. **Three audio-reactive TD scenes + MediaPipe hand tracking** built for Saturday Apr 26 closing-day VJ set. `.toe` + scripts + species images bundled, shared with Prav via Proton Drive.
 
-**License Policy:** COMMERCIAL USE — CC0, CC BY, CC BY-SA only. Artist fee at exhibition = commercial under CC terms. CC BY-NC excluded. Collaborator materials (Moonfish, Denning) under `collaborator permission` — see `training-data/licenses-collaborators.md`. Full credits: `docs/credits-attribution.md`.
+**License Policy:** COMMERCIAL USE — CC0, CC BY, CC BY-SA only. CC BY-NC excluded. Collaborator materials (Moonfish, Denning) under `collaborator permission` — see `training-data/licenses-collaborators.md`. Full credits: `docs/credits-attribution.md`.
 
-**What's Done:**
-- **Full production stack live**: Autolume (120 kimg abstract aesthetic) + StreamDiffusion (sd-turbo) + Resolume Arena + visitor web app (QR → prompt → OSC). Auto-heal chain proven live with Prav (Apr 21).
-- **Visitor fade-in**: Resolume layer 5, clip 1, target opacity 0.7, 30s dwell. Validated live.
-- **Health monitoring**: `health_probe.ps1` on 3090 → Telegram alerts. `audio_monitor` + `audio_silent` checks disabled (3090 has no mic — 3.5mm out only). All other checks (TD, Resolume, Autolume, relay, gallery server, snapshot) active.
-- **Relay**: `td_relay.py` polls `/td/next?after=N` every 2s, exponential backoff, PID singleton lock.
-- **Audio**: Ableton looping `Matt - file 2 Mp3.mp3`. Silence detector disabled (no loopback mic).
-- **Remote access**: SSH reverse tunnel through poly (`windows-desktop-remote`). `SSD-SSH-Tunnel` task on 3090.
+**What's Done (Saturday VJ prep, 2026-04-23):**
+- **Three TD scenes live-built via TD MCP**:
+  - `salish_audio` (mycelium) — audio-reactive + hand-conducted via MediaPipe webcam (`scripts/mycelium_audio.py`)
+  - `salish_prisms` — 128 Salish Sea species portraits as instanced 3D cards, mic-reactive (`scripts/salish_prisms.py`)
+  - `salish_dreamworld` — live HTTP fetch of `/dreams/3d`, music-driven unity→cluster→individual bezier breathing (`scripts/salish_dreamworld.py`)
+- **MediaPipe hand tracking** — installed via torinmb plugin; `hand_pos` CHOP bridge via Execute DAT JSON parser (`scripts/setup_hand_bridge.py`)
+- **Gallery live-show fixes deployed**: regex + GPT-4.1-mini LLM prompt filter (wrestlers/politicians/weapons/trucks) + new label "What would you co-dream with the Salish Sea?" (`scripts/gallery_server.py` on poly)
+- **Mac audio dev tools**: `scripts/play_audio_osc.py` (file playback + OSC), `scripts/fake_audio_osc.py` (synthetic breathe/peak/silent modes)
+- **TD key gotchas documented inline** (bit us hard): Geometry COMP `instancing` is master toggle (not `instanceactive`); per-instance textures via `instancetexs` TOPMulti + `instancetexindex` channel; LFO CHOP `rate` behaves unreliably — use `absTime.seconds` direct; webclientDAT response format differs between initial/re-fetch (parse from first `{`)
+
+**Prior production stack (intact):** Autolume 120 kimg + StreamDiffusion sd-turbo + Resolume Arena + visitor web app + auto-heal + health monitoring + SSH reverse tunnel (`windows-desktop-remote`).
 
 **What's Left:**
-1. **Sat Apr 26 live VJ/DJ mixing** — Prav wants audio-reactive TD + 3 controllers + possibly Darren's laptop as additional NDI source. Plan this before Saturday.
-2. **Known quirks** (non-blocking): visitor-app chat-mode bug; SD generates literal food prompts occasionally.
-3. **WASAPI loopback rewrite** of `gallery_audio.py` — deferred post-show; would re-enable audio silence detection via speaker output monitoring.
+1. **Friday 2026-04-25** — morning sync with Prav after he loads bundle; test scenes on his machine (path updates needed for `images/marine/` + MediaPipe.tox); NDI routing from Darren's laptop into Prav's Resolume setup
+2. **Saturday 2026-04-26** — live VJ/DJ closing session; rehearsal AM, show evening; 3 laptops + 3 MIDI controllers per Prav's plan
+3. **Post-show** (deferred): WASAPI loopback rewrite of `gallery_audio.py`, visitor-app chat-mode bug, SD food-prompt quirk
 
 ## Briony Style Transfer — Options for StreamDiffusion
 
@@ -292,3 +296,4 @@ curl http://localhost:8351/health  # check if KOI backend running
 | `5d61ad00` | 2026-03-25 | QC + finalization | Manual QC of all 50 species (1,600→1,254 images, 478 rejects). Fixed QC app species parsing bug (hex/UUID IDs). Supplement scrape for 4 thin species (+132 images: GPO, herring spawn, murrelet, orca). Corpus finalized and synced. Signal update drafted for team review + David/Moonfish image ask. |
 | `4337d388` | 2026-03-26–27 | Moonfish + Denning integration | Strategic pivot: video as primary exhibition material, not just corpus input. 8 hero segments subclipped, 3 uploaded to Drive for Prav. 416 underwater frames extracted. Shotlist + render packet sent to Prav. Two-track plan: Track A (exhibition lock by April 1) + Track B (TELUS training, subordinate). New scripts: extract_video_frames.py, contact_sheet.py. |
 | `af3eb5d9` | 2026-04-22 | ops | Silence false-positive Telegram alert: disabled `audio_monitor` health probe check in `health_probe.ps1` (3090 has no mic; `audio_silent` was already disabled Apr 20 for same reason). Deployed to 3090 via scp, committed + pushed. |
+| `f82e40c5` | 2026-04-23 | TD VJ prep + gallery fixes | **Pivot day per Prav's Signal directive.** (A) Gallery: hardened prompt filter (regex + gpt-4.1-mini moderation) + new co-dream label deployed to poly. (B) Three audio-reactive TD scenes built live via TD MCP: `salish_audio` (mycelium, hand-conducted), `salish_prisms` (128 species cards, mic-reactive), `salish_dreamworld` (live /dreams/3d fetch with music-driven unity→cluster→individual bezier breathing). (C) MediaPipe hand tracking integrated via `hand_pos` Constant CHOP bridge. (D) Bundle (184MB .toe + scripts + species images + README) uploaded to Proton Drive, link sent to Prav on Signal. Key TD gotchas discovered and documented: `instancing` (not `instanceactive`) is master toggle; LFO CHOP `rate` unreliable — use `absTime.seconds`; webclientDAT response format varies; per-instance textures need `instancetexs` TOPMulti. |
