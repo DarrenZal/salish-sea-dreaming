@@ -59,8 +59,11 @@ def onCook(scriptOp):
 	if wc is None: return
 	raw = wc.text
 	if not raw: return
-	bs = raw.find("\\r\\n\\r\\n")
-	body = raw[bs+4:] if bs > 0 else raw
+	# Find JSON body via first "{" (handles both HTTP-header responses
+	# from initial fetch and streaming-format responses from re-fetches)
+	js = raw.find("{")
+	if js < 0: return
+	body = raw[js:]
 	try: data = json.loads(body)
 	except Exception: return
 	nodes = data.get("nodes", [])
