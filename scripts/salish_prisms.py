@@ -1,27 +1,25 @@
-# salish_prisms.py — audio-reactive instanced cube cloud
+# salish_prisms.py — Salish Sea species cloud, mic-reactive
 #
-# Aesthetic: 4096 cubes spread as a noise-displaced 3D field. Size and
-# color of all cubes modulate with low/mid/high audio bands in real time.
-# Kinetic counterpart to the contemplative mycelium_audio scene — gives
-# Prav a second distinct aesthetic to mix between for Saturday VJ.
+# 100+ camera-facing extruded rectangle "cards" in a 3D noise-displaced
+# field. Each card shows a different Salish Sea species portrait from
+# images/marine/. Size pulses with bass from the mic — play music through
+# speakers and the species school breathes with the beat.
 #
-# Inspired by Prav's reference tutorial (audio prisms), adapted to TD 2025
-# by Darren + Claude via MCP vibe-code 2026-04-23. The tutorial's audio-
-# analysis CHOP was renamed/removed in modern TD, so we build the band
-# separation manually with audiofilterCHOP + analyzeCHOP per band.
+# Built 2026-04-23 via TD MCP with Darren. See inline comments for the
+# non-obvious gotchas: TD's Geometry COMP needs `instancing=True` as the
+# master toggle (NOT `instanceactive`, which is a StrMenu channel picker),
+# and per-instance textures need `instancetexs` as a space-separated list
+# of TOP paths + `instancetexindex` pointing at a CHOP channel.
 #
-# Requirements:
-#   - A .wav / .aiff / .flac audio file. Set AUDIO_FILE constant below.
-#   - System audio output routed correctly (the scene plays the file
-#     through audiodeviceoutCHOP, so you hear what the scene is reacting to).
-#
-# To use with live mic input instead of a file, replace audiofileinCHOP
-# with audiodeviceinCHOP and remove the audio_out wiring.
-#
-# Non-destructive: only touches /project1/salish_prisms. Coexists with
-# mycelium_audio + MediaPipe + salish_hand scenes.
+# Requires: images in /Users/darrenzal/projects/salish-sea-dreaming/images/marine/
+# Requires: macOS mic permission granted to TouchDesigner. On first run,
+# explicitly set audio_in.par.device to 'BuiltInMicrophoneDevice' (not 'default')
+# to trigger the permission prompt.
 
-AUDIO_FILE = "/Users/darrenzal/Downloads/Download 2026-04-24T01-00-51-867Z/A3. In 3.wav"
+import os
+
+SPECIES_FOLDER = '/Users/darrenzal/projects/salish-sea-dreaming/images/marine'
+N_INSTANCES = 100   # 10x10 grid of species cards
 
 project = op('/project1')
 
@@ -33,23 +31,17 @@ c = project.create(baseCOMP, 'salish_prisms')
 c.nodeX = 400; c.nodeY = -800
 
 # ==========================================================================
-# Audio: file -> speakers -> per-band filter -> RMS analysis -> merge -> norm
+# Audio: mic input -> per-band filter -> RMS -> merge -> lag -> norm
 # ==========================================================================
+adi = c.create(audiodeviceinCHOP, 'audio_in')
+adi.par.active = True
+# Explicit device name triggers macOS mic permission prompt on first run.
+adi.par.device = 'BuiltInMicrophoneDevice'
+adi.nodeX = -600; adi.nodeY = 0
 
-af = c.create(audiofileinCHOP, 'audio_file')
-af.par.file = AUDIO_FILE
-af.par.play = True
-af.par.repeat = True
-af.nodeX = -600; af.nodeY = 0
-
-ado = c.create(audiodeviceoutCHOP, 'audio_out')
-ado.inputConnectors[0].connect(af)
-ado.nodeX = -400; ado.nodeY = -100
-
-# Per-band filter chain: low (<250 Hz), mid (bandpass 1kHz), high (>2 kHz)
 def make_band(name, filter_kind, cutoff_hz, y):
     flt = c.create(audiofilterCHOP, f'{name}_filter')
-    flt.inputConnectors[0].connect(af)
+    flt.inputConnectors[0].connect(adi)
     flt.par.filter = filter_kind
     flt.par.cutofffrequency = cutoff_hz
     flt.nodeX = -400; flt.nodeY = y
@@ -75,97 +67,140 @@ low_r = make_band('low', 'lowpass', 250, 200)
 mid_r = make_band('mid', 'bandpass', 1000, 0)
 high_r = make_band('high', 'highpass', 2000, -200)
 
-# Merge into one 3-channel CHOP: low, mid, high
 bands = c.create(mergeCHOP, 'bands')
 bands.inputConnectors[0].connect(low_r)
 bands.inputConnectors[1].connect(mid_r)
 bands.inputConnectors[2].connect(high_r)
 bands.nodeX = 400; bands.nodeY = 0
 
-# Lag smooth
 bands_lag = c.create(lagCHOP, 'bands_lag')
 bands_lag.inputConnectors[0].connect(bands)
 bands_lag.par.lag1 = 0.1; bands_lag.par.lag2 = 0.15
 bands_lag.nodeX = 600; bands_lag.nodeY = 0
 
-# Normalize: bass is naturally much louder than mid/high. Gain to bring
-# all three into a comparable [0, ~1] range so expressions can treat
-# them symmetrically.
 bands_norm = c.create(mathCHOP, 'bands_norm')
 bands_norm.inputConnectors[0].connect(bands_lag)
-bands_norm.par.gain = 20.0
+bands_norm.par.gain = 40.0   # mic signal needs more gain than file input
 bands_norm.nodeX = 800; bands_norm.nodeY = 0
 
 # ==========================================================================
-# Positions: 64x64 grid SOP + noise SOP displacement -> sopToCHOP -> instances
+# Positions: grid + noise SOP -> sopToCHOP (tx, ty, tz per instance)
+# Texture index: scriptCHOP producing random 0..N_SPECIES-1 per instance
+# Merged into one CHOP that drives geo's instanceop
 # ==========================================================================
 grid = c.create(gridSOP, 'scatter_source')
-grid.par.rows = 64
-grid.par.cols = 64
-grid.par.sizex = 8
-grid.par.sizey = 8
+grid.par.rows = 10; grid.par.cols = 10
+grid.par.sizex = 8; grid.par.sizey = 8
 grid.nodeX = 400; grid.nodeY = -400
 
-# Noise SOP displaces grid points along Z (and others) for 3D cloud
 noise_sop = c.create(noiseSOP, 'scatter_noise')
 noise_sop.inputConnectors[0].connect(grid)
 noise_sop.par.amp = 1.5
 noise_sop.par.period = 2.0
 noise_sop.nodeX = 600; noise_sop.nodeY = -400
 
-# sopToCHOP: 4096 samples of (tx, ty, tz) -- one per grid point
 positions = c.create(soptoCHOP, 'positions_chop')
 positions.par.sop = noise_sop.path
 positions.nodeX = 800; positions.nodeY = -400
 
+# Load all species images + create MFI TOPs, one per image
+species_files = sorted([f for f in os.listdir(SPECIES_FOLDER) if f.endswith(('.jpg','.jpeg','.png'))])
+top_paths = []
+for i, f in enumerate(species_files):
+    mfi = c.create(moviefileinTOP, f'species_{i:03d}')
+    mfi.par.file = os.path.join(SPECIES_FOLDER, f)
+    mfi.nodeX = 1700 + (i % 8) * 120
+    mfi.nodeY = -100 - (i // 8) * 100
+    top_paths.append(mfi.path)
+
+N_SPECIES = len(species_files)
+
+# tex_idx: per-instance random texture index
+tex_idx = c.create(scriptCHOP, 'tex_idx')
+tex_idx.nodeX = 800; tex_idx.nodeY = -600
+tex_cb = c.create(textDAT, 'tex_idx_cb')
+tex_cb.nodeX = 600; tex_cb.nodeY = -600
+tex_cb.text = f'''import random
+def onSetupParameters(scriptOp): return
+def onPulse(par): return
+def onCook(scriptOp):
+	scriptOp.clear()
+	ch = scriptOp.appendChan("texindex")
+	scriptOp.numSamples = {N_INSTANCES}
+	random.seed(7)
+	for i in range({N_INSTANCES}):
+		ch[i] = float(random.randint(0, {N_SPECIES - 1}))
+'''
+tex_idx.par.callbacks = tex_cb.path
+tex_idx.cook(force=True)
+
+# Merge positions + texindex into one CHOP
+inst_data = c.create(mergeCHOP, 'inst_data')
+inst_data.inputConnectors[0].connect(positions)
+inst_data.inputConnectors[1].connect(tex_idx)
+inst_data.nodeX = 1000; inst_data.nodeY = -400
+
 # ==========================================================================
-# Geometry COMP with instancing
+# Geometry COMP: extruded rectangles (fish-card cards)
 # ==========================================================================
 geo = c.create(geometryCOMP, 'geo_cubes')
 geo.nodeX = 1100; geo.nodeY = -400
 
-# Internal: a single tiny box that gets instanced 4096 times
 for child in list(geo.children): child.destroy()
-box = geo.create(boxSOP, 'box1')
-# Box size is audio-reactive: low band drives pulse
-box.par.sizex.expr = "0.012 + op('/project1/salish_prisms/bands_norm')['low'][0] * 0.02"
-box.par.sizey.expr = "0.012 + op('/project1/salish_prisms/bands_norm')['low'][0] * 0.02"
-box.par.sizez.expr = "0.012 + op('/project1/salish_prisms/bands_norm')['low'][0] * 0.02"
-box.nodeX = 0
+
+rect = geo.create(rectangleSOP, 'fish_card')
+rect.par.sizex = 0.5; rect.par.sizey = 0.35
+# Audio-reactive size: bass pulses the card bigger
+rect.par.sizex.expr = "0.4 + op('/project1/salish_prisms/bands_norm')['low'][0] * 0.3"
+rect.par.sizey.expr = "0.28 + op('/project1/salish_prisms/bands_norm')['low'][0] * 0.2"
+rect.nodeX = 0
+
+# Small Z extrusion for subtle 3D
+ext = geo.create(extrudeSOP, 'fish_extrude')
+ext.inputConnectors[0].connect(rect)
+ext.par.depthscale = 0.15
+ext.par.initextrude.pulse()   # Pulse to initialize extrusion
+ext.nodeX = 200
 
 out_sop = geo.create(outSOP, 'out1')
-out_sop.inputConnectors[0].connect(box)
+out_sop.inputConnectors[0].connect(ext)
 out_sop.render = True; out_sop.display = True
-out_sop.nodeX = 200
+out_sop.nodeX = 400
 
-# THE master instancing toggle — this is the ONE SWITCH that actually
-# enables instanced rendering. `instanceactive` is NOT the enable toggle;
-# it's a StrMenu that selects a per-instance-visibility CHOP channel.
-# Setting `instanceactive = True` (string) silently does nothing.
+# --- Instancing ---
+# MASTER TOGGLE (the one switch that actually enables it).
+# `instanceactive` is NOT this — it's a StrMenu for per-instance visibility.
 geo.par.instancing = True
 
-geo.par.instanceop = positions.path
-geo.par.instancecountmode = 'manual'   # oplength was flaky for us; manual is reliable
-geo.par.numinstances = 4096
+geo.par.instanceop = inst_data.path
+geo.par.instancecountmode = 'manual'
+geo.par.numinstances = N_INSTANCES
 geo.par.instancetx = 'tx'
 geo.par.instancety = 'ty'
 geo.par.instancetz = 'tz'
 
-# Constant material with audio-reactive RGB
+# Face the camera so textures read cleanly
+cam = c.create(cameraCOMP, 'cam1')
+cam.par.tz = 6
+cam.nodeX = 1100; cam.nodeY = -800
+geo.par.instancerottoop = cam.path
+geo.par.instancerottoforward = 'posz'
+
+# Per-instance texture: instancetexs is a TOPMulti (space-separated paths)
+# instancetexindex = channel name whose value picks which TOP per instance
+geo.par.instancetexs = ' '.join(top_paths)
+geo.par.instancetexindex = 'texindex'
+
+# Constant material — white base so texture shows clean
 mat = c.create(constantMAT, 'cube_mat')
-mat.par.colorr.expr = "0.3 + op('/project1/salish_prisms/bands_norm')['low'][0] * 0.4"
-mat.par.colorg.expr = "0.5 + op('/project1/salish_prisms/bands_norm')['mid'][0] * 3.0"
-mat.par.colorb.expr = "0.6 + op('/project1/salish_prisms/bands_norm')['high'][0] * 5.0"
+mat.par.colorr = 1.0; mat.par.colorg = 1.0; mat.par.colorb = 1.0
+mat.par.colormap = top_paths[0]   # fallback texture if instancetexs fails
 mat.nodeX = 1100; mat.nodeY = -200
 geo.par.material = mat.path
 
 # ==========================================================================
-# Camera + Render + Output
+# Render + Output
 # ==========================================================================
-cam = c.create(cameraCOMP, 'cam1')
-cam.par.tz = 6
-cam.nodeX = 1100; cam.nodeY = -600
-
 render = c.create(renderTOP, 'render1')
 render.par.geometry = geo.path
 render.par.camera = cam.path
@@ -179,9 +214,7 @@ out_top.nodeX = 1600; out_top.nodeY = -400
 out_top.viewer = True
 out_top.display = True
 
-print("salish_prisms — audio-reactive 4096-cube cloud")
-print(f"  audio     : {af.path}  (file: {af.par.file.eval()})")
-print(f"  bands     : {bands_norm.path}  (low, mid, high — gain {bands_norm.par.gain.eval()}x)")
-print(f"  geometry  : {geo.path}  (instancing ON, {geo.par.numinstances.eval()} instances)")
-print(f"  material  : {mat.path}  (audio-reactive RGB)")
-print(f"  output    : {out_top.path}")
+print(f"salish_prisms — {N_INSTANCES} species cards, {N_SPECIES} unique species loaded")
+print(f"  audio: {adi.path} (mic)  bands_norm gain: {bands_norm.par.gain.eval()}")
+print(f"  geo: {geo.path}  instancing: {geo.par.instancing.eval()}")
+print(f"  output: {out_top.path}")
