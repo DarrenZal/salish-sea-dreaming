@@ -10,12 +10,13 @@
 // State object.
 
 // Mudra (one-hand pinch). The TD callback uses a fixed normalized threshold
-// of 0.05, which works on the gallery 3090's high-res fixed-distance cam.
-// On a laptop webcam, distance from the camera varies, so we normalize the
-// thumb-index distance by the hand's own length (wrist→middle-tip). The
-// ratio threshold below corresponds to "fingers within ~30% of one finger
-// length of each other" — practical pinch.
-export const MUDRA_RATIO_THRESHOLD = 0.30;
+// of 0.05 which works on the gallery 3090's high-res fixed-distance cam.
+// On a laptop webcam, hand-to-camera distance varies, so we normalize the
+// thumb-index distance by the hand's own length (wrist→middle-tip). 0.50
+// means "fingers within half a finger-length" → matches what looks like an
+// "OK" pinch in practice. Squaring the raw signal (TD does this) damps the
+// response too much on lower-resolution webcams; we use the linear value.
+export const MUDRA_RATIO_THRESHOLD = 0.50;
 export const MUDRA_SMOOTHING = 0.40;            // α in EMA — quick to fire, quick to release
 
 export const HAKINI_SUM_THRESHOLD = 1.0;        // 5-pair distance sum below this = hakini
@@ -58,9 +59,11 @@ export function readMudra(landmarks, state) {
             if (handLen < 1e-4) continue;  // can't normalize; skip this hand
             const pinchD = dist3(thumb, index);
             const ratio = pinchD / handLen;
+            // Linear response curve. Squaring (TD-style) damps too much
+            // on a laptop webcam; users have to do an exaggerated pinch
+            // to register. Linear gives natural-pinch values around 60-80%.
             const raw = clamp01(1.0 - ratio / MUDRA_RATIO_THRESHOLD);
-            const r2 = raw * raw;
-            if (r2 > bestRaw) bestRaw = r2;
+            if (raw > bestRaw) bestRaw = raw;
         }
     }
     if (state) {
