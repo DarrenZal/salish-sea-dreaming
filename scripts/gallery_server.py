@@ -1924,11 +1924,14 @@ async def chat(req: ChatRequest, request: Request):
         user_msg, _chat_cards, _chat_docs, _chat_canon
     )
 
-    # Foundation: if any retrieved canon doc is placeholder/draft, the agent
-    # answers with the in-progress refusal instead of synthesizing from
-    # placeholder content. The team is preparing this explanation.
+    # Foundation: placeholder canon docs are NEVER quoted into context.
+    # We split matched_canon into placeholder vs. signed-off, and only refuse
+    # outright if placeholder canon is the ONLY signal we have. If we also have
+    # cards or non-placeholder canon, drop placeholders from context and answer
+    # normally (the system prompt + non-placeholder retrieval is enough).
     placeholder_hits = [cd for _s, cd in matched_canon if cd.get("is_placeholder")]
-    if placeholder_hits:
+    matched_canon = [(s, cd) for s, cd in matched_canon if not cd.get("is_placeholder")]
+    if placeholder_hits and not matched_cards and not matched_docs and not matched_canon:
         titles = ", ".join(cd["title"] for cd in placeholder_hits[:2])
         return ChatResponse(
             reply=(
@@ -1938,6 +1941,11 @@ async def chat(req: ChatRequest, request: Request):
                 "linked from the home page."
             ),
             sources=[cd.get("source_path", "") for cd in placeholder_hits[:2]],
+        )
+    if placeholder_hits:
+        logger.info(
+            f"Chat: skipped {len(placeholder_hits)} placeholder canon doc(s) from context "
+            f"(other retrieval available)"
         )
 
     # Build context string for the LLM
