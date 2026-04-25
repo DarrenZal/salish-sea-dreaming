@@ -134,6 +134,49 @@ If the agent's retrieval surfaces a chunk from a doc whose frontmatter is `signe
 
 The agent never quotes from, summarizes, or paraphrases placeholder/draft content.
 
+## How a visitor can revisit and change consent
+
+Every dream submitted via `/visitor` (or the QR code at the gallery wall)
+gets a private consent token. The visitor can use it to re-open the four
+toggles for that dream — or withdraw it from the cloud entirely — at any
+time, on any device.
+
+**Same device** (the browser still has the cookie):
+1. Visit `/consent` on this site.
+2. The page recognizes the cookie and renders the form for that dream.
+3. Toggle / withdraw / save.
+
+**Different device** (or after the cookie was cleared):
+1. Visit `/consent` on this site from any device.
+2. Paste the consent token saved at submission time (offered as a downloadable
+   `my-salish-token.txt` plus a copy button on the visitor app).
+3. The site validates the token server-side, issues a short-lived session
+   cookie scoped narrowly to the consent endpoints, and renders the form.
+4. Toggle / withdraw / save.
+
+Soft action only — the system never deletes a dream record. "Withdraw" sets
+`visible_in_installation = 0`, which hides the dream from the cloud + visitor
+feed + chat retrieval. The dream stays in the database (so the consent record
+itself is preserved), and changes propagate to the 3D cloud on the next
+periodic UMAP recompute (≤10 minutes), or immediately if a steward forces
+`POST /admin/recompute-umap`.
+
+## What if I lost my token?
+
+By design, the system has no way to identify your dream without it. There's
+no email, no account, no recovery phrase — that's part of what keeps the
+project from collecting more about you than the dream itself. If you've lost
+the token, the choices are:
+
+- **Submit a new dream** with the consent flags you want.
+- **Email** the project (`darren@salishseadreaming.art`) describing what you
+  remember about your dream — date, time, content. A steward can then issue
+  a per-dream consent action by id, with all parties auditable. This isn't
+  guaranteed and depends on the dream being recoverable from memory.
+
+The agent should describe both paths plainly when asked, without manufacturing
+a recovery flow that doesn't exist.
+
 ## A timeout / overload response
 
 If the system is overwhelmed and the chat agent returns 503:

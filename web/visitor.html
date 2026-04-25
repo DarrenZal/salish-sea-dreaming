@@ -877,6 +877,65 @@
             line-height: 1.5;
             font-style: italic;
         }
+
+        /* Stage 2: token-save panel — shows after a successful submission so the
+           visitor can revisit /consent later. Cookie also remembers it on this
+           device; the saved token is the cross-device fallback. */
+        .token-save {
+            display: none;
+            margin-top: 1.25rem;
+            padding: 0.85rem 1rem;
+            background: rgba(0, 168, 168, 0.06);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.82rem;
+            color: var(--text-primary);
+            line-height: 1.55;
+        }
+        .token-save.shown { display: block; }
+        .token-save .ts-title { font-size: 0.78rem; color: var(--cyan); letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+        .token-save .ts-token {
+            display: block;
+            font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
+            font-size: 0.74rem;
+            color: var(--text-primary);
+            background: rgba(0, 0, 0, 0.25);
+            padding: 0.5rem 0.65rem;
+            border-radius: 4px;
+            user-select: all;
+            word-break: break-all;
+            margin: 0.4rem 0 0.7rem;
+        }
+        .token-save .ts-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+        .token-save .ts-btn {
+            background: rgba(0, 168, 168, 0.15);
+            border: 1px solid rgba(0, 168, 168, 0.4);
+            color: var(--teal);
+            font-family: inherit;
+            font-size: 0.78rem;
+            padding: 0.45rem 0.8rem;
+            border-radius: 6px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .token-save .ts-btn:hover { background: rgba(0, 168, 168, 0.25); }
+        .token-save .ts-note {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-top: 0.55rem;
+            font-style: italic;
+        }
+        .manage-link {
+            text-align: center;
+            margin-top: 1.5rem;
+            font-size: 0.78rem;
+        }
+        .manage-link a {
+            color: var(--text-muted);
+            text-decoration: none;
+            border-bottom: 1px dotted var(--text-muted);
+        }
+        .manage-link a:hover { color: var(--cyan); border-bottom-color: var(--cyan); }
     </style>
 </head>
 <body>
@@ -927,6 +986,18 @@
                 </div>
                 <p class="consent-note">Defaults are conservative — quoting and post-show persistence are opt-in. You can change any of these later from the link we'll save in your browser.</p>
             </details>
+
+            <div class="token-save" id="token-save" role="region" aria-label="Save your consent token">
+                <div class="ts-title">SAVE YOUR CONSENT TOKEN</div>
+                <div>To revisit and change consent on this dream from another device — or after this browser forgets the cookie — keep this token:</div>
+                <code class="ts-token" id="token-save-value"></code>
+                <div class="ts-actions">
+                    <a href="#" class="ts-btn" id="token-save-download" download="my-salish-token.txt">Save to file</a>
+                    <button type="button" class="ts-btn" id="token-save-copy">Copy</button>
+                    <a href="/consent" class="ts-btn" target="_blank" rel="noopener">Manage consent →</a>
+                </div>
+                <div class="ts-note">Same browser? Your cookie remembers — just open <a href="/consent" style="color:var(--text-muted)">/consent</a>. Different device? You'll need this token.</div>
+            </div>
         </section>
 
         <!-- Divider -->
@@ -974,6 +1045,9 @@
                 explore the knowledge graph &rarr;
             </a>
         </p>
+        <div class="manage-link">
+            <a href="/consent">manage consent for past dreams</a>
+        </div>
 
     </div>
 
@@ -1313,9 +1387,45 @@
                             cameraBtn.textContent = '📷';
                         }
                         statusTimeout = setTimeout(hideStatus, 2000);
-                        // Enter chat mode for text offerings
+
+                        // Stage 2: surface the consent_token so visitor can save it.
+                        // Token is also in cookie ssd_dream_token for same-device
+                        // revisits to /consent; the saved file is the cross-device
+                        // fallback.
+                        try {
+                            const data = await res.json();
+                            if (data && data.consent_token) {
+                                const tokenSave = document.getElementById('token-save');
+                                const tokenVal = document.getElementById('token-save-value');
+                                const tokenDl  = document.getElementById('token-save-download');
+                                const tokenCp  = document.getElementById('token-save-copy');
+                                if (tokenSave && tokenVal && tokenDl && tokenCp) {
+                                    tokenVal.textContent = data.consent_token;
+                                    const blob = new Blob(
+                                        ["Salish Sea Dreaming — consent token\n",
+                                         "Saved: " + new Date().toISOString() + "\n",
+                                         "Dream id: " + (data.id || '?') + "\n\n",
+                                         data.consent_token + "\n\n",
+                                         "Visit https://v2.salishseadreaming.art/consent and paste this token to manage consent for this dream.\n"],
+                                        { type: 'text/plain' }
+                                    );
+                                    tokenDl.href = URL.createObjectURL(blob);
+                                    tokenCp.onclick = function () {
+                                        if (navigator.clipboard) {
+                                            navigator.clipboard.writeText(data.consent_token);
+                                            tokenCp.textContent = 'Copied ✓';
+                                            setTimeout(function () { tokenCp.textContent = 'Copy'; }, 2000);
+                                        }
+                                    };
+                                    tokenSave.classList.add('shown');
+                                }
+                            }
+                        } catch (_) { /* non-JSON or no token — ignore */ }
+
+                        // Enter chat mode for text offerings — slight delay so
+                        // visitor sees the token-save panel before the chat overlay.
                         if (text) {
-                            setTimeout(function() { enterChatMode(text); }, 600);
+                            setTimeout(function() { enterChatMode(text); }, 2200);
                         }
                     } else if (res.status === 429) {
                         showStatus('please wait a moment before sending again');

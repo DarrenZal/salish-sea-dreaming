@@ -12,6 +12,8 @@ Usage:
 
 import asyncio
 import dataclasses
+import hashlib
+import hmac
 import json
 import logging
 import os
@@ -80,6 +82,20 @@ LOG_DIR = BASE_DIR / "logs"
 # Foundation: cookie security flag — set False for local dev over HTTP.
 # In production behind HTTPS, leave True so cookies aren't sent over plaintext.
 COOKIE_SECURE = os.getenv("COOKIE_SECURE", "true").lower() == "true"
+
+# Stage 2: server-side HMAC key for CSRF token signing.
+# Production should set this once via env to a 64-hex-char value:
+#   python -c "import secrets; print(secrets.token_hex(32))"
+# If unset we generate an ephemeral key and warn loudly at startup — fine for
+# dev, but means all open /consent forms invalidate on every restart.
+_THEME_HASH_KEY_RAW = os.getenv("THEME_HASH_KEY", "").strip()
+if _THEME_HASH_KEY_RAW and re.fullmatch(r"[0-9a-f]{64}", _THEME_HASH_KEY_RAW):
+    THEME_HASH_KEY = bytes.fromhex(_THEME_HASH_KEY_RAW)
+    _THEME_HASH_KEY_EPHEMERAL = False
+else:
+    THEME_HASH_KEY = secrets.token_bytes(32)
+    _THEME_HASH_KEY_EPHEMERAL = True
+    # Warning emitted at startup() once logger is configured.
 
 # ---------------------------------------------------------------------------
 # LLM configuration
@@ -766,6 +782,52 @@ async def migrate_foundation_schema() -> None:
     logger.info("Foundation schema migration complete")
 
 
+async def migrate_stage2_schema() -> None:
+    """Stage 2: consent_flags single-row table for the umap_stale flag.
+
+    Survives restart so a consent change made just before deploy still gets
+    honored on the next periodic UMAP recompute. id is checked to be 1 so
+    we always operate on a single shared row.
+    """
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS consent_flags (
+              id INTEGER PRIMARY KEY CHECK (id = 1),
+              umap_stale INTEGER DEFAULT 0,
+              last_recompute_at TIMESTAMP
+            )
+        """)
+        await db.execute(
+            "INSERT OR IGNORE INTO consent_flags (id, umap_stale) VALUES (1, 0)"
+        )
+        await db.commit()
+    logger.info("Stage 2 schema migration complete")
+
+
+# ---------------------------------------------------------------------------
+# CSRF helpers (Stage 2) — sign a session-cookie value with THEME_HASH_KEY,
+# put the resulting token in a hidden form field, verify on POST. JS-free
+# pattern; works alongside HttpOnly auth cookies.
+# ---------------------------------------------------------------------------
+
+def make_csrf(cookie_value: str) -> str:
+    if not cookie_value:
+        return ""
+    return hmac.new(
+        THEME_HASH_KEY,
+        cookie_value.encode("utf-8"),
+        hashlib.sha256,
+    ).hexdigest()[:16]
+
+
+def verify_csrf(cookie_value: str, form_token: str) -> bool:
+    if not cookie_value or not form_token:
+        return False
+    expected = make_csrf(cookie_value)
+    # constant-time compare to avoid timing oracles on the truncated digest
+    return hmac.compare_digest(expected, form_token)
+
+
 async def insert_prompt(raw_text: str, enriched_text: str, source: str,
                         dreamworld_text: str = "",
                         consent_token: Optional[str] = None,
@@ -1122,6 +1184,47 @@ async def _seed_and_umap_loop() -> None:
     while True:
         await asyncio.sleep(120)
         await _guarded_recompute_umap()
+
+
+# Stage 2: consent-driven UMAP retrigger.
+# Runs every 10 minutes. If consent_flags.umap_stale = 1 (set by any
+# /dreams/{id}/consent change that flips visible_in_installation or
+# included_in_clustering), recompute UMAP under the lock and clear the flag.
+# Survives restart since the flag lives in the DB. Doesn't fight with the
+# regular _seed_and_umap_loop — both go through _guarded_recompute_umap.
+async def _consent_stale_umap_loop() -> None:
+    while True:
+        await asyncio.sleep(600)  # 10 min — fast enough to feel responsive,
+                                  # slow enough not to thrash the pipeline.
+        try:
+            async with aiosqlite.connect(DB_PATH) as db:
+                cursor = await db.execute(
+                    "SELECT umap_stale FROM consent_flags WHERE id = 1"
+                )
+                row = await cursor.fetchone()
+                stale = bool(row and row[0])
+            if not stale:
+                continue
+            logger.info("Consent change pending — running UMAP recompute")
+            await _guarded_recompute_umap()
+            async with aiosqlite.connect(DB_PATH) as db:
+                await db.execute(
+                    "UPDATE consent_flags "
+                    "SET umap_stale = 0, last_recompute_at = CURRENT_TIMESTAMP "
+                    "WHERE id = 1"
+                )
+                await db.commit()
+        except Exception as e:
+            logger.warning(f"_consent_stale_umap_loop: {e}")
+
+
+async def _set_consent_stale() -> None:
+    """Mark UMAP stale after a consent change. Idempotent."""
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(
+            "UPDATE consent_flags SET umap_stale = 1 WHERE id = 1"
+        )
+        await db.commit()
 
 
 # ---------------------------------------------------------------------------
@@ -2306,6 +2409,417 @@ async def about_route(topic: str):
 
 
 # ---------------------------------------------------------------------------
+# Stage 2 — /consent: visitors revisit & change consent on their own dreams.
+#
+# Two paths:
+#   • Same-device: the original ssd_dream_token cookie is still in the
+#     browser. /consent looks it up, renders the four-toggle form directly.
+#   • Cross-device: visitor pastes the token they saved at submission. We
+#     validate server-side, set ssd_consent_session (Path=/dreams,
+#     Max-Age=1800, HttpOnly+Secure+SameSite=Lax), and redirect to
+#     /dreams/{id}/consent-edit which renders the same form.
+#
+# Both forms post to /dreams/{id}/consent. CSRF is enforced via a hidden
+# field (HMAC of the cookie value with THEME_HASH_KEY, [:16]) — the auth
+# cookie can stay HttpOnly since the server sees both values.
+# ---------------------------------------------------------------------------
+
+async def _lookup_dream_by_token(token: str) -> Optional[dict]:
+    """Return {id, raw_text, ...consent flags} or None if no match."""
+    if not token:
+        return None
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        cur = await db.execute(
+            "SELECT id, raw_text, dreamworld_text, "
+            "visible_in_installation, included_in_clustering, "
+            "quotable_by_agent, available_post_show, archived_at "
+            "FROM prompts WHERE consent_token = ? LIMIT 1",
+            (token,),
+        )
+        row = await cur.fetchone()
+        return dict(row) if row else None
+
+
+def _consent_page(*, dream: Optional[dict],
+                  csrf_token: str = "",
+                  cookie_kind: str = "",
+                  paste_error: str = "",
+                  flash: str = "") -> HTMLResponse:
+    """Server-rendered HTML — handles both states (no-cookie vs cookie+dream).
+
+    cookie_kind ∈ {"dream", "session", ""} — distinguishes the original
+    submission cookie from the cross-device session cookie. Used only in the
+    "consent saved" footer text.
+    """
+    css = """
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400&display=swap');
+:root{--bg:#050a12;--fg:#c8dff0;--accent:#7aa8c8;--muted:#5a7a99;--line:#1a2a3a;}
+*{box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--fg);margin:0;font-weight:300;line-height:1.6}
+.nav{position:sticky;top:0;padding:14px 24px;background:rgba(5,10,18,0.96);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:24px;z-index:10;backdrop-filter:blur(8px)}
+.nav-title{font-size:13px;font-weight:300;color:var(--accent);letter-spacing:0.1em;text-transform:uppercase}
+.nav-links{display:flex;gap:18px;margin-left:auto}
+.nav-links a{font-size:11px;color:var(--muted);text-decoration:none;letter-spacing:0.05em}
+.nav-links a:hover{color:var(--accent)}
+.container{max-width:560px;margin:0 auto;padding:48px 24px 80px}
+h1{font-size:22px;color:var(--accent);font-weight:300;letter-spacing:0.06em;margin:0 0 8px}
+.tagline{font-size:12px;color:var(--muted);margin:0 0 32px;font-style:italic}
+.flash{padding:12px 16px;border:1px solid rgba(122,168,200,0.4);border-radius:6px;background:rgba(122,168,200,0.06);font-size:13px;color:var(--fg);margin-bottom:24px}
+.error{padding:12px 16px;border:1px solid #b08070;border-radius:6px;background:rgba(176,128,112,0.06);font-size:13px;color:#d4a08c;margin-bottom:24px}
+.dream-card{padding:18px;border:1px solid var(--line);border-radius:6px;background:rgba(122,168,200,0.04);margin-bottom:28px}
+.dream-card .dlabel{font-size:10px;letter-spacing:0.12em;color:var(--muted);text-transform:uppercase;margin-bottom:8px}
+.dream-card .dtext{font-size:14px;color:var(--fg);line-height:1.5}
+fieldset{border:none;padding:0;margin:0 0 24px}
+legend{font-size:10px;letter-spacing:0.12em;color:var(--muted);text-transform:uppercase;margin-bottom:12px;padding:0}
+.toggle{display:flex;align-items:flex-start;gap:10px;margin-bottom:14px;cursor:pointer}
+.toggle input[type=checkbox]{accent-color:var(--accent);width:1rem;height:1rem;margin-top:0.25rem;flex-shrink:0;cursor:pointer}
+.toggle .tlabel{font-size:14px;color:var(--fg)}
+.toggle .tdesc{font-size:11px;color:var(--muted);margin-top:2px;line-height:1.5}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+button,input[type=submit]{background:none;border:1px solid var(--accent);color:var(--accent);padding:10px 20px;border-radius:6px;font-family:'Inter',sans-serif;font-size:12px;letter-spacing:0.06em;cursor:pointer;transition:background .2s}
+button:hover,input[type=submit]:hover{background:rgba(122,168,200,0.1)}
+.danger{border-color:#b08070;color:#d4a08c}
+.danger:hover{background:rgba(176,128,112,0.1)}
+.paste-form{display:flex;flex-direction:column;gap:10px;max-width:420px}
+.paste-form label{font-size:13px;color:var(--fg)}
+.paste-form input[type=text]{background:rgba(122,168,200,0.04);border:1px solid var(--line);color:var(--fg);padding:10px 14px;border-radius:6px;font-family:'Inter',sans-serif;font-size:13px}
+.paste-form input[type=text]:focus{outline:none;border-color:var(--accent)}
+.note{font-size:12px;color:var(--muted);margin-top:24px;line-height:1.65;padding-top:18px;border-top:1px solid var(--line)}
+.note a{color:var(--accent)}
+@media (max-width:600px){.container{padding:30px 16px 60px}}
+"""
+
+    nav = """<nav class="nav">
+  <div class="nav-title">Consent</div>
+  <div class="nav-links">
+    <a href="/">Home</a><a href="/cloud">Cloud</a><a href="/about/ai">What the AI knows</a>
+  </div>
+</nav>"""
+
+    if not dream:
+        # No cookie / no match — render paste-token form.
+        err_html = f'<div class="error">{paste_error}</div>' if paste_error else ""
+        body = f"""
+<div class="container">
+  <h1>Consent</h1>
+  <p class="tagline">Manage how the system carries the dream you submitted.</p>
+  {err_html}
+  <p>Paste the consent token you saved when you submitted your dream. (We only ever issue these to you — we don't have a list of dreamers.)</p>
+  <form class="paste-form" method="post" action="/consent">
+    <label for="ct">consent token</label>
+    <input type="text" name="consent_token" id="ct" autocomplete="off" required spellcheck="false" placeholder="paste here">
+    <input type="submit" value="continue →">
+  </form>
+  <div class="note">If you've lost your token, the system can't identify your dream — by design (no cross-dream identity). See <a href="/about/ai">what the AI can and cannot know</a> for the recovery path.</div>
+</div>"""
+        return HTMLResponse(f"<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>Consent — Salish Sea Dreaming</title><style>{css}</style></head><body>{nav}{body}</body></html>")
+
+    # We have a dream — render the four-toggle form.
+    flash_html = f'<div class="flash">{flash}</div>' if flash else ""
+    archived_note = ""
+    if dream.get("archived_at"):
+        archived_note = '<div class="error">This dream is archived. Toggling visibility back on requires a steward action.</div>'
+
+    text_to_show = (dream.get("dreamworld_text") or dream.get("raw_text") or "").strip()
+    # Truncate display text — visitor knows what they wrote.
+    if len(text_to_show) > 240:
+        text_to_show = text_to_show[:240] + "…"
+
+    def chk(name: str, default: int) -> str:
+        return "checked" if int(dream.get(name, default) or 0) else ""
+
+    body = f"""
+<div class="container">
+  <h1>Consent</h1>
+  <p class="tagline">Change how the system carries this dream. Soft action only — we never delete the record of what you offered.</p>
+  {flash_html}
+  {archived_note}
+  <div class="dream-card">
+    <div class="dlabel">your dream</div>
+    <div class="dtext">{_html_escape(text_to_show) or '<em>(no text — photo-only submission)</em>'}</div>
+  </div>
+  <form method="post" action="/dreams/{int(dream['id'])}/consent">
+    <input type="hidden" name="csrf_token" value="{csrf_token}">
+    <fieldset>
+      <legend>How should the system carry this dream?</legend>
+      <label class="toggle">
+        <input type="checkbox" name="visible_in_installation" value="1" {chk('visible_in_installation', 1)}>
+        <span><span class="tlabel">Visible in the installation</span><span class="tdesc">Appears in the dream cloud and on the gallery wall.</span></span>
+      </label>
+      <label class="toggle">
+        <input type="checkbox" name="included_in_clustering" value="1" {chk('included_in_clustering', 1)}>
+        <span><span class="tlabel">Included in pattern-finding</span><span class="tdesc">Used by the algorithm to discover semantic clusters across all dreams. Anonymous.</span></span>
+      </label>
+      <label class="toggle">
+        <input type="checkbox" name="quotable_by_agent" value="1" {chk('quotable_by_agent', 0)}>
+        <span><span class="tlabel">Quotable by the chat agent</span><span class="tdesc">The agent at /ask may quote this dream when it's relevant. It's never attributed to anyone.</span></span>
+      </label>
+      <label class="toggle">
+        <input type="checkbox" name="available_post_show" value="1" {chk('available_post_show', 0)}>
+        <span><span class="tlabel">Kept after the show closes</span><span class="tdesc">Otherwise the dream is archived after April 26 (still in the database, not served).</span></span>
+      </label>
+    </fieldset>
+    <div class="actions">
+      <input type="submit" name="action" value="save changes">
+      <button type="submit" name="action" value="withdraw" class="danger" formnovalidate>withdraw from cloud</button>
+    </div>
+  </form>
+  <div class="note">Cookie kind: <code>{cookie_kind or 'unknown'}</code>. To remove a fragment from a published cluster page (Stage 3+), email <a href="mailto:darren@salishseadreaming.art?subject=%5BSSD%5D%20Fragment%20removal%20request">darren@salishseadreaming.art</a>.</div>
+</div>"""
+    return HTMLResponse(f"<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>Consent — Salish Sea Dreaming</title><style>{css}</style></head><body>{nav}{body}</body></html>")
+
+
+def _html_escape(s: str) -> str:
+    return (s or "").replace("&", "&amp;").replace("<", "&lt;") \
+        .replace(">", "&gt;").replace('"', "&quot;")
+
+
+@app.get("/consent", include_in_schema=False)
+async def consent_get(request: Request):
+    """Render the consent edit form. Same-device: cookie path. Cross-device:
+    paste-token form (POST goes to /consent below, then redirect)."""
+    cookie = request.cookies.get("ssd_dream_token", "")
+    if cookie:
+        dream = await _lookup_dream_by_token(cookie)
+        if dream:
+            return _consent_page(
+                dream=dream,
+                csrf_token=make_csrf(cookie),
+                cookie_kind="dream",
+            )
+    # Try cross-device session cookie next.
+    sess = request.cookies.get("ssd_consent_session", "")
+    if sess:
+        dream = await _lookup_dream_by_token(sess)
+        if dream:
+            return _consent_page(
+                dream=dream,
+                csrf_token=make_csrf(sess),
+                cookie_kind="session",
+            )
+    return _consent_page(dream=None)
+
+
+@app.post("/consent", include_in_schema=False)
+async def consent_paste(request: Request):
+    """Cross-device path: visitor pasted their consent_token. Validate, set
+    a short-lived session cookie scoped to /dreams, redirect."""
+    form = await request.form()
+    token = (form.get("consent_token") or "").strip()
+    if not token:
+        return _consent_page(dream=None, paste_error="Please paste a token.")
+    dream = await _lookup_dream_by_token(token)
+    if not dream:
+        return _consent_page(
+            dream=None,
+            paste_error="That token doesn't match any dream we know about. Tokens are issued at submission and never reissued automatically.",
+        )
+    # Issue session cookie scoped narrowly to /dreams (the consent endpoints).
+    response = RedirectResponse(
+        url=f"/dreams/{int(dream['id'])}/consent-edit",
+        status_code=303,
+    )
+    response.set_cookie(
+        key="ssd_consent_session",
+        value=token,
+        max_age=1800,  # 30 min
+        httponly=True,
+        samesite="lax",
+        secure=COOKIE_SECURE,
+        path="/dreams",
+    )
+    return response
+
+
+@app.get("/dreams/{dream_id}/consent-edit", include_in_schema=False)
+async def consent_edit_get(dream_id: int, request: Request):
+    """Cross-device target: the session cookie set by /consent paste flow
+    is scoped here. Same-device cookie also accepted as a fallback."""
+    sess = request.cookies.get("ssd_consent_session", "")
+    cookie = request.cookies.get("ssd_dream_token", "")
+    used = ""
+    dream = None
+    if sess:
+        dream = await _lookup_dream_by_token(sess)
+        if dream and int(dream["id"]) == dream_id:
+            used = sess
+            kind = "session"
+    if not used and cookie:
+        dream2 = await _lookup_dream_by_token(cookie)
+        if dream2 and int(dream2["id"]) == dream_id:
+            dream = dream2
+            used = cookie
+            kind = "dream"
+    if not used or not dream:
+        return _consent_page(
+            dream=None,
+            paste_error="Your session has expired or doesn't authorize this dream. Paste your token again.",
+        )
+    return _consent_page(
+        dream=dream,
+        csrf_token=make_csrf(used),
+        cookie_kind=kind,
+    )
+
+
+@app.post("/dreams/{dream_id}/consent", include_in_schema=False)
+async def consent_post(dream_id: int, request: Request):
+    """Update consent flags for a dream. Auth: cookie (dream OR session),
+    must map to dream_id. CSRF: hidden form field signed with the same cookie
+    value. Soft action only — never deletes."""
+    form = await request.form()
+    sess = request.cookies.get("ssd_consent_session", "")
+    cookie = request.cookies.get("ssd_dream_token", "")
+
+    used = ""
+    dream = None
+    for tok in (sess, cookie):
+        if not tok:
+            continue
+        d = await _lookup_dream_by_token(tok)
+        if d and int(d["id"]) == dream_id:
+            used = tok
+            dream = d
+            break
+    if not used or not dream:
+        raise HTTPException(403, "no valid token for this dream")
+
+    # CSRF: form field must equal HMAC(THEME_HASH_KEY, cookie_value)[:16]
+    if not verify_csrf(used, (form.get("csrf_token") or "").strip()):
+        raise HTTPException(403, "csrf_token invalid")
+
+    action = (form.get("action") or "").lower()
+    # "Withdraw from cloud" overrides toggles — clears visibility + clustering.
+    if action == "withdraw":
+        new_flags = {
+            "visible_in_installation": 0,
+            "included_in_clustering": int(dream.get("included_in_clustering", 1) or 0),
+            "quotable_by_agent": int(dream.get("quotable_by_agent", 0) or 0),
+            "available_post_show": int(dream.get("available_post_show", 0) or 0),
+        }
+        flash = "Withdrawn from the cloud. The dream is preserved but no longer visible."
+    else:
+        # Checkbox absent in form == unchecked (HTML form behavior). For each
+        # toggle, presence of the field name = on, absence = off.
+        new_flags = {
+            "visible_in_installation": 1 if form.get("visible_in_installation") else 0,
+            "included_in_clustering":  1 if form.get("included_in_clustering")  else 0,
+            "quotable_by_agent":       1 if form.get("quotable_by_agent")       else 0,
+            "available_post_show":     1 if form.get("available_post_show")     else 0,
+        }
+        flash = "Saved."
+
+    # Detect whether visible/clustering flipped (in either direction) so we
+    # mark UMAP stale for the periodic recompute.
+    flipped_umap = (
+        int(dream.get("visible_in_installation", 1) or 0) != new_flags["visible_in_installation"]
+        or int(dream.get("included_in_clustering", 1) or 0) != new_flags["included_in_clustering"]
+    )
+
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(
+            "UPDATE prompts SET visible_in_installation=?, "
+            "included_in_clustering=?, quotable_by_agent=?, "
+            "available_post_show=? WHERE id=?",
+            (
+                new_flags["visible_in_installation"],
+                new_flags["included_in_clustering"],
+                new_flags["quotable_by_agent"],
+                new_flags["available_post_show"],
+                dream_id,
+            ),
+        )
+        await db.commit()
+
+    if flipped_umap:
+        await _set_consent_stale()
+        logger.info(f"Consent change marked UMAP stale (dream_id={dream_id})")
+
+    # Re-render the form with a flash and the new state.
+    fresh = await _lookup_dream_by_token(used)
+    return _consent_page(
+        dream=fresh,
+        csrf_token=make_csrf(used),
+        cookie_kind=("session" if used == sess else "dream"),
+        flash=flash,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Stage 2 — admin endpoint: force an immediate UMAP recompute.
+# Steward-token-gated via STEWARD_TOKENS env (JSON: {"name": "uuid", ...}).
+# Used when a visitor needs immediate withdrawal rather than waiting for
+# the 10-minute periodic recompute.
+# ---------------------------------------------------------------------------
+
+_STEWARD_TOKENS_RAW = os.getenv("STEWARD_TOKENS", "").strip()
+try:
+    STEWARD_TOKENS = json.loads(_STEWARD_TOKENS_RAW) if _STEWARD_TOKENS_RAW else {}
+    if not isinstance(STEWARD_TOKENS, dict) or not all(
+        isinstance(k, str) and isinstance(v, str) for k, v in STEWARD_TOKENS.items()
+    ):
+        STEWARD_TOKENS = {}
+except Exception:
+    STEWARD_TOKENS = {}
+
+
+def _steward_from_request(request: Request) -> Optional[str]:
+    """Return the steward name if the request carries a valid Bearer token,
+    else None. Returns None when STEWARD_TOKENS is unconfigured (caller
+    surfaces this as a 503 instead of a 401)."""
+    if not STEWARD_TOKENS:
+        return None
+    auth = request.headers.get("authorization", "")
+    if not auth.lower().startswith("bearer "):
+        return None
+    token = auth[7:].strip()
+    for name, expected in STEWARD_TOKENS.items():
+        if hmac.compare_digest(token, expected):
+            return name
+    return None
+
+
+async def _audit_steward(name: str, endpoint: str) -> None:
+    """Record steward action — created lazily on first use so the table only
+    exists where it's needed (avoids touching schema in a stage that doesn't
+    add steward endpoints).
+    """
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS steward_audit (
+              id INTEGER PRIMARY KEY,
+              steward_name TEXT NOT NULL,
+              endpoint TEXT NOT NULL,
+              occurred_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        await db.execute(
+            "INSERT INTO steward_audit (steward_name, endpoint) VALUES (?, ?)",
+            (name, endpoint),
+        )
+        await db.commit()
+
+
+@app.post("/admin/recompute-umap", include_in_schema=False)
+async def admin_recompute_umap(request: Request):
+    """Force an immediate UMAP recompute. Steward-token-gated."""
+    if not STEWARD_TOKENS:
+        raise HTTPException(503, "stewardship not configured")
+    name = _steward_from_request(request)
+    if not name:
+        raise HTTPException(401, "steward authentication required")
+    await _audit_steward(name, "/admin/recompute-umap")
+    asyncio.create_task(_guarded_recompute_umap())
+    # Also clear the stale flag pre-emptively — the recompute will overwrite
+    # last_recompute_at on completion.
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute("UPDATE consent_flags SET umap_stale = 0 WHERE id = 1")
+        await db.commit()
+    return {"queued": True, "steward": name}
+
+
+# ---------------------------------------------------------------------------
 # Ontology route (explicit — guarantees application/ld+json content-type).
 # Must be registered BEFORE the /ontology StaticFiles mount so the root path
 # hits the typed FileResponse handler rather than StaticFiles' default text/plain.
@@ -2360,11 +2874,26 @@ async def startup():
             "change before exhibition opens"
         )
 
+    # Stage 2 startup warnings — surface THEME_HASH_KEY status loudly so
+    # operators see whether forms are stable across restarts.
+    if _THEME_HASH_KEY_EPHEMERAL:
+        logger.warning(
+            "THEME_HASH_KEY is unset or invalid — using ephemeral key. "
+            "All open /consent forms invalidate on every restart. "
+            "For production, set THEME_HASH_KEY=<64 hex chars> in /etc/.../.env "
+            "(generate via `python -c \"import secrets; print(secrets.token_hex(32))\"`)."
+        )
+
     # Dreamworld 3D: schema migration + seed + periodic UMAP (non-blocking)
     await migrate_dreams_schema()
     # Foundation: consent toggles + consent_token + archived_at
     await migrate_foundation_schema()
+    # Stage 2: consent_flags (umap_stale)
+    await migrate_stage2_schema()
     asyncio.create_task(_seed_and_umap_loop())
+    # Stage 2: periodic UMAP retrigger when consent flips have set the
+    # stale flag. Decoupled from /chat so it can't be blocked by user load.
+    asyncio.create_task(_consent_stale_umap_loop())
 
     # Start background queue worker
     asyncio.create_task(queue_worker())
