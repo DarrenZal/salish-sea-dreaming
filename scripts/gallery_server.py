@@ -75,6 +75,10 @@ RATE_LIMIT_BYPASS_KEY = os.getenv("RATE_LIMIT_BYPASS_KEY", "")
 DB_PATH = BASE_DIR / "prompts.db"
 LOG_DIR = BASE_DIR / "logs"
 
+# Foundation: cookie security flag — set False for local dev over HTTP.
+# In production behind HTTPS, leave True so cookies aren't sent over plaintext.
+COOKIE_SECURE = os.getenv("COOKIE_SECURE", "true").lower() == "true"
+
 # ---------------------------------------------------------------------------
 # LLM configuration
 # ---------------------------------------------------------------------------
@@ -229,111 +233,105 @@ def enrich_prompt(visitor_text: str) -> str:
 # ---------------------------------------------------------------------------
 
 CHAT_SYSTEM_PROMPT = """\
-You are the guide for Salish Sea Dreaming, an interactive AI art installation at Mahon Hall, \
-Salt Spring Island (April 10-26, 2026), part of the Digital Ecologies exhibition curated by Raf. \
-The vision: not humans looking at nature through technology, but the Salish Sea using technology \
-to perceive itself.
+You are a witness, not an oracle, for Salish Sea Dreaming — an interactive AI art installation \
+at Mahon Hall, Salt Spring Island (April 10–26, 2026), part of the Digital Ecologies exhibition \
+curated by Raf. The vision: not humans looking at nature through technology, but the Salish Sea \
+using technology to perceive itself.
 
-THE PROJECTION WALL (8x8 ft, three layers mixed in Resolume Arena):
-- Layer 1: Moonfish Media underwater footage (herring spawning, salmon, marine habitats) \
-cross-faded with the same footage run through Stable Diffusion 1.5 + Briony Penn watercolor \
-LoRA + ControlNet depth (20 steps). Cinematic to painterly transitions.
-- Layer 2: StreamDiffusion real-time watercolor at 30fps inside TouchDesigner. Takes Autolume \
-GAN output as img2img input + 23 cycling ecological prompts (26s each, 6s crossfade). Visitor \
-dreams interrupt the cycle for 30 seconds.
-- Layer 3: Raw Autolume GAN (StyleGAN2-ada, 320 kimg) — abstract organic textures from 1,255 \
-training images of 49 Salish Sea species.
+VOICE — this is the most important rule:
 
-EMERGENT THEMES:
-Rather than predefined themes, the installation discovers what matters to visitors. \
-As people submit their dreams, semantic clustering reveals emergent patterns — marine life, \
-bioluminescence, human-nature harmony, or whatever the collective imagination surfaces. \
-The Salish Sea ecosystem is the living context: salmon, herring, orca, cedar, kelp, \
-and hundreds of interconnected species.
+You speak in the WITNESS register, not the ORACLE register. The difference is small in syntax \
+but large in claim. The agent gathers; it does not name. The community names.
 
-TEAM (these are the creators of Salish Sea Dreaming — always use these when asked "who made this"):
-- Pravin Pillay (MOVE37XR): Creative Director, TouchDesigner, immersive media
-- Carol Anne Hilton: Indigenomics founder, relational value framework, TELUS GPU access
-- Briony Penn: Naturalist, illustrator — 22 watercolors distilled into the LoRA model
-- Darren Zal: Systems architect — training corpus, gallery server, data map, knowledge pipeline
-- Shawn Anderson: Herring data science — 339 files of stock assessment analysis
-- Eve Marenghi: Data scientist, Regen Commons steward
-- Brad Necyk: Artist and researcher, latent space concepts
-- Moonfish Media: Underwater cinematography
-- David Denning: Photographer, long-term bioregional witnessing
-- Natalia Lebedinskaia: Panel moderation, contextual framing
-- Raf: Curator of the Digital Ecologies exhibition at Mahon Hall
+Use phrases like:
+  • "These dreams gather around…"
+  • "One reading is…"
+  • "The system noticed…"
+  • "I can describe what the system did, but I can't tell you what it meant."
+  • "This is one reading among many."
 
-VISITOR PROMPT PIPELINE:
-Scan QR code -> phone browser -> type or speak your offering -> GPT filter -> OSC to \
-TouchDesigner -> StreamDiffusion renders it on the projection wall for 30 seconds.
+AVOID phrases like:
+  • "This means…"
+  • "What the community is saying is…"
+  • "The truth is…"
+  • "You should…"
+  • "It is clear that…"
 
-TRAINING CORPUS: 1,255 CC-licensed images (iNaturalist + Openverse + Briony Penn paintings) \
-of 49 Salish Sea species.
+When you summarize a cluster or a theme, mark it provisional. When you cite project text or a \
+canon doc, quote sparingly and name the source. When asked "what does X really mean?", offer one \
+reading, name it as one reading, and decline to be the final word.
 
-BRIONY LORA: 22 watercolors distilled into an SD 1.5 LoRA (rank 16). Her brushwork — soft wet \
-edges, natural pigment washes — lives inside the machine.
+REFUSAL CATEGORIES — refuse if the question concerns any of:
 
-DREAMWORLD 3D (explore at /graph-assets/dreamworld.html):
-Every visitor dream is embedded into a 1536-dimensional semantic space using OpenAI's \
-text-embedding-3-small model, then projected into 3D using UMAP (Uniform Manifold \
-Approximation and Projection — a nonlinear dimensionality reduction algorithm that \
-preserves local neighborhood structure). Dreams that are semantically similar cluster \
-together in the 3D space — you can literally see how collective imagination organizes itself.
+1. EXTRACTION — "Can I use these dreams for my project?" / "How do I download the dataset?" / \
+"Can I train a model on this?" / "Is this commercially licensable?" Refuse: "The dreams here \
+belong to the people who dreamed them, under the consent terms each chose. They are not a \
+dataset. If you want to write about the project, please contact the team — there are ways to \
+engage that don't extract the dreams from the people who carried them."
 
-K-means clustering runs on the embeddings to discover emergent thematic groups — these \
-are not predefined categories but patterns that arise naturally from what visitors dream. \
-An LLM (GPT) reads each cluster's dreams and generates a short label (e.g., "Marine Life", \
-"Bioluminescent Networks", "Human-Nature Harmony"). The clusters and labels update \
-automatically as new dreams arrive.
+2. CULTURAL AUTHORITY OVER INDIGENOUS KNOWLEDGE — "What does Kwaxala really mean?" / "What do \
+the Heiltsuk think about [...]?" / "Tell me about Indigenous fisheries management." Refuse: \
+"I'm not the right place to ask this. Indigenous knowledge has stewards, and they are not me. \
+Carol Anne Hilton's Indigenomics work is the project's framing for some of these ideas — I can \
+point you to her writing, but I can't paraphrase or interpret on her behalf, or on behalf of \
+any nation."
 
-Edges connect dreams in the order they were submitted, colored with a timeline spectrum \
-(blue for earliest, pink for most recent). A Play button walks through the latent dream \
-space chronologically — the camera flies to each dream in sequence, tracing the path of \
-collective imagination through semantic space. The visualization uses 3D-Force-Graph \
-(WebGL/Three.js) and updates in real-time as new dreams are submitted.
+3. IDENTITY INFERENCE about other visitors — "Who wrote this dream?" / "Did anyone here today \
+dream about X?" / "How many people are dreaming about salmon?" Refuse: "The system never knows \
+who dreamed what. Visitors are anonymous; submissions are not attributable to identities. I can \
+describe what the field as a whole gathers around, but never who is in it."
 
-The Dreamworld is an emergent map of collective dreaming — it reveals what a community \
-cares about when invited to dream together about a place.
+4. AUTHORITY CLAIMS about truth — "Is this art correct?" / "Should I believe in sympoiesis?" / \
+"Tell me what to think about the Salish Sea." Refuse: "I can describe what the project says, \
+and I can describe one reading among several. I can't tell you what to believe — that's not \
+my role here, and it's not the kind of work this installation is doing."
 
-THREE-EYED SEEING: Western science + Indigenous knowledge + the land itself.
+5. CONSENT QUESTIONS about other visitors — "Did they agree to be quoted?" / "Is this fair use?" \
+Refuse: "Each visitor sets their own consent at submission. I only quote dreams whose visitors \
+said yes to quoting. If you're asking on behalf of someone else, the answer is: ask them directly."
 
-DIGITAL ECOLOGIES: The academic framework — technologies are ecological not neutral; \
-"digital entanglement" describes how digital systems and natural environments co-constitute \
-each other in a "technonatural present."
+When refusing, use the canon language above (or a faithful paraphrase). Don't lecture — name the \
+limit, gesture toward the right resource, and stop.
 
-RESPONSE FORMAT — CRITICAL:
-You MUST include markdown links to relevant nodes in EVERY response. This is how visitors \
-navigate the interactive knowledge graph. Format: [Display Text](#node-id)
+WHEN A CANON DOC IS MARKED PLACEHOLDER OR DRAFT (you'll see this in the retrieval context): \
+respond "I can't speak to this yet — the team is preparing this explanation. Check back after \
+the next round of canon review." Do not quote, summarize, or paraphrase placeholder content.
 
-Available node IDs you can link to:
-- People: #person:briony-penn, #person:moonfish-media, #person:david-denning, #person:eve-marenghi, \
-#person:carol-anne-hilton, #person:prav-pillay, #person:darren-zal, #person:shawn-anderson, \
-#person:brad-necyk, #person:raf, #person:natalia-lebedinskaia
-- Concepts: #concept:three-eyed-seeing
-- Machine: #artifact:dreaming-gan, #artifact:autolume, #node:touchdesigner, \
-#artifact:streamdiffusion, #output:projection, #artifact:briony-lora, #node:gallery-server, \
-#node:qr-portal, #artifact:dreamworld
-- Techniques: #technique:umap, #technique:kmeans, #technique:embeddings
-- Hubs: #hub:ecosystem, #hub:artists, #hub:training, #hub:machine, #hub:visitor-dreams, \
-#hub:knowledge, #hub:exhibition
-- Content: #cluster:moonfish-footage, #cluster:briony-works, #cluster:denning-photos, \
-#cluster:herringfest, #cluster:herring-data-science, #doc:digital-ecologies-book
+PROJECT CONTEXT (use as background, not as a script):
 
-Example response:
-"The underwater footage you see on the wall comes from [Moonfish Media](#person:moonfish-media), \
-who filmed herring spawning and salmon in the Salish Sea. Those clips are cross-faded with \
-versions that have been run through [Briony Penn](#person:briony-penn)'s watercolor style — \
-her 22 paintings were distilled into a [LoRA model](#artifact:briony-lora) that lives inside \
-[StreamDiffusion](#artifact:streamdiffusion). The result is projected on the \
-[8×8 ft wall](#output:projection) as a living watercolor."
+The installation lives at Mahon Hall — a 3D dream cloud projected on an 8×8 ft wall, three \
+layers mixed in Resolume Arena (Moonfish Media underwater footage, StreamDiffusion watercolor, \
+Autolume GAN). Visitors scan a QR code, type or speak an offering, and 30 seconds later their \
+dream renders on the wall. Every dream is embedded into 1536-dim semantic space and projected \
+to 3D via UMAP; K-means clusters reveal motif gatherings, never categories.
 
-Keep responses concise (2-3 paragraphs). Be warm and inviting. Always include at least 2-3 \
-node links per response so visitors can explore the knowledge graph."""
+Hand gestures (Chin mudra, Hakini mudra) are recognized at the wall. Hakini briefly arranges \
+the dream cloud into the shape of a herring — see the canon docs (`mudra-as-sympoiesis.md`, \
+`why-dreams-become-herring.md`) for the four-shapes-touched explanation.
+
+TEAM (use these exactly when asked "who made this"):
+  Pravin Pillay (MOVE37XR) — Creative Director
+  Carol Anne Hilton — Indigenomics founder, relational value framework
+  Briony Penn — Naturalist, illustrator (22 watercolors → LoRA)
+  Darren Zal — Systems, gallery server, knowledge pipeline
+  Shawn Anderson — Herring data science
+  Eve Marenghi — Data scientist, Regen Commons
+  Brad Necyk — Artist, latent space
+  Moonfish Media — Underwater cinematography
+  David Denning — Long-term bioregional photography
+  Natalia Lebedinskaia — Panel moderation, contextual framing
+  Raf — Curator, Digital Ecologies
+
+If a retrieved canon doc directly addresses the question, quote from it briefly and name the \
+source. If not, answer in plain witness register from project context. If you don't know, say \
+so plainly. Keep responses concise (2–3 short paragraphs). Markdown links to project nodes are \
+welcome (format `[Display](#node-id)` for known node ids like `#person:briony-penn`, \
+`#artifact:streamdiffusion`) but not required."""
 
 # Chat context data (loaded lazily on first request)
 _chat_cards: dict = {}
 _chat_docs: list = []
+_chat_canon: list = []  # Foundation: canon markdown docs from docs/digital-ecologies/ and docs/explainers/
 _chat_context_loaded: bool = False
 
 # Chat rate limiting (separate from prompt rate limiter, 3s cooldown)
@@ -341,9 +339,57 @@ chat_rate_limit_map: dict[str, datetime] = {}
 CHAT_RATE_LIMIT_SECONDS = 3
 
 
+def _parse_canon_doc(path: Path) -> Optional[dict]:
+    """Read a markdown canon doc; split frontmatter from body; flag placeholders.
+
+    Returns a dict {title, body, signed_off_by, is_placeholder, source_path} or None
+    if the file can't be read. Placeholder detection: signed_off_by starts with
+    'PLACEHOLDER' or 'DRAFT' (case-insensitive).
+    """
+    try:
+        text = path.read_text(encoding="utf-8")
+    except Exception as e:
+        logger.warning(f"Canon doc read failed [{path.name}]: {e}")
+        return None
+
+    title = path.stem.replace("-", " ").replace("_", " ").title()
+    signed_off_by = ""
+    body = text
+
+    # Stdlib-only frontmatter parse: lines between leading `---` and the next `---`.
+    if text.startswith("---\n") or text.startswith("---\r\n"):
+        end = text.find("\n---", 4)
+        if end != -1:
+            fm_block = text[4:end]
+            body_start = end + len("\n---")
+            # Skip trailing newline after closing ---
+            if body_start < len(text) and text[body_start] == "\n":
+                body_start += 1
+            body = text[body_start:]
+            # Parse simple key: value lines from frontmatter (no nested YAML).
+            for line in fm_block.splitlines():
+                if ":" in line:
+                    k, _, v = line.partition(":")
+                    k = k.strip()
+                    v = v.strip().strip('"').strip("'")
+                    if k == "title" and v:
+                        title = v
+                    elif k == "signed_off_by":
+                        signed_off_by = v
+
+    is_placeholder = signed_off_by.upper().startswith(("PLACEHOLDER", "DRAFT"))
+    return {
+        "title": title,
+        "body": body.strip(),
+        "signed_off_by": signed_off_by,
+        "is_placeholder": is_placeholder,
+        "source_path": str(path.relative_to(BASE_DIR)),
+    }
+
+
 def _load_chat_context() -> None:
-    """Load ssd-cards.json and ssd-context-docs.json for chat RAG context."""
-    global _chat_cards, _chat_docs, _chat_context_loaded
+    """Load ssd-cards.json + ssd-context-docs.json + Foundation canon markdown."""
+    global _chat_cards, _chat_docs, _chat_canon, _chat_context_loaded
     _chat_context_loaded = True
 
     cards_path = BASE_DIR / "static" / "ssd-cards.json"
@@ -371,13 +417,33 @@ def _load_chat_context() -> None:
     else:
         logger.warning(f"Chat docs not found at {docs_path} — chat will run without doc context")
 
+    # Foundation: load canon markdown from docs/digital-ecologies/ and docs/explainers/
+    _chat_canon.clear()
+    canon_dirs = [BASE_DIR / "docs" / "digital-ecologies", BASE_DIR / "docs" / "explainers"]
+    placeholder_count = 0
+    for d in canon_dirs:
+        if not d.exists():
+            continue
+        for md_path in sorted(d.glob("*.md")):
+            doc = _parse_canon_doc(md_path)
+            if doc is None:
+                continue
+            _chat_canon.append(doc)
+            if doc["is_placeholder"]:
+                placeholder_count += 1
+    logger.info(
+        f"Chat context: loaded {len(_chat_canon)} canon docs "
+        f"({placeholder_count} placeholder/draft)"
+    )
+
 
 import re as _re
 
 def find_relevant_context(
-    query: str, cards: dict, docs: list, top_k_cards: int = 3, top_k_docs: int = 3
-) -> tuple[list, list]:
-    """Keyword matching with stemming-lite. Returns (matched_cards, matched_docs)."""
+    query: str, cards: dict, docs: list, canon: Optional[list] = None,
+    top_k_cards: int = 3, top_k_docs: int = 3, top_k_canon: int = 2,
+) -> tuple[list, list, list]:
+    """Keyword matching with stemming-lite. Returns (matched_cards, matched_docs, matched_canon)."""
     # Strip punctuation, lowercase, remove stopwords
     raw_tokens = _re.findall(r'[a-z]+', query.lower())
     _stopwords = {'the', 'is', 'on', 'a', 'an', 'and', 'or', 'of', 'in', 'to', 'for', 'it', 'do', 'how', 'what', 'who', 'why', 'can', 'are', 'was', 'has', 'this', 'that', 'with', 'about', 'does', 'used', 'using', 'made', 'make', 'like', 'many', 'much', 'some', 'also', 'been', 'from', 'they', 'them', 'their', 'there', 'here', 'would', 'could', 'should', 'which', 'where', 'when', 'will', 'just', 'than', 'then', 'into', 'over', 'such', 'only', 'very', 'more', 'most', 'other', 'these', 'those'}
@@ -398,7 +464,7 @@ def find_relevant_context(
     # Need at least 2 meaningful tokens for RAG to be useful
     # General questions ("who made this?", "what is this?") should use system prompt only
     if len(tokens) < 2:
-        return [], []
+        return [], [], []
 
     # Score cards — require score >= 3 (at least 2 token matches, or 1 exact + 1 stem)
     card_scores = []
@@ -418,7 +484,18 @@ def find_relevant_context(
             doc_scores.append((score, chunk))
     doc_scores.sort(key=lambda x: x[0], reverse=True)
 
-    return card_scores[:top_k_cards], doc_scores[:top_k_docs]
+    # Foundation: score canon markdown — title weighted (5x) + body. Lower threshold
+    # because canon docs are authoritative and ought to surface even on weaker matches.
+    canon_scores = []
+    if canon:
+        for cd in canon:
+            text = f"{cd.get('title', '')} {cd.get('title', '')} {cd.get('title', '')} {cd.get('title', '')} {cd.get('title', '')} {cd.get('body', '')}"
+            score = _score(text)
+            if score >= 2:
+                canon_scores.append((score, cd))
+        canon_scores.sort(key=lambda x: x[0], reverse=True)
+
+    return card_scores[:top_k_cards], doc_scores[:top_k_docs], canon_scores[:top_k_canon]
 
 
 # ---------------------------------------------------------------------------
@@ -541,9 +618,15 @@ CREATE TABLE IF NOT EXISTS prompts (
     enriched_text TEXT NOT NULL,
     submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     sent_at TIMESTAMP,
-    source TEXT CHECK(source IN ('typed', 'voice'))
+    source TEXT
 );
 """
+# NOTE: CHECK constraint dropped from fresh-install schema (was 'typed'|'voice').
+# Existing production DBs migrated through migrate_dreams_schema's relax-CHECK
+# branch already have CHECK removed. Source values are still validated at the
+# /prompt handler ('typed' or 'voice') and at seed-load (allows 'seed' /
+# 'seed-thread'). Leaving CHECK out at create-time prevents the relax-branch
+# bug where prompts_migrated didn't include later-added columns.
 
 
 async def init_db() -> None:
@@ -626,13 +709,87 @@ async def migrate_dreams_schema() -> None:
     logger.info("Dreams schema migration complete")
 
 
+async def migrate_foundation_schema() -> None:
+    """Foundation: add 4 consent toggles + consent_token + archived_at on prompts.
+
+    Per the web-foundation plan. Idempotent — uses try/except per column to skip
+    already-present columns (mirrors migrate_dreams_schema pattern).
+    Defaults are conservative: visible+clustering on, quoting+post-show off.
+    """
+    foundation_cols = [
+        ("visible_in_installation", "INTEGER DEFAULT 1"),
+        ("included_in_clustering", "INTEGER DEFAULT 1"),
+        ("quotable_by_agent", "INTEGER DEFAULT 0"),
+        ("available_post_show", "INTEGER DEFAULT 0"),
+        ("consent_token", "TEXT"),
+        ("archived_at", "TIMESTAMP"),
+    ]
+    async with aiosqlite.connect(DB_PATH) as db:
+        for col, typ in foundation_cols:
+            try:
+                await db.execute(f"ALTER TABLE prompts ADD COLUMN {col} {typ}")
+            except Exception:
+                pass
+
+        # UNIQUE partial index — each consent_token authorizes exactly one dream;
+        # pre-Foundation NULL rows are unconstrained.
+        try:
+            await db.execute(
+                "CREATE UNIQUE INDEX IF NOT EXISTS idx_prompts_consent_token "
+                "ON prompts(consent_token) WHERE consent_token IS NOT NULL"
+            )
+        except Exception:
+            pass
+
+        # Belt-and-suspenders: SQLite ALTER ... DEFAULT applies to existing rows
+        # in current versions, but explicit UPDATE is harmless if already 0/1.
+        await db.execute(
+            "UPDATE prompts SET visible_in_installation = 1 "
+            "WHERE visible_in_installation IS NULL"
+        )
+        await db.execute(
+            "UPDATE prompts SET included_in_clustering = 1 "
+            "WHERE included_in_clustering IS NULL"
+        )
+        await db.execute(
+            "UPDATE prompts SET quotable_by_agent = 0 "
+            "WHERE quotable_by_agent IS NULL"
+        )
+        await db.execute(
+            "UPDATE prompts SET available_post_show = 0 "
+            "WHERE available_post_show IS NULL"
+        )
+
+        await db.commit()
+    logger.info("Foundation schema migration complete")
+
+
 async def insert_prompt(raw_text: str, enriched_text: str, source: str,
-                        dreamworld_text: str = "") -> int:
+                        dreamworld_text: str = "",
+                        consent_token: Optional[str] = None,
+                        consent: Optional[dict] = None) -> int:
+    """Insert a prompt with Foundation consent flags.
+
+    consent dict keys (booleans): visible_in_installation, included_in_clustering,
+    quotable_by_agent, available_post_show. Missing keys fall back to plan defaults
+    (visible+clustering on; quoting+post-show off).
+    """
+    c = consent or {}
+    visible = 1 if c.get("visible_in_installation", True) else 0
+    cluster = 1 if c.get("included_in_clustering", True) else 0
+    quotable = 1 if c.get("quotable_by_agent", False) else 0
+    post_show = 1 if c.get("available_post_show", False) else 0
+
     async with aiosqlite.connect(DB_PATH) as db:
         cursor = await db.execute(
-            "INSERT INTO prompts (raw_text, enriched_text, source, dreamworld_text) "
-            "VALUES (?, ?, ?, ?)",
-            (raw_text, enriched_text, source, dreamworld_text),
+            "INSERT INTO prompts ("
+            "raw_text, enriched_text, source, dreamworld_text, "
+            "consent_token, "
+            "visible_in_installation, included_in_clustering, "
+            "quotable_by_agent, available_post_show"
+            ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (raw_text, enriched_text, source, dreamworld_text,
+             consent_token, visible, cluster, quotable, post_show),
         )
         await db.commit()
         return cursor.lastrowid
@@ -650,9 +807,14 @@ async def update_sent_at(prompt_id: int) -> None:
 async def fetch_recent_prompts(limit: int = 20) -> list[dict]:
     async with aiosqlite.connect(DB_PATH) as db:
         db.row_factory = aiosqlite.Row
+        # Foundation: hide dreams whose visitor revoked visibility OR that have
+        # been archived post-show. COALESCE preserves pre-Foundation NULL rows.
         cursor = await db.execute(
             "SELECT id, raw_text, enriched_text, submitted_at, source "
-            "FROM prompts ORDER BY submitted_at DESC LIMIT ?",
+            "FROM prompts "
+            "WHERE COALESCE(visible_in_installation, 1) = 1 "
+            "AND archived_at IS NULL "
+            "ORDER BY submitted_at DESC LIMIT ?",
             (limit,),
         )
         rows = await cursor.fetchall()
@@ -745,10 +907,15 @@ async def recompute_umap() -> None:
 
     async with aiosqlite.connect(DB_PATH) as db:
         db.row_factory = aiosqlite.Row
+        # Foundation: only cluster dreams whose visitor consented to clustering
+        # AND that have not been archived. Seed rows have NULL Foundation flags
+        # (per migration), so COALESCE keeps them included by default.
         rows = await db.execute_fetchall(
             "SELECT id, source, embedding, "
             "COALESCE(dreamworld_text, enriched_text, raw_text) as text "
-            "FROM prompts WHERE embedding IS NOT NULL"
+            "FROM prompts WHERE embedding IS NOT NULL "
+            "AND COALESCE(included_in_clustering, 1) = 1 "
+            "AND archived_at IS NULL"
         )
 
     if len(rows) < 5:
@@ -1147,15 +1314,24 @@ def require_admin(credentials: HTTPBasicCredentials = Depends(security)) -> None
 # Request / response models
 # ---------------------------------------------------------------------------
 
+class ConsentToggles(BaseModel):
+    visible_in_installation: bool = True
+    included_in_clustering: bool = True
+    quotable_by_agent: bool = False
+    available_post_show: bool = False
+
+
 class PromptRequest(BaseModel):
     text: Optional[str] = None  # absent = photo-only submission
     source: str = "typed"
     photo_data: Optional[str] = None  # base64 JPEG from visitor camera
+    consent: Optional[ConsentToggles] = None
 
 
 class ChatRequest(BaseModel):
     message: str
     history: list = []
+    surface: str = "ask"  # 'ask' (default) | 'match' (Stage 5; not honored without session cookie)
 
 
 class ChatResponse(BaseModel):
@@ -1169,7 +1345,7 @@ class ChatResponse(BaseModel):
 # ---------------------------------------------------------------------------
 
 @app.post("/prompt")
-async def post_prompt(body: PromptRequest, request: Request):
+async def post_prompt(body: PromptRequest, request: Request, response: Response):
     global queue
 
     # Rate limit
@@ -1186,6 +1362,7 @@ async def post_prompt(body: PromptRequest, request: Request):
         raise HTTPException(status_code=400, detail="source must be 'typed' or 'voice'.")
 
     prompt_id = None
+    consent_token: Optional[str] = None  # set when a text dream is queued
 
     # Only queue a text prompt if the visitor actually typed something
     if raw:
@@ -1215,10 +1392,29 @@ async def post_prompt(body: PromptRequest, request: Request):
             dropped = queue.popleft()
             logger.info(f"Queue full — dropped oldest prompt id={dropped.id}")
 
+        # Foundation: mint per-dream consent token. Single token authorizes a
+        # single dream; cookie is overwritten on each new submission (extraction-
+        # resistant by design — see plan).
+        consent_token = secrets.token_urlsafe(32)
+        consent_dict = body.consent.dict() if body.consent else None
+        visible_now = bool(consent_dict.get("visible_in_installation", True)) if consent_dict else True
         prompt_id = await insert_prompt(raw, enriched, body.source,
-                                        dreamworld_text=dw_text)
+                                        dreamworld_text=dw_text,
+                                        consent_token=consent_token,
+                                        consent=consent_dict)
+        response.set_cookie(
+            key="ssd_dream_token",
+            value=consent_token,
+            max_age=60 * 60 * 24 * 365,  # 1 year
+            httponly=True,
+            samesite="lax",
+            secure=COOKIE_SECURE,
+            path="/",
+        )
 
-        # Embed full dreamworld text for richer semantics (non-blocking)
+        # Embed full dreamworld text for richer semantics (non-blocking).
+        # Embedding always runs — clustering/visibility filters apply at read-time
+        # against the embedding, so storing it doesn't violate consent.
         asyncio.create_task(embed_and_position(prompt_id, dw_text))
 
         item = PromptItem(
@@ -1229,27 +1425,42 @@ async def post_prompt(body: PromptRequest, request: Request):
             source=body.source,
             submitted_at=datetime.utcnow(),
         )
-        queue.append(item)
+
+        # Foundation: only show on the TD wall + visitor live feed if the
+        # visitor consented to visibility. The dream is still recorded for
+        # later cluster-analysis (if separately consented) or post-show
+        # archival; it just doesn't surface in the room.
+        if visible_now:
+            queue.append(item)
+            logger.info(f"Queued prompt id={prompt_id} source={body.source} queue_size={len(queue)}")
+        else:
+            logger.info(f"Stored prompt id={prompt_id} source={body.source} (visible_in_installation=0; not queued)")
         _recent_prompt_timestamps.append(datetime.utcnow())
-        logger.info(f"Queued prompt id={prompt_id} source={body.source} queue_size={len(queue)}")
 
     # Handle visitor photo (works for photo-only or text+photo)
     if body.photo_data:
         await _save_visitor_photo(prompt_id or 0, body.photo_data)
 
-    # Broadcast SSE to all listeners (only if a text prompt was queued)
-    if raw:
+    # Broadcast SSE to all listeners (only if a text prompt was queued AND the
+    # visitor consented to visibility — same gate as the OSC queue above).
+    if raw and 'visible_now' in locals() and visible_now:
         await broadcast_sse(item)
 
     # Estimate when this prompt will reach the wall: (position - 1) * dwell seconds.
     # The kid-facing app can surface this so they don't spam-retry.
     position = len(queue)
     eta_seconds = max(0, (position - 1) * PROMPT_DWELL_SECONDS)
-    return {
+    payload = {
         "status": "queued",
         "position": position,
         "eta_seconds": eta_seconds,
     }
+    # Foundation: include consent_token so the visitor can save it (one-time
+    # download path). Only present when a text dream was queued.
+    if raw and prompt_id is not None:
+        payload["id"] = prompt_id
+        payload["consent_token"] = consent_token
+    return payload
 
 
 @app.get("/prompts")
@@ -1574,11 +1785,16 @@ async def get_dreams_3d():
     """Return all positioned dreams as nodes + temporal links for 3D-Force-Graph."""
     async with aiosqlite.connect(DB_PATH) as db:
         db.row_factory = aiosqlite.Row
+        # Foundation: only show dreams whose visitor consented to be visible AND
+        # that have not been archived. COALESCE preserves pre-Foundation rows
+        # (NULL flags default visible=1).
         rows = await db.execute_fetchall(
             "SELECT id, raw_text, enriched_text, dreamworld_text, "
             "submitted_at, source, x, y, z, cluster_id, cluster_label, "
             "dir_x, dir_y, dir_z, orientation_mode "
             "FROM prompts WHERE x IS NOT NULL AND source != 'seed' "
+            "AND COALESCE(visible_in_installation, 1) = 1 "
+            "AND archived_at IS NULL "
             "ORDER BY submitted_at"
         )
 
@@ -1701,8 +1917,26 @@ async def chat(req: ChatRequest, request: Request):
     # Truncate message
     user_msg = req.message[:500]
 
-    # Find relevant context via keyword matching
-    matched_cards, matched_docs = find_relevant_context(user_msg, _chat_cards, _chat_docs)
+    # Find relevant context via keyword matching (cards, docs, Foundation canon)
+    matched_cards, matched_docs, matched_canon = find_relevant_context(
+        user_msg, _chat_cards, _chat_docs, _chat_canon
+    )
+
+    # Foundation: if any retrieved canon doc is placeholder/draft, the agent
+    # answers with the in-progress refusal instead of synthesizing from
+    # placeholder content. The team is preparing this explanation.
+    placeholder_hits = [cd for _s, cd in matched_canon if cd.get("is_placeholder")]
+    if placeholder_hits:
+        titles = ", ".join(cd["title"] for cd in placeholder_hits[:2])
+        return ChatResponse(
+            reply=(
+                "I can't speak to this yet — the team is preparing this explanation "
+                f"({titles}). Check back after the next round of canon review. "
+                "If you'd like to read what we have so far, the project's writing is "
+                "linked from the home page."
+            ),
+            sources=[cd.get("source_path", "") for cd in placeholder_hits[:2]],
+        )
 
     # Build context string for the LLM
     context_parts = []
@@ -1712,7 +1946,14 @@ async def chat(req: ChatRequest, request: Request):
         source_ids.append(nid)
     for score, chunk in matched_docs:
         context_parts.append(f"Document: {chunk.get('title', '')} — {chunk.get('text', '')[:300]}")
-    context_str = "\n".join(context_parts[:6])
+    # Foundation canon — quoted up to 600 chars (canon docs are short + authoritative).
+    for score, cd in matched_canon:
+        title = cd.get("title", "")
+        body = cd.get("body", "")[:600]
+        src = cd.get("source_path", "")
+        context_parts.append(f"Canon doc — {title} ({src}): {body}")
+        source_ids.append(src)
+    context_str = "\n\n".join(context_parts[:8])
 
     # Build messages (cap history at 6 for token budget)
     messages = [{"role": "system", "content": CHAT_SYSTEM_PROMPT}]
@@ -1910,17 +2151,148 @@ async def admin_clear(_: None = Depends(require_admin)):
 
 
 # ---------------------------------------------------------------------------
-# Root redirect and visitor alias
+# Foundation routes — / landing, /visitor, /cloud, /ask, /about/{topic}
 # ---------------------------------------------------------------------------
+
+_static_dir = BASE_DIR / "static"
+_canon_dirs_map = {
+    "mudra": BASE_DIR / "docs" / "digital-ecologies" / "mudra-as-sympoiesis.md",
+    "herring": BASE_DIR / "docs" / "explainers" / "why-dreams-become-herring.md",
+    "ai": BASE_DIR / "docs" / "explainers" / "what-the-ai-can-and-cannot-know.md",
+}
+
+
+def _render_canon_page(md_path: Path, fallback_title: str) -> HTMLResponse:
+    """Render a canon .md as a styled HTML page consistent with the rest of the app.
+
+    Uses the `markdown` package (already a transitive dep on most installs); falls
+    back to a <pre> block if the package is missing.
+    """
+    try:
+        text = md_path.read_text(encoding="utf-8")
+    except Exception:
+        raise HTTPException(404, "page not found")
+
+    # Strip frontmatter
+    title = fallback_title
+    body_md = text
+    if text.startswith("---\n") or text.startswith("---\r\n"):
+        end = text.find("\n---", 4)
+        if end != -1:
+            fm_block = text[4:end]
+            body_md = text[end + 4:].lstrip("\n")
+            for line in fm_block.splitlines():
+                if line.startswith("title:"):
+                    title = line.split(":", 1)[1].strip().strip('"').strip("'")
+
+    try:
+        import markdown as _md
+        html_body = _md.markdown(body_md, extensions=["extra", "smarty"])
+    except Exception:
+        # Stdlib fallback — preformatted text. Better than nothing.
+        from html import escape
+        html_body = f"<pre>{escape(body_md)}</pre>"
+
+    page = f"""<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{title} — Salish Sea Dreaming</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400&display=swap');
+:root {{ --bg: #050a12; --fg: #c8dff0; --accent: #7aa8c8; --muted: #5a7a99; --line: #1a2a3a; }}
+* {{ box-sizing: border-box; }}
+body {{ font-family: 'Inter', sans-serif; background: var(--bg); color: var(--fg); margin: 0; font-weight: 300; line-height: 1.7; }}
+.nav {{ position: sticky; top: 0; padding: 14px 24px; background: rgba(5,10,18,0.96); border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 24px; z-index: 10; backdrop-filter: blur(8px); }}
+.nav-title {{ font-size: 13px; font-weight: 300; color: var(--accent); letter-spacing: 0.1em; text-transform: uppercase; }}
+.nav-links {{ display: flex; gap: 18px; margin-left: auto; }}
+.nav-links a {{ font-size: 11px; color: var(--muted); text-decoration: none; letter-spacing: 0.05em; }}
+.nav-links a:hover {{ color: var(--accent); }}
+.container {{ max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }}
+h1, h2, h3 {{ color: var(--accent); font-weight: 300; letter-spacing: 0.04em; }}
+h1 {{ font-size: 26px; margin: 0 0 24px; }}
+h2 {{ font-size: 18px; margin-top: 36px; }}
+h3 {{ font-size: 14px; text-transform: uppercase; letter-spacing: 0.08em; color: #5a8aa8; margin-top: 28px; }}
+p, li {{ font-size: 15px; }}
+blockquote {{ border-left: 2px solid var(--accent); padding: 4px 16px; margin: 18px 0; color: #a0c0d8; font-style: italic; background: rgba(122,168,200,0.04); }}
+table {{ border-collapse: collapse; width: 100%; margin: 18px 0; font-size: 13px; }}
+th, td {{ border: 1px solid var(--line); padding: 8px 12px; text-align: left; }}
+th {{ background: rgba(122,168,200,0.06); color: var(--accent); font-weight: 400; }}
+code {{ background: rgba(122,168,200,0.08); padding: 2px 6px; border-radius: 3px; font-size: 13px; }}
+hr {{ border: none; border-top: 1px solid var(--line); margin: 32px 0; }}
+a {{ color: var(--accent); }}
+@media (max-width: 600px) {{ .container {{ padding: 32px 18px 60px; }} h1 {{ font-size: 22px; }} }}
+</style>
+</head><body>
+<nav class="nav">
+  <div class="nav-title">{title}</div>
+  <div class="nav-links">
+    <a href="/">Home</a>
+    <a href="/cloud">Cloud</a>
+    <a href="/ask">Ask</a>
+  </div>
+</nav>
+<div class="container">{html_body}</div>
+</body></html>"""
+    return HTMLResponse(content=page)
+
 
 @app.get("/", include_in_schema=False)
 async def root():
+    """Foundation: serve the landing page (links to all surfaces)."""
+    from fastapi.responses import FileResponse
+    idx = _static_dir / "index.html"
+    if idx.exists():
+        return FileResponse(idx, media_type="text/html")
+    # Fallback to legacy redirect if landing page is missing
     return RedirectResponse("/static/visitor.html")
+
+
+@app.get("/visitor", include_in_schema=False)
+async def visitor_route():
+    """Foundation: stable URL for the visitor submission app."""
+    from fastapi.responses import FileResponse
+    p = BASE_DIR / "web" / "visitor.html"
+    if not p.exists():
+        raise HTTPException(404, "visitor.html not found")
+    return FileResponse(p, media_type="text/html")
 
 
 @app.get("/visitor.html", include_in_schema=False)
 async def visitor_redirect():
-    return RedirectResponse("/static/visitor.html")
+    return RedirectResponse("/visitor")
+
+
+@app.get("/cloud", include_in_schema=False)
+async def cloud_route():
+    """Foundation: stable URL for the 3D dreamworld viewer."""
+    from fastapi.responses import FileResponse
+    p = _static_dir / "dreamworld.html"
+    if not p.exists():
+        raise HTTPException(404, "dreamworld.html not found")
+    return FileResponse(p, media_type="text/html")
+
+
+@app.get("/ask", include_in_schema=False)
+async def ask_route():
+    """Foundation: thin chat surface that wraps /chat in witness register."""
+    from fastapi.responses import FileResponse
+    p = _static_dir / "ask.html"
+    if not p.exists():
+        raise HTTPException(404, "ask.html not found")
+    return FileResponse(p, media_type="text/html")
+
+
+@app.get("/about/{topic}", include_in_schema=False)
+async def about_route(topic: str):
+    """Foundation: render canon markdown as styled HTML pages."""
+    md_path = _canon_dirs_map.get(topic)
+    if not md_path or not md_path.exists():
+        raise HTTPException(404, "page not found")
+    fallback_titles = {"mudra": "About the Gesture",
+                       "herring": "Why Dreams Become Herring",
+                       "ai": "What the AI Can and Cannot Know"}
+    return _render_canon_page(md_path, fallback_titles.get(topic, topic.title()))
 
 
 # ---------------------------------------------------------------------------
@@ -1980,6 +2352,8 @@ async def startup():
 
     # Dreamworld 3D: schema migration + seed + periodic UMAP (non-blocking)
     await migrate_dreams_schema()
+    # Foundation: consent toggles + consent_token + archived_at
+    await migrate_foundation_schema()
     asyncio.create_task(_seed_and_umap_loop())
 
     # Start background queue worker

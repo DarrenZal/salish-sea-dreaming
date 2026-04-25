@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ask the Dream Field — Salish Sea Dreaming</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400&display=swap');
+:root { --bg: #050a12; --fg: #8ba4c4; --accent: #7aa8c8; --muted: #3a5a6a; --line: #1a2a3a; }
+* { box-sizing: border-box; }
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--fg); margin: 0; padding: 0; min-height: 100vh; font-weight: 300; }
+.nav { position: fixed; top: 0; left: 0; right: 0; padding: 14px 24px; background: rgba(5,10,18,0.95); border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 24px; z-index: 10; }
+.nav-title { font-size: 13px; font-weight: 300; color: var(--accent); letter-spacing: 0.1em; text-transform: uppercase; }
+.nav-links { display: flex; gap: 18px; margin-left: auto; }
+.nav-links a { font-size: 11px; color: var(--muted); text-decoration: none; letter-spacing: 0.05em; }
+.nav-links a:hover { color: var(--accent); }
+.container { max-width: 720px; margin: 0 auto; padding: 80px 20px 120px; }
+.framing { font-size: 12px; color: var(--muted); line-height: 1.6; margin-bottom: 32px; padding-bottom: 20px; border-bottom: 1px solid var(--line); font-style: italic; }
+#log { display: flex; flex-direction: column; gap: 18px; min-height: 200px; }
+.msg { padding: 14px 16px; border-radius: 6px; line-height: 1.6; font-size: 14px; max-width: 92%; }
+.msg.user { align-self: flex-end; background: rgba(122,168,200,0.08); border: 1px solid var(--line); color: var(--fg); }
+.msg.agent { align-self: flex-start; color: var(--fg); border-left: 2px solid var(--accent); padding-left: 18px; }
+.msg.agent .cite { font-size: 11px; color: var(--muted); margin-top: 8px; padding-top: 8px; border-top: 1px dotted var(--line); font-style: italic; }
+.msg.error { color: #b08070; font-size: 12px; font-style: italic; }
+.compose { position: fixed; bottom: 0; left: 0; right: 0; padding: 16px 20px 20px; background: linear-gradient(to top, var(--bg) 70%, transparent); }
+.compose-inner { max-width: 720px; margin: 0 auto; display: flex; gap: 10px; }
+input[type=text] { flex: 1; background: rgba(122,168,200,0.04); border: 1px solid var(--line); color: var(--fg); padding: 12px 14px; border-radius: 4px; font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 300; }
+input[type=text]:focus { outline: none; border-color: var(--accent); }
+button { background: none; border: 1px solid var(--accent); color: var(--accent); padding: 12px 22px; border-radius: 4px; font-family: 'Inter', sans-serif; font-size: 12px; letter-spacing: 0.08em; cursor: pointer; transition: background .2s; }
+button:hover { background: rgba(122,168,200,0.1); }
+button:disabled { opacity: 0.4; cursor: wait; }
+.thinking { color: var(--muted); font-size: 12px; font-style: italic; }
+@media (max-width: 600px) { .container { padding: 70px 14px 110px; } }
+</style>
+</head>
+<body>
+<nav class="nav">
+  <div class="nav-title">Ask the dream field</div>
+  <div class="nav-links">
+    <a href="/">Home</a>
+    <a href="/cloud">Cloud</a>
+    <a href="/about/mudra">Gesture</a>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="framing">
+    A witness, not an oracle. Speaks in the register of "one reading is…" Cites dreams (where visitors have consented to quoting), project text, and graph relations. Says I don't know when it doesn't know.
+  </div>
+  <div id="log"></div>
+</div>
+
+<form class="compose" id="form">
+  <div class="compose-inner">
+    <input type="text" id="q" placeholder="What would you like to ask the field?" autocomplete="off" required>
+    <button type="submit" id="send">Ask</button>
+  </div>
+</form>
+
+<script>
+const log = document.getElementById('log');
+const q = document.getElementById('q');
+const send = document.getElementById('send');
+const form = document.getElementById('form');
+
+function addMsg(text, role, cite) {
+  const div = document.createElement('div');
+  div.className = 'msg ' + role;
+  div.textContent = text;
+  if (cite) {
+    const c = document.createElement('div');
+    c.className = 'cite';
+    c.textContent = cite;
+    div.appendChild(c);
+  }
+  log.appendChild(div);
+  div.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  return div;
+}
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const text = q.value.trim();
+  if (!text) return;
+  addMsg(text, 'user');
+  q.value = '';
+  send.disabled = true;
+  const thinking = addMsg('…listening…', 'agent');
+  thinking.classList.add('thinking');
+  try {
+    const res = await fetch('/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: text, surface: 'ask' })
+    });
+    if (res.status === 503) {
+      thinking.remove();
+      addMsg('The dream field is taking a long breath. Please try again in a moment.', 'agent');
+      return;
+    }
+    if (!res.ok) {
+      thinking.remove();
+      addMsg('The field is quiet. Try again?', 'error');
+      return;
+    }
+    const data = await res.json();
+    thinking.remove();
+    const reply = data.reply || data.message || data.answer || 'I have no reading right now.';
+    const cite = (data.sources || data.citations || []).join(', ');
+    addMsg(reply, 'agent', cite || null);
+  } catch (err) {
+    thinking.remove();
+    addMsg('Connection lost. The dream field is still here.', 'error');
+  } finally {
+    send.disabled = false;
+    q.focus();
+  }
+});
+
+q.focus();
+</script>
+</body>
+</html>

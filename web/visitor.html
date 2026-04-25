@@ -827,6 +827,56 @@
         .kp-overlay.open {
             display: block;
         }
+        /* Consent panel (Foundation) */
+        .consent-panel {
+            margin-top: 1.5rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 0.6rem 1rem 0.85rem;
+            background: rgba(0, 168, 168, 0.04);
+        }
+        .consent-panel summary {
+            cursor: pointer;
+            font-size: 0.85rem;
+            color: var(--cyan);
+            letter-spacing: 0.05em;
+            outline: none;
+            padding: 0.2rem 0;
+            user-select: none;
+        }
+        .consent-panel summary::-webkit-details-marker { color: var(--text-dim); }
+        .consent-toggles {
+            display: flex;
+            flex-direction: column;
+            gap: 0.45rem;
+            margin-top: 0.75rem;
+            padding-left: 0.25rem;
+        }
+        .consent-toggles label {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.55rem;
+            font-size: 0.85rem;
+            color: var(--text-primary);
+            cursor: pointer;
+            line-height: 1.45;
+            font-weight: 300;
+        }
+        .consent-toggles input[type="checkbox"] {
+            accent-color: var(--cyan);
+            width: 1rem;
+            height: 1rem;
+            margin-top: 0.18rem;
+            flex-shrink: 0;
+            cursor: pointer;
+        }
+        .consent-note {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            margin: 0.7rem 0 0;
+            line-height: 1.5;
+            font-style: italic;
+        }
     </style>
 </head>
 <body>
@@ -866,6 +916,17 @@
                 <p class="mic-help-note" id="mic-help-note"></p>
                 <button class="mic-help-close" id="mic-help-close">got it</button>
             </div>
+
+            <details class="consent-panel" open>
+                <summary>How will your dream be used?</summary>
+                <div class="consent-toggles">
+                    <label><input type="checkbox" id="consent-visible" checked> Visible in the installation</label>
+                    <label><input type="checkbox" id="consent-cluster" checked> Included in pattern-finding (clustering)</label>
+                    <label><input type="checkbox" id="consent-quotable"> Quotable by the chat agent</label>
+                    <label><input type="checkbox" id="consent-keep"> Kept after April 26 (the exhibition closes)</label>
+                </div>
+                <p class="consent-note">Defaults are conservative — quoting and post-show persistence are opt-in. You can change any of these later from the link we'll save in your browser.</p>
+            </details>
         </section>
 
         <!-- Divider -->
@@ -1224,9 +1285,18 @@
                     if (text) body.text = text;
                     if (capturedPhotoData) body.photo_data = capturedPhotoData;
 
+                    // Foundation consent — four toggles, conservative defaults.
+                    body.consent = {
+                        visible_in_installation: !!document.getElementById('consent-visible')?.checked,
+                        included_in_clustering: !!document.getElementById('consent-cluster')?.checked,
+                        quotable_by_agent: !!document.getElementById('consent-quotable')?.checked,
+                        available_post_show: !!document.getElementById('consent-keep')?.checked,
+                    };
+
                     const res = await fetch('/prompt', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
+                        credentials: 'same-origin',
                         body: JSON.stringify(body)
                     });
 

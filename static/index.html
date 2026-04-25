@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Salish Sea Dreaming</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400&display=swap');
+:root { --bg: #050a12; --fg: #8ba4c4; --accent: #7aa8c8; --muted: #3a5a6a; --line: #1a2a3a; }
+* { box-sizing: border-box; }
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--fg); margin: 0; padding: 0; min-height: 100vh; font-weight: 300; }
+.container { max-width: 720px; margin: 0 auto; padding: 64px 24px 48px; }
+h1 { font-size: 22px; font-weight: 300; color: var(--accent); letter-spacing: 0.1em; text-transform: uppercase; margin: 0 0 8px; }
+.tagline { font-size: 12px; color: var(--muted); letter-spacing: 0.08em; margin: 0 0 48px; font-style: italic; }
+.surfaces { display: grid; gap: 16px; }
+.surface { display: block; padding: 20px 22px; border: 1px solid var(--line); border-radius: 4px; text-decoration: none; color: var(--fg); transition: border-color .2s, background .2s; }
+.surface:hover { border-color: var(--accent); background: rgba(122,168,200,0.04); }
+.surface-title { font-size: 14px; color: var(--accent); letter-spacing: 0.05em; margin-bottom: 6px; }
+.surface-desc { font-size: 12px; color: var(--muted); line-height: 1.5; }
+.footer { margin-top: 56px; font-size: 10px; color: var(--muted); letter-spacing: 0.05em; line-height: 1.7; }
+.footer a { color: var(--muted); text-decoration: none; border-bottom: 1px dotted var(--muted); }
+.footer a:hover { color: var(--accent); border-bottom-color: var(--accent); }
+@media (max-width: 600px) { .container { padding: 32px 18px; } h1 { font-size: 18px; } }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Salish Sea Dreaming</h1>
+  <p class="tagline">We are the Salish Sea, dreaming itself awake.</p>
+
+  <div class="surfaces">
+    <a class="surface" href="/visitor">
+      <div class="surface-title">Submit a dream</div>
+      <div class="surface-desc">What would you co-dream with the Salish Sea? A few words, voice, or photo.</div>
+    </a>
+    <a class="surface" href="/cloud">
+      <div class="surface-title">The dream cloud</div>
+      <div class="surface-desc">Constellations of all dreams visitors have submitted, drifting in language-space. Provisional.</div>
+    </a>
+    <a class="surface" href="/ask">
+      <div class="surface-title">Ask the dream field</div>
+      <div class="surface-desc">A witness, not an oracle. Cites dreams, project text, and graph relations. Says "one reading is…"</div>
+    </a>
+    <a class="surface" href="/about/mudra">
+      <div class="surface-title">About the gesture</div>
+      <div class="surface-desc">Why the cloud collapses to a point, and why two pairs of fingertips can briefly arrange the dreams as a herring.</div>
+    </a>
+    <a class="surface" href="/about/herring">
+      <div class="surface-title">Why dreams become herring</div>
+      <div class="surface-desc">Forage species, food web, Kwaxala — worth more swimming.</div>
+    </a>
+    <a class="surface" href="/about/ai">
+      <div class="surface-title">What the AI can and cannot know</div>
+      <div class="surface-desc">What the witness will answer, what it must refuse, and how to ask it well.</div>
+    </a>
+  </div>
+
+  <div class="footer">
+    Salt Spring Spring Art Show — <em>Digital Ecologies: Bridging Nature and Technology</em><br>
+    A project by Pravin Pillay, Carol Anne Hilton, Briony Penn, Darren Zal, and the dreaming network.
+  </div>
+</div>
+</body>
+</html>
