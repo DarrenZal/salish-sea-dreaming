@@ -72,7 +72,9 @@ BASE_PROMPT = os.getenv(
 )
 RATE_LIMIT_SECONDS = int(os.getenv("RATE_LIMIT_SECONDS", "5"))
 RATE_LIMIT_BYPASS_KEY = os.getenv("RATE_LIMIT_BYPASS_KEY", "")
-DB_PATH = BASE_DIR / "prompts.db"
+# DB_PATH env-driven so a parallel Foundation deploy on poly:9001 can use a
+# separate prompts-foundation.db without touching the live :9000 DB.
+DB_PATH = Path(os.getenv("DB_PATH", str(BASE_DIR / "prompts.db")))
 LOG_DIR = BASE_DIR / "logs"
 
 # Foundation: cookie security flag — set False for local dev over HTTP.
