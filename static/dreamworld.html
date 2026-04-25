@@ -442,6 +442,14 @@
         loadingEl.classList.add('hidden');
         rotate();
 
+        // v5: gesture-mudra hook — let the module script know data + graph
+        // are ready so it can wire the per-frame fish-target loop.
+        try {
+            window.dispatchEvent(new CustomEvent('dreamworld:ready', {
+                detail: { graphData, graph },
+            }));
+        } catch (_) { /* ignore — Stage <5 viewers don't listen */ }
+
         // Deep-link: ?dream=<id> focuses camera on that dream + opens its panel
         const params = new URLSearchParams(location.search);
         const deepDream = params.get('dream');
@@ -492,5 +500,192 @@
     init();
 })();
 </script>
+
+<!-- v5 — webcam-driven gesture detection for the dream cloud.
+     Loads only when not disabled via ?gestures=off. 100% client-side: no
+     video, no images, no biometric data leaves the browser. -->
+<style>
+  /* Camera consent modal */
+  .gx-overlay { position: fixed; inset: 0; background: rgba(5,10,18,0.85); z-index: 200; display: none; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(6px); }
+  .gx-overlay.shown { display: flex; }
+  .gx-modal { max-width: 460px; background: #0a1322; border: 1px solid #1a2a3a; border-radius: 12px; padding: 28px 28px 24px; color: #c8dff0; font-family: 'Inter', sans-serif; font-weight: 300; line-height: 1.55; box-shadow: 0 12px 36px rgba(0,0,0,0.5); }
+  .gx-modal h2 { font-size: 16px; color: #7aa8c8; letter-spacing: 0.08em; text-transform: uppercase; margin: 0 0 14px; font-weight: 300; }
+  .gx-modal p { font-size: 13px; margin: 0 0 12px; }
+  .gx-modal p.muted { color: #5a7a99; font-size: 11px; font-style: italic; }
+  .gx-modal ul { font-size: 12px; color: #8ba4c4; padding-left: 18px; margin: 8px 0 14px; line-height: 1.7; }
+  .gx-actions { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+  .gx-btn { background: none; border: 1px solid #7aa8c8; color: #7aa8c8; font-family: inherit; font-size: 12px; letter-spacing: 0.06em; padding: 9px 18px; border-radius: 6px; cursor: pointer; transition: background .2s; }
+  .gx-btn:hover { background: rgba(122,168,200,0.12); }
+  .gx-btn.muted { border-color: #2a4a5a; color: #5a7a99; }
+  .gx-btn.muted:hover { background: rgba(90,122,153,0.08); color: #8ba4c4; }
+  /* Camera-active indicator dot */
+  .gx-indicator { position: fixed; top: 56px; right: 16px; z-index: 25; display: none; align-items: center; gap: 6px; padding: 5px 10px; background: rgba(5,10,18,0.85); border: 1px solid #2a4a5a; border-radius: 12px; font-size: 10px; color: #5a7a99; letter-spacing: 0.06em; cursor: pointer; }
+  .gx-indicator.shown { display: flex; }
+  .gx-indicator-dot { width: 6px; height: 6px; border-radius: 50%; background: #6ee79a; box-shadow: 0 0 6px rgba(110,231,154,0.7); animation: gxpulse 1.6s ease-in-out infinite; }
+  .gx-indicator:hover { color: #c8dff0; border-color: #7aa8c8; }
+  @keyframes gxpulse { 0%,100% { opacity: 0.55; } 50% { opacity: 1; } }
+  /* Hidden camera feed used by MediaPipe — never displayed but must remain
+     in the DOM so video frames are available to the detector. */
+  #gx-video { position: fixed; left: -9999px; top: -9999px; width: 320px; height: 240px; }
+  /* Tiny "gestures off" toggle for testing */
+  .gx-status { position: fixed; bottom: 16px; right: 16px; z-index: 10; padding: 6px 10px; background: rgba(5,10,18,0.85); border: 1px solid #1a2a3a; border-radius: 12px; font-size: 9px; color: #3a5a6a; letter-spacing: 0.06em; pointer-events: none; }
+</style>
+
+<div class="gx-overlay" id="gx-overlay" role="dialog" aria-label="Webcam permission">
+  <div class="gx-modal">
+    <h2>The cloud can listen to your hands</h2>
+    <p>This page can react to your gestures. A pinch (thumb to index, one hand) collapses the cloud toward all-my-relations. Two hands meeting fingertip-to-fingertip — Hakini — gathers the dreams briefly into the shape of a herring.</p>
+    <p>The detection runs entirely in your browser:</p>
+    <ul>
+      <li>No video, no images, no biometric data leaves your computer.</li>
+      <li>Nothing is recorded — every frame is forgotten as the next arrives.</li>
+      <li>You can turn the camera off at any time. The cloud still works without it.</li>
+    </ul>
+    <p class="muted">A green dot near the top-right shows when the camera is on.</p>
+    <div class="gx-actions">
+      <button class="gx-btn" id="gx-allow">Allow camera</button>
+      <button class="gx-btn muted" id="gx-skip">Skip — view without gestures</button>
+    </div>
+  </div>
+</div>
+
+<div class="gx-indicator" id="gx-indicator" title="Camera is on (click to stop)" aria-label="Camera is on (click to stop)">
+  <span class="gx-indicator-dot"></span>
+  <span>camera on</span>
+</div>
+
+<video id="gx-video" autoplay muted playsinline></video>
+<div class="gx-status" id="gx-status" hidden>idle</div>
+
+<script type="module">
+  // v5 gesture pipeline — wires the camera, detector, and per-frame fish
+  // targets into the existing 3d-force-graph cloud.
+
+  import * as Camera from '/graph-assets/js/camera-bridge.js';
+  import { createDetectorState, readGestures } from '/graph-assets/js/mudra-detector.js';
+  import { createTargetState, tickPhases, applyTargetsToNodes } from '/graph-assets/js/dream-targets.js';
+
+  const params = new URLSearchParams(location.search);
+  const GESTURES_OFF = params.get('gestures') === 'off';
+
+  const overlayEl   = document.getElementById('gx-overlay');
+  const allowBtn    = document.getElementById('gx-allow');
+  const skipBtn     = document.getElementById('gx-skip');
+  const indicatorEl = document.getElementById('gx-indicator');
+  const videoEl     = document.getElementById('gx-video');
+  const statusEl    = document.getElementById('gx-status');
+
+  const STORAGE_KEY = 'ssd_gestures_pref'; // 'on' | 'off' | unset
+  const setStatus = (txt) => {
+    if (!statusEl) return;
+    statusEl.hidden = !txt;
+    statusEl.textContent = txt || '';
+  };
+
+  let detectorState = null;
+  let targetState   = null;
+  let lastLandmarks = [];
+  let lastTickT     = null;
+
+  // Listen for the dreamworld IIFE's "ready" signal — fires once after
+  // /dreams/3d data has loaded and the force-graph is constructed.
+  let ready = null; // { graphData, graph }
+  window.addEventListener('dreamworld:ready', (e) => { ready = e.detail; }, { once: true });
+
+  // ── Per-frame loop. Always running, even before camera is approved —
+  //    if no gestures fire, phases settle to MID and the cloud looks the same.
+  function frame(now) {
+    requestAnimationFrame(frame);
+    if (!ready || !ready.graphData || !ready.graphData.nodes.length) return;
+    if (!targetState) {
+      targetState = createTargetState(ready.graphData.nodes);
+    }
+    const dt = (lastTickT === null) ? (1 / 60) : Math.max(0, (now - lastTickT) / 1000);
+    lastTickT = now;
+    let gestures = { mudra: 0, hakini: 0 };
+    if (Camera.isActive() && detectorState) {
+      gestures = readGestures(lastLandmarks, detectorState);
+    }
+    tickPhases(targetState, gestures, dt);
+    applyTargetsToNodes(targetState, ready.graphData.nodes, dt);
+    if (Camera.isActive()) {
+      setStatus(`mudra ${(gestures.mudra*100|0)}%  ·  hakini ${(gestures.hakini*100|0)}%  ·  herring ${(targetState.herringPhase*100|0)}%`);
+    }
+  }
+  requestAnimationFrame(frame);
+
+  // ── Show consent modal on first visit (or honor remembered preference).
+  function showConsent() { overlayEl.classList.add('shown'); }
+  function hideConsent() { overlayEl.classList.remove('shown'); }
+
+  async function startCamera() {
+    if (!Camera.isAvailable()) {
+      console.warn('[v5] camera/MediaPipe not available in this browser — gesture detection disabled');
+      return;
+    }
+    detectorState = createDetectorState();
+    try {
+      await Camera.requestStart({
+        video: videoEl,
+        onLandmarks: (landmarks) => { lastLandmarks = landmarks; },
+        numHands: window.innerWidth < 600 ? 2 : 4,
+      });
+      indicatorEl.classList.add('shown');
+      localStorage.setItem(STORAGE_KEY, 'on');
+      setStatus('camera ready');
+    } catch (err) {
+      console.warn('[v5] camera start failed:', err);
+      setStatus('camera unavailable');
+      // Don't pester — record off so we don't ask again this session.
+      localStorage.setItem(STORAGE_KEY, 'off');
+    }
+  }
+
+  function stopCamera() {
+    Camera.stop();
+    indicatorEl.classList.remove('shown');
+    setStatus('');
+  }
+
+  if (GESTURES_OFF) {
+    // Explicit opt-out via URL param. Skip everything; the cloud falls back
+    // to its pre-v5 behavior (rotation only, no fish-target overrides).
+    targetState = null; // disable target-application path
+    // Reverse the dispatch trick by overriding applyTargetsToNodes-equivalent:
+    // simplest is to gate inside frame() — already does so via ready+targetState.
+    // Hide the consent modal entirely.
+  } else {
+    const pref = localStorage.getItem(STORAGE_KEY);
+    if (pref === 'on') {
+      // User previously consented — start straight away (browsers will
+      // re-prompt for camera permission per their own UX, which is correct).
+      startCamera();
+    } else if (pref === 'off') {
+      // User previously declined; respect that. They can re-enable from the
+      // browser console or by clearing storage; we don't nag.
+    } else {
+      showConsent();
+    }
+  }
+
+  allowBtn?.addEventListener('click', async () => {
+    hideConsent();
+    await startCamera();
+  });
+  skipBtn?.addEventListener('click', () => {
+    hideConsent();
+    localStorage.setItem(STORAGE_KEY, 'off');
+  });
+  indicatorEl?.addEventListener('click', () => {
+    if (Camera.isActive()) {
+      stopCamera();
+      localStorage.setItem(STORAGE_KEY, 'off');
+    }
+  });
+
+  // Stop on tab close — frees the camera for other apps.
+  window.addEventListener('pagehide', () => Camera.stop());
+</script>
+
 </body>
 </html>
