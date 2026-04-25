@@ -137,8 +137,21 @@ export function computeFishTarget(state, node) {
 
 /**
  * Per-frame: lerp every node toward its target by SMOOTHING_PER_SEC.
- * Mutates node.fx/fy/fz directly so 3d-force-graph picks up new pinned
- * positions on the next render.
+ *
+ * 3d-force-graph (used by dreamworld.html) is initialized with
+ * cooldownTicks=0, so the physics simulation never ticks. That means
+ * setting node.fx/fy/fz alone won't move the rendered fish — those are
+ * physics-constraint inputs, not rendered positions.
+ *
+ * To actually move fish each frame we update both:
+ *   - node.x / node.y / node.z       (the data-side rendered position)
+ *   - node.__threeObj.position       (the Three.js mesh, set by the
+ *                                      library after createFish() returns)
+ *
+ * The force-graph internal tick handler reads node.x/y/z when present, but
+ * with cooldownTicks=0 it isn't running, so the mesh-position write is
+ * what visually moves things. We keep node.x/y/z in sync for any code path
+ * that reads them later (deep-link camera focus, link rendering, etc.).
  */
 export function applyTargetsToNodes(state, nodes, dtSec) {
     const dt = Math.max(0.0, Math.min(0.1, dtSec));
@@ -146,12 +159,19 @@ export function applyTargetsToNodes(state, nodes, dtSec) {
     for (const n of nodes) {
         if (n.isSeed) continue; // leave seed prompts alone
         const target = computeFishTarget(state, n);
-        const fx = (n.fx === undefined || n.fx === null) ? n.x : n.fx;
-        const fy = (n.fy === undefined || n.fy === null) ? n.y : n.fy;
-        const fz = (n.fz === undefined || n.fz === null) ? n.z : n.fz;
-        n.fx = fx + (target.x - fx) * k;
-        n.fy = fy + (target.y - fy) * k;
-        n.fz = fz + (target.z - fz) * k;
+        const cx = (typeof n.x === 'number') ? n.x : 0;
+        const cy = (typeof n.y === 'number') ? n.y : 0;
+        const cz = (typeof n.z === 'number') ? n.z : 0;
+        const nx = cx + (target.x - cx) * k;
+        const ny = cy + (target.y - cy) * k;
+        const nz = cz + (target.z - cz) * k;
+        n.x = nx; n.y = ny; n.z = nz;
+        // Mirror to constraint fields too — harmless either way.
+        n.fx = nx; n.fy = ny; n.fz = nz;
+        const obj = n.__threeObj;
+        if (obj && obj.position && typeof obj.position.set === 'function') {
+            obj.position.set(nx, ny, nz);
+        }
     }
 }
 

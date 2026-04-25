@@ -609,10 +609,15 @@
     tickPhases(targetState, gestures, dt);
     applyTargetsToNodes(targetState, ready.graphData.nodes, dt);
     if (Camera.isActive()) {
-      setStatus(`mudra ${(gestures.mudra*100|0)}%  ·  hakini ${(gestures.hakini*100|0)}%  ·  herring ${(targetState.herringPhase*100|0)}%`);
+      const hands = lastLandmarks.length;
+      setStatus(`hands ${hands}  ·  mudra ${(gestures.mudra*100|0)}%  ·  hakini ${(gestures.hakini*100|0)}%  ·  herring ${(targetState.herringPhase*100|0)}%`);
     }
   }
   requestAnimationFrame(frame);
+
+  // Make the status overlay readable while testing — drop the [hidden]
+  // gate and surface diagnostic state always, in a small chip.
+  if (statusEl) statusEl.style.color = '#5a7a99';
 
   // ── Show consent modal on first visit (or honor remembered preference).
   function showConsent() { overlayEl.classList.add('shown'); }
