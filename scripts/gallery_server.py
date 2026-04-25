@@ -3289,10 +3289,25 @@ async def clusters_publish(request: Request):
     return {"signature": signature, "url": f"/clusters/{signature}", "idempotent": False}
 
 
+# Reserved sub-paths that share the /clusters/ prefix but aren't signatures.
+# Starlette matches routes in registration order, so /clusters/{signature}
+# would otherwise absorb /clusters/published and /clusters/draft. Listing
+# them here as guards before the catch-all keeps the routing correct
+# without re-ordering long blocks of code below.
+_CLUSTERS_RESERVED = {"published", "draft"}
+
+
 @app.get("/clusters/{signature}", include_in_schema=False)
 async def cluster_page(signature: str, request: Request):
     """Public, server-rendered cluster page. Stable URL — page renders
     forever (with retraction notice if retracted)."""
+    if signature in _CLUSTERS_RESERVED:
+        # /clusters/published and /clusters/draft handlers are defined later
+        # in this file; without this guard they'd be shadowed.
+        if signature == "published":
+            return await clusters_published(request)
+        if signature == "draft":
+            return await clusters_draft(request)
     pub = await _fetch_publication(signature)
     if not pub:
         raise HTTPException(404, "cluster page not found")
