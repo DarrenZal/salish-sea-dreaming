@@ -138,22 +138,16 @@ export function computeFishTarget(state, node) {
 /**
  * Per-frame: lerp every node toward its target by SMOOTHING_PER_SEC.
  *
- * 3d-force-graph (used by dreamworld.html) is initialized with
- * cooldownTicks=0, so the physics simulation never ticks. That means
- * setting node.fx/fy/fz alone won't move the rendered fish — those are
- * physics-constraint inputs, not rendered positions.
+ * 3d-force-graph is initialized with cooldownTicks=0 in dreamworld.html, so
+ * its physics simulation doesn't tick and node.x/y/z writes don't propagate
+ * to the rendered THREE.Group positions. The IIFE in dreamworld.html keeps
+ * a `fishMap` (id → THREE.Group) and exposes it on window._dw.fishMap; we
+ * write group.position there directly.
  *
- * To actually move fish each frame we update both:
- *   - node.x / node.y / node.z       (the data-side rendered position)
- *   - node.__threeObj.position       (the Three.js mesh, set by the
- *                                      library after createFish() returns)
- *
- * The force-graph internal tick handler reads node.x/y/z when present, but
- * with cooldownTicks=0 it isn't running, so the mesh-position write is
- * what visually moves things. We keep node.x/y/z in sync for any code path
- * that reads them later (deep-link camera focus, link rendering, etc.).
+ * We also update node.x/y/z so any other code that reads them (deep-link
+ * camera focus, link endpoint rendering, etc.) stays consistent.
  */
-export function applyTargetsToNodes(state, nodes, dtSec) {
+export function applyTargetsToNodes(state, nodes, dtSec, fishMap) {
     const dt = Math.max(0.0, Math.min(0.1, dtSec));
     const k = 1.0 - Math.exp(-SMOOTHING_PER_SEC * dt);
     for (const n of nodes) {
@@ -166,11 +160,14 @@ export function applyTargetsToNodes(state, nodes, dtSec) {
         const ny = cy + (target.y - cy) * k;
         const nz = cz + (target.z - cz) * k;
         n.x = nx; n.y = ny; n.z = nz;
-        // Mirror to constraint fields too — harmless either way.
         n.fx = nx; n.fy = ny; n.fz = nz;
-        const obj = n.__threeObj;
-        if (obj && obj.position && typeof obj.position.set === 'function') {
-            obj.position.set(nx, ny, nz);
+        // Direct THREE.Group access via fishMap (set by createFish).
+        const grp = fishMap && fishMap[n.id];
+        if (grp && grp.position && typeof grp.position.set === 'function') {
+            grp.position.set(nx, ny, nz);
+        } else if (n.__threeObj && n.__threeObj.position) {
+            // Fallback: 3d-force-graph stores back-ref on __threeObj.
+            n.__threeObj.position.set(nx, ny, nz);
         }
     }
 }

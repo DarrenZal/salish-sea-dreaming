@@ -496,7 +496,11 @@
         }, 15000);
     }
 
-    window._dw = { togglePlay, closePanel };
+    // Expose fishMap so the v5 gesture pipeline can move fish meshes
+    // directly. With cooldownTicks=0 the force-graph physics doesn't tick,
+    // so node.x/y/z writes don't propagate to the rendered THREE.Group
+    // positions. Direct mesh.position.set() bypasses that.
+    window._dw = { togglePlay, closePanel, fishMap, graphData: () => graphData };
     init();
 })();
 </script>
@@ -607,7 +611,8 @@
       gestures = readGestures(lastLandmarks, detectorState);
     }
     tickPhases(targetState, gestures, dt);
-    applyTargetsToNodes(targetState, ready.graphData.nodes, dt);
+    const fishMap = (window._dw && window._dw.fishMap) || null;
+    applyTargetsToNodes(targetState, ready.graphData.nodes, dt, fishMap);
     if (Camera.isActive()) {
       const hands = lastLandmarks.length;
       setStatus(`hands ${hands}  ·  mudra ${(gestures.mudra*100|0)}%  ·  hakini ${(gestures.hakini*100|0)}%  ·  herring ${(targetState.herringPhase*100|0)}%`);
