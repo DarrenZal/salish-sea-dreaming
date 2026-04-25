@@ -22,6 +22,11 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--fg)
 .msg.agent { align-self: flex-start; color: var(--fg); border-left: 2px solid var(--accent); padding-left: 18px; }
 .msg.agent .cite { font-size: 11px; color: var(--muted); margin-top: 8px; padding-top: 8px; border-top: 1px dotted var(--line); font-style: italic; }
 .msg.error { color: #b08070; font-size: 12px; font-style: italic; }
+
+/* Inline node links inside agent messages */
+.msg.agent a.node-link { color: var(--accent); text-decoration: none; border-bottom: 1px dotted var(--accent); padding: 0 2px; cursor: pointer; transition: background .15s; }
+.msg.agent a.node-link:hover { background: rgba(122,168,200,0.08); }
+
 .compose { position: fixed; bottom: 0; left: 0; right: 0; padding: 16px 20px 20px; background: linear-gradient(to top, var(--bg) 70%, transparent); }
 .compose-inner { max-width: 720px; margin: 0 auto; display: flex; gap: 10px; }
 input[type=text] { flex: 1; background: rgba(122,168,200,0.04); border: 1px solid var(--line); color: var(--fg); padding: 12px 14px; border-radius: 4px; font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 300; }
@@ -30,7 +35,26 @@ button { background: none; border: 1px solid var(--accent); color: var(--accent)
 button:hover { background: rgba(122,168,200,0.1); }
 button:disabled { opacity: 0.4; cursor: wait; }
 .thinking { color: var(--muted); font-size: 12px; font-style: italic; }
-@media (max-width: 600px) { .container { padding: 70px 14px 110px; } }
+
+/* Knowledge panel — bottom sheet, mirrors visitor.html / ssd-data-map.html */
+.kp-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 199; opacity: 0; pointer-events: none; transition: opacity .25s; }
+.kp-overlay.open { opacity: 1; pointer-events: auto; }
+.knowledge-panel { position: fixed; bottom: 0; left: 0; right: 0; max-height: 70vh; transform: translateY(100%); transition: transform .3s ease; border-radius: 16px 16px 0 0; background: #0a1322; border-top: 1px solid var(--line); z-index: 200; overflow-y: auto; -webkit-overflow-scrolling: touch; box-shadow: 0 -4px 24px rgba(0,0,0,0.5); }
+.knowledge-panel.open { transform: translateY(0); }
+.kp-handle { width: 36px; height: 4px; background: var(--muted); border-radius: 2px; margin: 10px auto 0; }
+.kp-close { position: absolute; top: 8px; right: 12px; background: none; border: none; color: var(--muted); font-size: 1.4rem; cursor: pointer; min-width: 44px; min-height: 44px; display: flex; align-items: center; justify-content: center; padding: 0; }
+.kp-close:hover { color: var(--accent); }
+.kp-content { padding: 22px 22px 28px; max-width: 720px; margin: 0 auto; }
+.kp-title { font-size: 17px; color: #c0d8e8; font-weight: 400; margin: 0 0 6px; letter-spacing: 0.02em; }
+.kp-badge { display: inline-block; font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); border: 1px solid var(--line); border-radius: 10px; padding: 3px 10px; margin-bottom: 14px; }
+.kp-thumb { max-width: 100%; max-height: 240px; object-fit: cover; border-radius: 6px; margin: 8px 0 14px; display: block; }
+.kp-body { font-size: 13px; color: var(--fg); line-height: 1.65; margin: 0 0 18px; }
+.kp-species { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 18px; }
+.kp-species-pill { font-size: 11px; background: rgba(122,168,200,0.08); color: var(--accent); border: 1px solid var(--line); border-radius: 12px; padding: 3px 10px; }
+.kp-graph-link { display: inline-block; color: var(--accent); font-size: 12px; letter-spacing: 0.04em; text-decoration: none; border: 1px solid var(--accent); border-radius: 16px; padding: 8px 16px; margin-right: 8px; transition: background .2s; }
+.kp-graph-link:hover { background: rgba(122,168,200,0.1); }
+
+@media (max-width: 600px) { .container { padding: 70px 14px 110px; } .kp-content { padding: 18px 16px 22px; } }
 </style>
 </head>
 <body>
@@ -39,6 +63,7 @@ button:disabled { opacity: 0.4; cursor: wait; }
   <div class="nav-links">
     <a href="/">Home</a>
     <a href="/cloud">Cloud</a>
+    <a href="/graph">Graph</a>
     <a href="/about/mudra">Gesture</a>
   </div>
 </nav>
@@ -57,67 +82,232 @@ button:disabled { opacity: 0.4; cursor: wait; }
   </div>
 </form>
 
+<!-- Knowledge panel -->
+<div class="kp-overlay" id="kp-overlay"></div>
+<div class="knowledge-panel" id="knowledge-panel" role="dialog" aria-label="Knowledge panel" aria-hidden="true">
+  <div class="kp-handle"></div>
+  <button class="kp-close" id="kp-close" aria-label="Close">&times;</button>
+  <div class="kp-content" id="kp-content"></div>
+</div>
+
 <script>
-const log = document.getElementById('log');
-const q = document.getElementById('q');
-const send = document.getElementById('send');
-const form = document.getElementById('form');
+(function () {
+  var logEl = document.getElementById('log');
+  var qEl = document.getElementById('q');
+  var sendEl = document.getElementById('send');
+  var formEl = document.getElementById('form');
+  var kpOverlay = document.getElementById('kp-overlay');
+  var kpPanel = document.getElementById('knowledge-panel');
+  var kpClose = document.getElementById('kp-close');
+  var kpContent = document.getElementById('kp-content');
 
-function addMsg(text, role, cite) {
-  const div = document.createElement('div');
-  div.className = 'msg ' + role;
-  div.textContent = text;
-  if (cite) {
-    const c = document.createElement('div');
-    c.className = 'cite';
-    c.textContent = cite;
-    div.appendChild(c);
+  // ── Card data — fetched once on first node click, then cached. Same source
+  //    of truth as production visitor.html and ssd-data-map.html.
+  var cardData = null;
+  var cardFetchPromise = null;
+  function ensureCardData() {
+    if (cardData) return Promise.resolve(cardData);
+    if (cardFetchPromise) return cardFetchPromise;
+    cardFetchPromise = fetch('/graph-assets/ssd-cards.json')
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) {
+        cardData = (j && j.cards) ? j.cards : (j || {});
+        return cardData;
+      })
+      .catch(function () { cardData = {}; return cardData; });
+    return cardFetchPromise;
   }
-  log.appendChild(div);
-  div.scrollIntoView({ behavior: 'smooth', block: 'end' });
-  return div;
-}
 
-form.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const text = q.value.trim();
-  if (!text) return;
-  addMsg(text, 'user');
-  q.value = '';
-  send.disabled = true;
-  const thinking = addMsg('…listening…', 'agent');
-  thinking.classList.add('thinking');
-  try {
-    const res = await fetch('/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: text, surface: 'ask' })
+  // ── Markdown rendering — minimal, matches production's renderChatMessage:
+  //    [text](#node-id) → clickable knowledge-panel link
+  //    [text](/path)    → external/internal link (new tab for absolute paths)
+  //    \n               → <br>
+  //    Bold/italic/code intentionally not supported here; the agent rarely
+  //    emits them, and adding them invites HTML-escape mistakes.
+  function escapeHtml(t) {
+    return String(t)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+  function renderChatMessage(text) {
+    var html = escapeHtml(text);
+    // Node-link form: [Display](#node-id) — characters allowed: letters, digits, _ : . -
+    html = html.replace(/\[([^\]]+)\]\(#([a-zA-Z0-9:_.\-]+)\)/g,
+      '<a href="#" data-node="$2" class="node-link">$1</a>');
+    // Path-link form: [Display](/some/path) — opens in a new tab
+    html = html.replace(/\[([^\]]+)\]\((\/[a-zA-Z0-9:_.\-\/?=&%#]+)\)/g,
+      '<a href="$2" target="_blank" rel="noopener" class="node-link">$1</a>');
+    // Newlines → <br> (paragraph breaks for the witness's prose)
+    html = html.replace(/\n/g, '<br>');
+    return html;
+  }
+
+  // ── Message append
+  function addMsg(role, contentHtml, cite) {
+    var div = document.createElement('div');
+    div.className = 'msg ' + role;
+    div.innerHTML = contentHtml;
+    if (cite) {
+      var c = document.createElement('div');
+      c.className = 'cite';
+      c.textContent = cite;
+      div.appendChild(c);
+    }
+    logEl.appendChild(div);
+    div.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    return div;
+  }
+  function addPlain(role, text, cite) {
+    return addMsg(role, escapeHtml(text), cite);
+  }
+
+  // ── Knowledge panel
+  function openKP(nodeId) {
+    ensureCardData().then(function (cards) {
+      var card = cards[nodeId];
+      if (!card) {
+        // Fallback panel — at least show the bare node id + a graph link.
+        kpContent.innerHTML = '';
+        var h = document.createElement('h3');
+        h.className = 'kp-title';
+        h.textContent = nodeId;
+        kpContent.appendChild(h);
+        var b = document.createElement('span');
+        b.className = 'kp-badge';
+        b.textContent = nodeId.split(':')[0];
+        kpContent.appendChild(b);
+        var p = document.createElement('p');
+        p.className = 'kp-body';
+        p.textContent = "I don't have a card for this node yet.";
+        kpContent.appendChild(p);
+        appendGraphLink(nodeId);
+        showPanel();
+        return;
+      }
+      kpContent.innerHTML = '';
+
+      var h3 = document.createElement('h3');
+      h3.className = 'kp-title';
+      h3.textContent = card.title || nodeId;
+      kpContent.appendChild(h3);
+
+      var badge = document.createElement('span');
+      badge.className = 'kp-badge';
+      badge.textContent = nodeId.split(':')[0];
+      kpContent.appendChild(badge);
+
+      if (card.thumbnail_url) {
+        var img = document.createElement('img');
+        img.className = 'kp-thumb';
+        img.src = card.thumbnail_url;
+        img.alt = card.title || '';
+        img.loading = 'lazy';
+        img.onerror = function () { this.style.display = 'none'; };
+        kpContent.appendChild(img);
+      }
+
+      if (card.body) {
+        var p = document.createElement('p');
+        p.className = 'kp-body';
+        p.textContent = card.body;
+        kpContent.appendChild(p);
+      }
+
+      if (card.species && card.species.length) {
+        var pillWrap = document.createElement('div');
+        pillWrap.className = 'kp-species';
+        card.species.forEach(function (sp) {
+          var pill = document.createElement('span');
+          pill.className = 'kp-species-pill';
+          pill.textContent = sp;
+          pillWrap.appendChild(pill);
+        });
+        kpContent.appendChild(pillWrap);
+      }
+
+      appendGraphLink(nodeId);
+      showPanel();
     });
-    if (res.status === 503) {
-      thinking.remove();
-      addMsg('The dream field is taking a long breath. Please try again in a moment.', 'agent');
-      return;
-    }
-    if (!res.ok) {
-      thinking.remove();
-      addMsg('The field is quiet. Try again?', 'error');
-      return;
-    }
-    const data = await res.json();
-    thinking.remove();
-    const reply = data.reply || data.message || data.answer || 'I have no reading right now.';
-    const cite = (data.sources || data.citations || []).join(', ');
-    addMsg(reply, 'agent', cite || null);
-  } catch (err) {
-    thinking.remove();
-    addMsg('Connection lost. The dream field is still here.', 'error');
-  } finally {
-    send.disabled = false;
-    q.focus();
   }
-});
+  function appendGraphLink(nodeId) {
+    var link = document.createElement('a');
+    link.className = 'kp-graph-link';
+    link.href = '/graph#node=' + encodeURIComponent(nodeId);
+    link.target = '_blank';
+    link.rel = 'noopener';
+    link.textContent = 'explore in the graph →';
+    kpContent.appendChild(link);
+  }
+  function showPanel() {
+    kpPanel.classList.add('open');
+    kpOverlay.classList.add('open');
+    kpPanel.setAttribute('aria-hidden', 'false');
+  }
+  function closePanel() {
+    kpPanel.classList.remove('open');
+    kpOverlay.classList.remove('open');
+    kpPanel.setAttribute('aria-hidden', 'true');
+  }
+  kpClose.addEventListener('click', closePanel);
+  kpOverlay.addEventListener('click', closePanel);
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && kpPanel.classList.contains('open')) closePanel();
+  });
 
-q.focus();
+  // Delegate clicks on agent-message node links to the knowledge panel.
+  logEl.addEventListener('click', function (e) {
+    var link = e.target.closest('.node-link');
+    if (link && link.dataset.node) {
+      e.preventDefault();
+      openKP(link.dataset.node);
+    }
+    // Path-form node-links (no data-node) navigate normally.
+  });
+
+  // ── Submit
+  formEl.addEventListener('submit', async function (e) {
+    e.preventDefault();
+    var text = qEl.value.trim();
+    if (!text) return;
+    addPlain('user', text);
+    qEl.value = '';
+    sendEl.disabled = true;
+    var thinking = addPlain('agent', '…listening…');
+    thinking.classList.add('thinking');
+    try {
+      var res = await fetch('/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text, surface: 'ask' })
+      });
+      if (res.status === 503) {
+        thinking.remove();
+        addPlain('agent', 'The dream field is taking a long breath. Please try again in a moment.');
+        return;
+      }
+      if (!res.ok) {
+        thinking.remove();
+        addPlain('error', 'The field is quiet. Try again?');
+        return;
+      }
+      var data = await res.json();
+      thinking.remove();
+      var reply = data.reply || data.message || data.answer || 'I have no reading right now.';
+      var cite = (data.sources || data.citations || []).join(', ');
+      addMsg('agent', renderChatMessage(reply), cite || null);
+    } catch (err) {
+      thinking.remove();
+      addPlain('error', 'Connection lost. The dream field is still here.');
+    } finally {
+      sendEl.disabled = false;
+      qEl.focus();
+    }
+  });
+
+  qEl.focus();
+})();
 </script>
 </body>
 </html>

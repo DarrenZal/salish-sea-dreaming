@@ -390,6 +390,14 @@
         }
         .kp-body { font-size: 13px; color: #8ba4c4; line-height: 1.6; }
         .kp-thumb { max-width: 100%; border-radius: 6px; margin: 10px 0; }
+        .kp-graph-link {
+            display: inline-block; margin-top: 14px;
+            color: #7aa8c8; font-size: 12px; letter-spacing: 0.04em;
+            text-decoration: none; border: 1px solid #1a2a3a;
+            border-radius: 16px; padding: 7px 14px;
+            cursor: pointer; transition: background .2s, border-color .2s;
+        }
+        .kp-graph-link:hover { background: rgba(122,168,200,0.08); border-color: #7aa8c8; }
 
         @media (max-width: 768px) {
             .chat-btn { bottom: 16px; right: 16px; width: 44px; height: 44px; }
@@ -2041,6 +2049,25 @@
                 const p = document.createElement('p'); p.className = 'kp-body';
                 p.textContent = card.body; kpContent.appendChild(p);
             }
+            // "explore in the graph →" — focus the matching node in this same view.
+            // The existing showDetail() handles pan/zoom + selection; deep-link
+            // hash is also updated so the URL is shareable.
+            const graphLink = document.createElement('a');
+            graphLink.className = 'kp-graph-link';
+            graphLink.href = '#node=' + encodeURIComponent(nodeId);
+            graphLink.textContent = 'explore in the graph →';
+            graphLink.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = (typeof nodes !== 'undefined' && nodes)
+                    ? nodes.find(function (n) { return n.id === nodeId; })
+                    : null;
+                history.replaceState(null, '', '#node=' + encodeURIComponent(nodeId));
+                closeKP();
+                if (target && typeof showDetail === 'function') {
+                    showDetail(target);
+                }
+            });
+            kpContent.appendChild(graphLink);
             knowledgePanel.classList.add('active');
             kpOverlay.classList.add('active');
         }
