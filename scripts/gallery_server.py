@@ -88,6 +88,15 @@ COOKIE_SECURE = os.getenv("COOKIE_SECURE", "true").lower() == "true"
 #   python -c "import secrets; print(secrets.token_hex(32))"
 # If unset we generate an ephemeral key and warn loudly at startup — fine for
 # dev, but means all open /consent forms invalidate on every restart.
+# Stage 3: pinned constants for cluster signature. NEVER derive from runtime
+# state (e.g. importlib metadata of sklearn) — that would silently shift
+# signatures across deploys. Bump deliberately in a reviewed commit when the
+# clustering pipeline changes; old cluster_publications keep their old
+# version (signature is over the historical value baked in at publication).
+EMBEDDING_MODEL = "openai/text-embedding-3-small"
+CLUSTERING_ALGORITHM = "kmeans+umap"
+CLUSTERING_VERSION = "kmeans+umap;k=auto;n_init=10;v1"
+
 _THEME_HASH_KEY_RAW = os.getenv("THEME_HASH_KEY", "").strip()
 if _THEME_HASH_KEY_RAW and re.fullmatch(r"[0-9a-f]{64}", _THEME_HASH_KEY_RAW):
     THEME_HASH_KEY = bytes.fromhex(_THEME_HASH_KEY_RAW)
@@ -780,6 +789,79 @@ async def migrate_foundation_schema() -> None:
 
         await db.commit()
     logger.info("Foundation schema migration complete")
+
+
+async def migrate_stage3_schema() -> None:
+    """Stage 3: cluster_publications + cluster_contests + edits.
+
+    cluster_publications.signature is the durable identity of a witnessed
+    cluster snapshot. Computed at publish time over (model, version,
+    sorted(rep_dream_ids)) — see CLUSTERING_VERSION above. The signature
+    persists exactly through any number of K-means re-runs.
+
+    parent_signature chains revisions; the partial UNIQUE index prevents
+    forks (only one un-retracted child per parent at any time).
+    """
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS cluster_publications (
+              signature TEXT PRIMARY KEY,
+              cluster_id_at_publication INTEGER NOT NULL,
+              motif_phrase TEXT NOT NULL,
+              steward_name TEXT NOT NULL,
+              display_name TEXT,
+              steward_note TEXT,
+              embedding_model TEXT NOT NULL,
+              clustering_algorithm TEXT NOT NULL,
+              clustering_version TEXT NOT NULL,
+              member_count INTEGER NOT NULL,
+              representative_dream_ids TEXT NOT NULL,
+              representative_fragments_html TEXT NOT NULL,
+              related_concepts TEXT NOT NULL,
+              published_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+              retracted_at TIMESTAMP,
+              parent_signature TEXT
+            )
+        """)
+        # Concurrency: at most one un-retracted child per parent. A second
+        # concurrent revise targeting the same parent fails the constraint
+        # and is handled in the endpoint as 409.
+        try:
+            await db.execute(
+                "CREATE UNIQUE INDEX IF NOT EXISTS idx_pub_parent_active "
+                "ON cluster_publications(parent_signature) "
+                "WHERE retracted_at IS NULL AND parent_signature IS NOT NULL"
+            )
+        except Exception:
+            pass
+
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS cluster_contests (
+              id INTEGER PRIMARY KEY,
+              signature TEXT NOT NULL,
+              occurred_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        await db.execute(
+            "CREATE INDEX IF NOT EXISTS idx_contests_signature "
+            "ON cluster_contests(signature)"
+        )
+
+        # In-place metadata edits (steward_note, display_name, related_concepts)
+        # don't change the signature — they append to this audit table.
+        await db.execute("""
+            CREATE TABLE IF NOT EXISTS cluster_publication_edits (
+              id INTEGER PRIMARY KEY,
+              signature TEXT NOT NULL,
+              steward_name TEXT NOT NULL,
+              field TEXT NOT NULL,
+              old_value TEXT,
+              new_value TEXT,
+              occurred_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        await db.commit()
+    logger.info("Stage 3 schema migration complete")
 
 
 async def migrate_stage2_schema() -> None:
@@ -2820,6 +2902,628 @@ async def admin_recompute_umap(request: Request):
 
 
 # ---------------------------------------------------------------------------
+# Stage 3 — Cluster pages as published witnesses.
+#
+# Each cluster_publication is a steward-witnessed snapshot of a steward-
+# selected dream subset, identified by signature = sha256(model | version |
+# sorted(rep_dream_ids))[:16]. The signature persists exactly through any
+# number of K-means re-runs because it doesn't depend on algorithmic
+# membership at read time — only on the steward's selection at publish time.
+#
+# The page at /clusters/{signature} renders forever (with retraction notice
+# if retracted). Revisions chain via parent_signature; only one un-retracted
+# revision per parent (enforced by partial UNIQUE index).
+# ---------------------------------------------------------------------------
+
+def _compute_cluster_signature(rep_dream_ids: list) -> str:
+    """sha256(model | version | sorted-comma-joined-ids)[:16]. Deterministic."""
+    payload = "{model}|{version}|{ids}".format(
+        model=EMBEDDING_MODEL,
+        version=CLUSTERING_VERSION,
+        ids=",".join(str(int(i)) for i in sorted(rep_dream_ids)),
+    )
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:16]
+
+
+def _bake_fragment_html(dream_id: int, raw_text: str) -> str:
+    """Truncate to 200 chars at word boundary, HTML-escape, wrap in
+    <blockquote class="dream-fragment" data-dream-id="N">…</blockquote>.
+
+    data-dream-id is required for any future redact_fragment surgical
+    targeting — the original deep-link plan calls for this attribute.
+    """
+    text = (raw_text or "").strip()
+    if len(text) > 200:
+        # Word-boundary truncation
+        cut = text[:200].rsplit(" ", 1)[0] or text[:200]
+        text = cut + "…"
+    return (
+        f'<blockquote class="dream-fragment" data-dream-id="{int(dream_id)}">'
+        f'{_html_escape(text)}'
+        f'</blockquote>'
+    )
+
+
+async def _fetch_dreams_in_cluster(cluster_id: int) -> list:
+    """Returns all currently-quotable, non-archived dreams whose cluster_id
+    matches. Sorted by submitted_at DESC for steward review convenience."""
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        rows = await db.execute_fetchall(
+            "SELECT id, raw_text, dreamworld_text, submitted_at, cluster_label "
+            "FROM prompts "
+            "WHERE cluster_id = ? "
+            "AND COALESCE(quotable_by_agent, 0) = 1 "
+            "AND archived_at IS NULL "
+            "AND COALESCE(visible_in_installation, 1) = 1 "
+            "ORDER BY submitted_at DESC",
+            (int(cluster_id),),
+        )
+        return [dict(r) for r in rows]
+
+
+async def _fetch_publication(signature: str) -> Optional[dict]:
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        cur = await db.execute(
+            "SELECT * FROM cluster_publications WHERE signature = ?",
+            (signature,),
+        )
+        row = await cur.fetchone()
+        return dict(row) if row else None
+
+
+async def _fetch_contest_count(signature: str) -> int:
+    async with aiosqlite.connect(DB_PATH) as db:
+        cur = await db.execute(
+            "SELECT COUNT(*) FROM cluster_contests WHERE signature = ?",
+            (signature,),
+        )
+        row = await cur.fetchone()
+        return int(row[0]) if row else 0
+
+
+async def _fetch_chain_current(starting_signature: str) -> Optional[str]:
+    """Walk parent_signature chain forward from starting_signature; return
+    the current un-retracted leaf signature, or None if all are retracted."""
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        seen = set()
+        current = starting_signature
+        # Walk forward by finding rows whose parent_signature == current.
+        while current not in seen:
+            seen.add(current)
+            cur = await db.execute(
+                "SELECT signature, retracted_at FROM cluster_publications "
+                "WHERE parent_signature = ? AND retracted_at IS NULL "
+                "ORDER BY published_at DESC LIMIT 1",
+                (current,),
+            )
+            row = await cur.fetchone()
+            if not row:
+                # No newer un-retracted revision; check if `current` itself is unretracted
+                cur2 = await db.execute(
+                    "SELECT retracted_at FROM cluster_publications WHERE signature = ?",
+                    (current,),
+                )
+                r2 = await cur2.fetchone()
+                if r2 and r2[0] is None:
+                    return current
+                return None
+            current = row[0]
+        return None
+
+
+# ── /clusters/draft (steward UI) ────────────────────────────────────────
+
+def _is_steward_request(request: Request) -> Optional[str]:
+    """Returns steward_name if Authorization: Bearer <valid token>, else None.
+    Caller distinguishes 503 (unconfigured) vs 401 (bad token)."""
+    return _steward_from_request(request)
+
+
+def _draft_index_html(clusters: list) -> str:
+    """Steward-only index page: lists current K-means clusters with quotable
+    member counts so the steward can pick one to publish."""
+    css = """
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400&display=swap');
+:root{--bg:#050a12;--fg:#c8dff0;--accent:#7aa8c8;--muted:#5a7a99;--line:#1a2a3a;}
+*{box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--fg);margin:0;font-weight:300;line-height:1.6}
+.nav{position:sticky;top:0;padding:14px 24px;background:rgba(5,10,18,0.96);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:24px;z-index:10}
+.nav-title{font-size:13px;color:var(--accent);letter-spacing:0.1em;text-transform:uppercase}
+.nav-links{display:flex;gap:18px;margin-left:auto}
+.nav-links a{font-size:11px;color:var(--muted);text-decoration:none;letter-spacing:0.05em}
+.container{max-width:760px;margin:0 auto;padding:48px 24px 80px}
+h1{font-size:22px;color:var(--accent);font-weight:300;letter-spacing:0.06em;margin:0 0 8px}
+.tag{font-size:12px;color:var(--muted);margin:0 0 32px;font-style:italic}
+.cluster-row{display:flex;align-items:center;gap:14px;padding:14px 16px;border:1px solid var(--line);border-radius:6px;background:rgba(122,168,200,0.04);margin-bottom:10px}
+.cluster-row .cid{font-size:11px;color:var(--muted);letter-spacing:0.08em;min-width:64px}
+.cluster-row .motif{flex:1;font-size:14px;color:var(--fg)}
+.cluster-row .count{font-size:11px;color:var(--muted);min-width:96px;text-align:right}
+.cluster-row a{color:var(--accent);text-decoration:none;font-size:12px;border:1px solid var(--accent);border-radius:14px;padding:5px 12px;letter-spacing:0.04em}
+.cluster-row a:hover{background:rgba(122,168,200,0.1)}
+.note{font-size:12px;color:var(--muted);margin-top:24px;line-height:1.65;padding-top:18px;border-top:1px solid var(--line)}
+"""
+    rows_html = ""
+    for c in clusters:
+        rows_html += (
+            f'<div class="cluster-row">'
+            f'<div class="cid">cluster {int(c["cluster_id"])}</div>'
+            f'<div class="motif">{_html_escape(c.get("motif") or "(no label)")}</div>'
+            f'<div class="count">{int(c["quotable_count"])} quotable</div>'
+            f'<a href="/clusters/draft?cluster_id={int(c["cluster_id"])}">draft →</a>'
+            f'</div>'
+        )
+    if not rows_html:
+        rows_html = '<p class="tag">No clusters with quotable members yet. Visitors need to opt in to quoting first.</p>'
+    return f"""<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Cluster drafts — Salish Sea Dreaming</title><style>{css}</style></head><body>
+<nav class="nav"><div class="nav-title">Cluster drafts (steward)</div><div class="nav-links"><a href="/">Home</a><a href="/clusters/published">Published</a><a href="/cloud">Cloud</a></div></nav>
+<div class="container">
+  <h1>Cluster drafts</h1>
+  <p class="tag">Pick a cluster, choose 3–7 representative dreams from its quotable members, and publish a witnessed snapshot.</p>
+  {rows_html}
+  <div class="note">Only quotable, non-archived, visible dreams are listed (per consent). Publishing creates a permanent, signed witness page at <code>/clusters/&lt;signature&gt;</code>.</div>
+</div></body></html>"""
+
+
+def _draft_form_html(cluster_id: int, dreams: list, motif: str) -> str:
+    """Steward-only form for picking representatives + writing a steward note."""
+    css = _draft_index_html.__defaults__ if False else None  # placeholder; we
+    # reuse the same style block by inlining below for simplicity
+    style = """
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400&display=swap');
+:root{--bg:#050a12;--fg:#c8dff0;--accent:#7aa8c8;--muted:#5a7a99;--line:#1a2a3a;}
+*{box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--fg);margin:0;font-weight:300;line-height:1.6}
+.nav{position:sticky;top:0;padding:14px 24px;background:rgba(5,10,18,0.96);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:24px;z-index:10}
+.nav-title{font-size:13px;color:var(--accent);letter-spacing:0.1em;text-transform:uppercase}
+.nav-links{display:flex;gap:18px;margin-left:auto}
+.nav-links a{font-size:11px;color:var(--muted);text-decoration:none;letter-spacing:0.05em}
+.container{max-width:760px;margin:0 auto;padding:48px 24px 80px}
+h1{font-size:22px;color:var(--accent);font-weight:300;letter-spacing:0.06em;margin:0 0 8px}
+.tag{font-size:12px;color:var(--muted);margin:0 0 24px;font-style:italic}
+.dream-pick{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border:1px solid var(--line);border-radius:6px;background:rgba(122,168,200,0.03);margin-bottom:8px;cursor:pointer}
+.dream-pick input{accent-color:var(--accent);width:1rem;height:1rem;margin-top:0.2rem;flex-shrink:0}
+.dream-pick .dt{font-size:13px;color:var(--fg);line-height:1.55}
+.dream-pick .ds{font-size:10px;color:var(--muted);margin-top:4px;letter-spacing:0.04em}
+fieldset{border:none;padding:0;margin:0 0 18px}
+legend{font-size:10px;letter-spacing:0.12em;color:var(--muted);text-transform:uppercase;margin-bottom:10px;padding:0}
+input[type=text],textarea{background:rgba(122,168,200,0.04);border:1px solid var(--line);color:var(--fg);padding:10px 14px;border-radius:6px;font-family:'Inter',sans-serif;font-size:13px;width:100%;font-weight:300}
+textarea{min-height:84px;resize:vertical;line-height:1.6}
+input[type=text]:focus,textarea:focus{outline:none;border-color:var(--accent)}
+.row{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.row label{font-size:11px;color:var(--muted);letter-spacing:0.06em;text-transform:uppercase}
+.actions{display:flex;gap:10px;margin-top:18px}
+button{background:none;border:1px solid var(--accent);color:var(--accent);padding:10px 22px;border-radius:6px;font-family:inherit;font-size:12px;letter-spacing:0.06em;cursor:pointer}
+button:hover{background:rgba(122,168,200,0.1)}
+.count-hint{font-size:11px;color:var(--muted);margin:6px 0 16px}
+"""
+    pick_rows = ""
+    for d in dreams:
+        text = (d.get("dreamworld_text") or d.get("raw_text") or "").strip()
+        if len(text) > 220:
+            text = text[:220] + "…"
+        pick_rows += (
+            f'<label class="dream-pick">'
+            f'<input type="checkbox" name="representative_dream_ids" value="{int(d["id"])}">'
+            f'<span><span class="dt">{_html_escape(text)}</span>'
+            f'<span class="ds">id {int(d["id"])} · {_html_escape((d.get("submitted_at") or "")[:19])}</span></span>'
+            f'</label>'
+        )
+    if not pick_rows:
+        pick_rows = '<p class="tag">No quotable dreams in this cluster yet.</p>'
+
+    return f"""<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Cluster {int(cluster_id)} draft — Salish Sea Dreaming</title><style>{style}</style></head><body>
+<nav class="nav"><div class="nav-title">Cluster {int(cluster_id)} draft</div><div class="nav-links"><a href="/clusters/draft">Drafts</a><a href="/clusters/published">Published</a></div></nav>
+<div class="container">
+  <h1>Witness this cluster</h1>
+  <p class="tag">Algorithm motif: <em>{_html_escape(motif or '(no label)')}</em>. Pick 3–7 dreams whose presence you want to anchor at this cluster's witnessed identity. Add a steward note to frame the gathering.</p>
+  <form method="post" action="/clusters/publish">
+    <input type="hidden" name="cluster_id" value="{int(cluster_id)}">
+    <fieldset>
+      <legend>Representative dreams (3–7 required)</legend>
+      <div class="count-hint">Only quotable, non-archived, currently visible dreams shown.</div>
+      {pick_rows}
+    </fieldset>
+    <div class="row">
+      <label for="display_name">Display name (optional)</label>
+      <input type="text" id="display_name" name="display_name" maxlength="80" placeholder="e.g. The Salish Sea Dreaming Stewards">
+    </div>
+    <div class="row">
+      <label for="steward_note">Steward note</label>
+      <textarea id="steward_note" name="steward_note" maxlength="800" placeholder="Why these dreams together? What does this gathering hold?"></textarea>
+    </div>
+    <div class="row">
+      <label for="related_concepts">Related concepts (comma-separated)</label>
+      <input type="text" id="related_concepts" name="related_concepts" maxlength="200" placeholder="e.g. herring, eelgrass, Kwaxala">
+    </div>
+    <div class="actions">
+      <button type="submit">publish witness →</button>
+    </div>
+  </form>
+</div></body></html>"""
+
+
+@app.get("/clusters/draft", include_in_schema=False)
+async def clusters_draft(request: Request, cluster_id: Optional[int] = None):
+    """Steward-only draft UI. Without cluster_id, lists current K-means
+    clusters with quotable counts. With cluster_id, renders publish form."""
+    if not STEWARD_TOKENS:
+        raise HTTPException(503, "stewardship not configured")
+    name = _is_steward_request(request)
+    if not name:
+        raise HTTPException(401, "steward authentication required")
+
+    if cluster_id is None:
+        async with aiosqlite.connect(DB_PATH) as db:
+            db.row_factory = aiosqlite.Row
+            rows = await db.execute_fetchall(
+                "SELECT cluster_id, "
+                "MAX(cluster_label) AS motif, "
+                "SUM(CASE WHEN COALESCE(quotable_by_agent,0)=1 "
+                "         AND archived_at IS NULL "
+                "         AND COALESCE(visible_in_installation,1)=1 "
+                "    THEN 1 ELSE 0 END) AS quotable_count "
+                "FROM prompts WHERE cluster_id IS NOT NULL "
+                "GROUP BY cluster_id "
+                "ORDER BY quotable_count DESC, cluster_id"
+            )
+            clusters = [dict(r) for r in rows]
+        return HTMLResponse(_draft_index_html(clusters))
+
+    dreams = await _fetch_dreams_in_cluster(cluster_id)
+    motif = ""
+    if dreams:
+        motif = (dreams[0].get("cluster_label") or "").strip()
+    return HTMLResponse(_draft_form_html(cluster_id, dreams, motif))
+
+
+@app.post("/clusters/publish", include_in_schema=False)
+async def clusters_publish(request: Request):
+    """Publish a cluster snapshot. Steward-token-gated. Idempotent on
+    signature collisions — returns 200 with the existing publication."""
+    if not STEWARD_TOKENS:
+        raise HTTPException(503, "stewardship not configured")
+    steward_name = _is_steward_request(request)
+    if not steward_name:
+        raise HTTPException(401, "steward authentication required")
+
+    form = await request.form()
+    try:
+        cluster_id = int(form.get("cluster_id") or 0)
+    except (TypeError, ValueError):
+        raise HTTPException(400, "cluster_id required")
+    rep_ids_raw = form.getlist("representative_dream_ids")
+    try:
+        rep_ids = sorted({int(x) for x in rep_ids_raw if str(x).strip()})
+    except (TypeError, ValueError):
+        raise HTTPException(400, "representative_dream_ids must be integers")
+    if not (3 <= len(rep_ids) <= 7):
+        raise HTTPException(400, "representative_dream_ids: pick 3 to 7")
+    display_name = (form.get("display_name") or "").strip()[:80] or None
+    steward_note = (form.get("steward_note") or "").strip()[:800]
+    related_raw = (form.get("related_concepts") or "").strip()[:200]
+    related = [c.strip() for c in related_raw.split(",") if c.strip()][:8]
+
+    # Validate every dream id is currently a member of cluster_id, quotable,
+    # and not archived. (We check membership at publish time; the signature
+    # locks the selection so future re-clusterings don't change this page.)
+    eligible_ids = {int(d["id"]) for d in await _fetch_dreams_in_cluster(cluster_id)}
+    for rid in rep_ids:
+        if rid not in eligible_ids:
+            raise HTTPException(
+                422,
+                f"dream {rid} is not a quotable member of cluster {cluster_id}",
+            )
+
+    # Bake fragments + motif at publish time. Motif comes from the most
+    # recent cluster_label for this cluster.
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        cur = await db.execute(
+            "SELECT id, raw_text, dreamworld_text, cluster_label "
+            "FROM prompts WHERE id IN ({}) ORDER BY id".format(
+                ",".join("?" * len(rep_ids))
+            ),
+            tuple(rep_ids),
+        )
+        dreams = [dict(r) for r in await cur.fetchall()]
+    if len(dreams) != len(rep_ids):
+        raise HTTPException(422, "some representative ids no longer exist")
+
+    motif = ""
+    for d in dreams:
+        if d.get("cluster_label"):
+            motif = (d["cluster_label"] or "").strip()
+            break
+
+    fragments_html = "\n".join(
+        _bake_fragment_html(
+            int(d["id"]),
+            (d.get("dreamworld_text") or d.get("raw_text") or ""),
+        )
+        for d in dreams
+    )
+
+    signature = _compute_cluster_signature(rep_ids)
+
+    # Idempotency: if a publication with this signature already exists,
+    # return it unchanged. "First witnessed publication wins" — stewards
+    # who want different metadata under the same selection use edit-metadata.
+    existing = await _fetch_publication(signature)
+    if existing:
+        return {
+            "signature": signature,
+            "url": f"/clusters/{signature}",
+            "idempotent": True,
+            "published_at": existing.get("published_at"),
+        }
+
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(
+            "INSERT INTO cluster_publications ("
+            "  signature, cluster_id_at_publication, motif_phrase, "
+            "  steward_name, display_name, steward_note, "
+            "  embedding_model, clustering_algorithm, clustering_version, "
+            "  member_count, representative_dream_ids, "
+            "  representative_fragments_html, related_concepts"
+            ") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            (
+                signature, cluster_id, motif,
+                steward_name, display_name, steward_note,
+                EMBEDDING_MODEL, CLUSTERING_ALGORITHM, CLUSTERING_VERSION,
+                len(rep_ids),
+                json.dumps(rep_ids),
+                fragments_html,
+                json.dumps(related),
+            ),
+        )
+        await db.commit()
+    await _audit_steward(steward_name, f"/clusters/publish:{signature}")
+
+    # If browser, redirect to the rendered page. If API, return JSON.
+    accept = (request.headers.get("accept") or "").lower()
+    if "text/html" in accept:
+        return RedirectResponse(url=f"/clusters/{signature}", status_code=303)
+    return {"signature": signature, "url": f"/clusters/{signature}", "idempotent": False}
+
+
+@app.get("/clusters/{signature}", include_in_schema=False)
+async def cluster_page(signature: str, request: Request):
+    """Public, server-rendered cluster page. Stable URL — page renders
+    forever (with retraction notice if retracted)."""
+    pub = await _fetch_publication(signature)
+    if not pub:
+        raise HTTPException(404, "cluster page not found")
+    contests = await _fetch_contest_count(signature)
+    related = []
+    try:
+        related = json.loads(pub.get("related_concepts") or "[]")
+    except Exception:
+        related = []
+
+    title = pub.get("display_name") or pub.get("steward_name") or "Witnessed cluster"
+    motif = pub.get("motif_phrase") or "(no label)"
+    note = pub.get("steward_note") or ""
+    fragments = pub.get("representative_fragments_html") or ""
+    retracted = bool(pub.get("retracted_at"))
+
+    related_html = ""
+    if related:
+        chips = "".join(
+            f'<span class="rc-chip">{_html_escape(str(c))}</span>'
+            for c in related[:8]
+        )
+        related_html = f'<div class="related"><div class="rc-label">related concepts</div>{chips}</div>'
+
+    css = """
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400&display=swap');
+:root{--bg:#050a12;--fg:#c8dff0;--accent:#7aa8c8;--muted:#5a7a99;--line:#1a2a3a;}
+*{box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--fg);margin:0;font-weight:300;line-height:1.7}
+.nav{position:sticky;top:0;padding:14px 24px;background:rgba(5,10,18,0.96);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:24px;z-index:10;backdrop-filter:blur(8px)}
+.nav-title{font-size:13px;color:var(--accent);letter-spacing:0.1em;text-transform:uppercase}
+.nav-links{display:flex;gap:18px;margin-left:auto}
+.nav-links a{font-size:11px;color:var(--muted);text-decoration:none;letter-spacing:0.05em}
+.container{max-width:680px;margin:0 auto;padding:42px 24px 80px}
+.eyebrow{font-size:10px;letter-spacing:0.16em;color:var(--muted);text-transform:uppercase;margin-bottom:6px}
+h1{font-size:24px;color:var(--accent);font-weight:300;letter-spacing:0.04em;margin:0 0 4px}
+.motif{font-size:13px;color:var(--muted);font-style:italic;margin:0 0 26px}
+.steward-note{font-size:15px;color:var(--fg);margin:0 0 30px;line-height:1.65}
+.fragments-label{font-size:10px;letter-spacing:0.16em;color:var(--muted);text-transform:uppercase;margin-bottom:10px}
+.dream-fragment{margin:0 0 14px;padding:14px 16px;border-left:2px solid var(--accent);background:rgba(122,168,200,0.04);font-size:14px;color:var(--fg);font-style:italic;line-height:1.65;border-radius:0 6px 6px 0}
+.related{margin-top:24px}
+.rc-label{font-size:10px;letter-spacing:0.16em;color:var(--muted);text-transform:uppercase;margin-bottom:8px}
+.rc-chip{display:inline-block;font-size:11px;color:var(--accent);border:1px solid var(--line);border-radius:12px;padding:3px 10px;margin:0 6px 6px 0;background:rgba(122,168,200,0.04)}
+.algo-note{margin-top:36px;padding:16px;border:1px solid var(--line);border-radius:6px;background:rgba(0,0,0,0.2);font-size:11px;color:var(--muted);font-family:'SF Mono','Menlo',monospace;line-height:1.7}
+.algo-note .akey{color:var(--accent)}
+.witness-note{margin-top:18px;font-size:12px;color:var(--muted);font-style:italic;line-height:1.7}
+.contest-row{margin-top:24px;display:flex;align-items:center;gap:12px;font-size:11px}
+.contest-row form{display:inline}
+.contest-row button{background:none;border:1px solid var(--line);color:var(--muted);padding:6px 14px;border-radius:14px;font-size:11px;font-family:inherit;cursor:pointer}
+.contest-row button:hover{border-color:var(--accent);color:var(--accent)}
+.contest-count{color:var(--muted)}
+.retracted{margin-bottom:18px;padding:12px 16px;border:1px solid #b08070;border-radius:6px;background:rgba(176,128,112,0.06);font-size:13px;color:#d4a08c}
+"""
+
+    retract_html = ""
+    if retracted:
+        retract_html = (
+            '<div class="retracted"><strong>Retracted:</strong> '
+            'The witnessing has been withdrawn by a steward. The page is preserved '
+            'as a record that this gathering was once published, but should not be '
+            'taken as the project\'s current reading.</div>'
+        )
+
+    contest_html = ""
+    if not retracted:
+        cc = (f' <span class="contest-count">contested {contests}×</span>'
+              if contests > 0 else '')
+        contest_html = f"""
+<div class="contest-row">
+  <form method="post" action="/clusters/{signature}/contest"><button type="submit">contest this name</button></form>
+  {cc}
+</div>"""
+
+    body = f"""
+<div class="container">
+  {retract_html}
+  <div class="eyebrow">a witnessed cluster</div>
+  <h1>{_html_escape(title)}</h1>
+  <p class="motif">algorithmic motif: {_html_escape(motif)}</p>
+  <p class="steward-note">{_html_escape(note) if note else '<em>(no steward note)</em>'}</p>
+  <div class="fragments-label">representative dreams</div>
+  {fragments}
+  {related_html}
+  {contest_html}
+  <div class="algo-note">
+    <span class="akey">embedding model:</span> {_html_escape(pub.get("embedding_model") or "")}<br>
+    <span class="akey">clustering algorithm:</span> {_html_escape(pub.get("clustering_algorithm") or "")}<br>
+    <span class="akey">clustering version:</span> {_html_escape(pub.get("clustering_version") or "")}<br>
+    <span class="akey">signature:</span> {_html_escape(signature)}<br>
+    <span class="akey">members at publication:</span> {int(pub.get("member_count") or 0)}<br>
+    <span class="akey">published at:</span> {_html_escape(pub.get("published_at") or "")}
+  </div>
+  <div class="witness-note">Names here are provisional and revisable. The algorithm gathered the field; a steward witnessed this particular gathering. The dreams are still themselves.</div>
+</div>"""
+    return HTMLResponse(
+        f"<!doctype html><html><head><meta charset='utf-8'>"
+        f"<meta name='viewport' content='width=device-width,initial-scale=1'>"
+        f"<title>{_html_escape(title)} — Salish Sea Dreaming</title>"
+        f"<style>{css}</style></head><body>"
+        f"<nav class='nav'><div class='nav-title'>Cluster · {_html_escape(signature)}</div>"
+        f"<div class='nav-links'><a href='/'>Home</a><a href='/clusters/published'>Published</a><a href='/cloud'>Cloud</a></div></nav>"
+        f"{body}</body></html>"
+    )
+
+
+@app.get("/clusters/published", include_in_schema=False)
+async def clusters_published(request: Request):
+    """Public index of all current (non-retracted leaf) cluster publications."""
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        rows = await db.execute_fetchall(
+            "SELECT signature, motif_phrase, display_name, steward_name, "
+            "       steward_note, member_count, published_at, retracted_at "
+            "FROM cluster_publications "
+            "WHERE retracted_at IS NULL "
+            "AND signature NOT IN ("
+            "  SELECT parent_signature FROM cluster_publications "
+            "  WHERE parent_signature IS NOT NULL AND retracted_at IS NULL"
+            ") "
+            "ORDER BY published_at DESC"
+        )
+        publications = [dict(r) for r in rows]
+
+    css = """
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400&display=swap');
+:root{--bg:#050a12;--fg:#c8dff0;--accent:#7aa8c8;--muted:#5a7a99;--line:#1a2a3a;}
+*{box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--fg);margin:0;font-weight:300;line-height:1.6}
+.nav{position:sticky;top:0;padding:14px 24px;background:rgba(5,10,18,0.96);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:24px;z-index:10}
+.nav-title{font-size:13px;color:var(--accent);letter-spacing:0.1em;text-transform:uppercase}
+.nav-links{display:flex;gap:18px;margin-left:auto}
+.nav-links a{font-size:11px;color:var(--muted);text-decoration:none;letter-spacing:0.05em}
+.container{max-width:760px;margin:0 auto;padding:48px 24px 80px}
+h1{font-size:22px;color:var(--accent);font-weight:300;letter-spacing:0.06em;margin:0 0 8px}
+.tag{font-size:12px;color:var(--muted);margin:0 0 32px;font-style:italic}
+.row{display:block;padding:18px 20px;border:1px solid var(--line);border-radius:6px;background:rgba(122,168,200,0.04);margin-bottom:12px;text-decoration:none;color:var(--fg);transition:border-color .2s,background .2s}
+.row:hover{border-color:var(--accent);background:rgba(122,168,200,0.08)}
+.row .name{font-size:15px;color:var(--accent);margin-bottom:5px}
+.row .motif{font-size:12px;color:var(--muted);font-style:italic;margin-bottom:8px}
+.row .note{font-size:13px;color:var(--fg);line-height:1.55;margin-bottom:8px}
+.row .meta{font-size:10px;color:var(--muted);letter-spacing:0.06em}
+"""
+    if not publications:
+        rows_html = '<p class="tag">No witnessed clusters published yet.</p>'
+    else:
+        rows_html = ""
+        for p in publications:
+            note = (p.get("steward_note") or "").strip()
+            if len(note) > 200:
+                note = note[:200] + "…"
+            rows_html += (
+                f'<a class="row" href="/clusters/{_html_escape(p["signature"])}">'
+                f'<div class="name">{_html_escape(p.get("display_name") or "Witnessed cluster")}</div>'
+                f'<div class="motif">{_html_escape(p.get("motif_phrase") or "")}</div>'
+                f'<div class="note">{_html_escape(note) if note else "<em>(no note)</em>"}</div>'
+                f'<div class="meta">witnessed by {_html_escape(p.get("steward_name") or "")}'
+                f' · {int(p.get("member_count") or 0)} dreams · {_html_escape((p.get("published_at") or "")[:19])}</div>'
+                f'</a>'
+            )
+    return HTMLResponse(
+        f"<!doctype html><html><head><meta charset='utf-8'>"
+        f"<meta name='viewport' content='width=device-width,initial-scale=1'>"
+        f"<title>Published clusters — Salish Sea Dreaming</title>"
+        f"<style>{css}</style></head><body>"
+        f"<nav class='nav'><div class='nav-title'>Published clusters</div>"
+        f"<div class='nav-links'><a href='/'>Home</a><a href='/cloud'>Cloud</a></div></nav>"
+        f"<div class='container'><h1>Witnessed clusters</h1>"
+        f"<p class='tag'>Each page is a steward-witnessed snapshot. Names are provisional and revisable; pages persist forever.</p>"
+        f"{rows_html}</div></body></html>"
+    )
+
+
+# Per-IP rate limit for /clusters/{sig}/contest. Reuses the chat rate-limit
+# pattern but with a separate map so they don't share cooldowns.
+contest_rate_limit_map: dict[str, datetime] = {}
+CONTEST_RATE_LIMIT_SECONDS = 60
+
+
+@app.post("/clusters/{signature}/contest", include_in_schema=False)
+async def cluster_contest(signature: str, request: Request):
+    """Anonymous contest action. Rate-limited 1/min/IP."""
+    pub = await _fetch_publication(signature)
+    if not pub:
+        raise HTTPException(404, "cluster page not found")
+    if pub.get("retracted_at"):
+        raise HTTPException(410, "cluster page retracted")
+
+    ip = get_client_ip(request)
+    now = datetime.utcnow()
+    last = contest_rate_limit_map.get(ip)
+    if last and (now - last).total_seconds() < CONTEST_RATE_LIMIT_SECONDS:
+        raise HTTPException(429, "please wait a moment before contesting again")
+    contest_rate_limit_map[ip] = now
+
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(
+            "INSERT INTO cluster_contests (signature) VALUES (?)",
+            (signature,),
+        )
+        await db.commit()
+
+    return RedirectResponse(url=f"/clusters/{signature}", status_code=303)
+
+
+@app.post("/clusters/{signature}/retract", include_in_schema=False)
+async def cluster_retract(signature: str, request: Request):
+    """Steward-only. Sets retracted_at; page still renders with notice."""
+    if not STEWARD_TOKENS:
+        raise HTTPException(503, "stewardship not configured")
+    name = _is_steward_request(request)
+    if not name:
+        raise HTTPException(401, "steward authentication required")
+
+    pub = await _fetch_publication(signature)
+    if not pub:
+        raise HTTPException(404, "cluster page not found")
+    if pub.get("retracted_at"):
+        return {"signature": signature, "already_retracted": True}
+
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(
+            "UPDATE cluster_publications SET retracted_at = CURRENT_TIMESTAMP "
+            "WHERE signature = ? AND retracted_at IS NULL",
+            (signature,),
+        )
+        await db.commit()
+    await _audit_steward(name, f"/clusters/retract:{signature}")
+    return {"signature": signature, "retracted": True, "steward": name}
+
+
+# ---------------------------------------------------------------------------
 # Ontology route (explicit — guarantees application/ld+json content-type).
 # Must be registered BEFORE the /ontology StaticFiles mount so the root path
 # hits the typed FileResponse handler rather than StaticFiles' default text/plain.
@@ -2890,6 +3594,8 @@ async def startup():
     await migrate_foundation_schema()
     # Stage 2: consent_flags (umap_stale)
     await migrate_stage2_schema()
+    # Stage 3: cluster_publications + cluster_contests + cluster_publication_edits
+    await migrate_stage3_schema()
     asyncio.create_task(_seed_and_umap_loop())
     # Stage 2: periodic UMAP retrigger when consent flips have set the
     # stale flag. Decoupled from /chat so it can't be blocked by user load.
