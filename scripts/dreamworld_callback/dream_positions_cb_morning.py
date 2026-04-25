@@ -44,6 +44,7 @@ HYSTERESIS_OUT_FRAMES = 12       # ~200ms at 60fps to enter "released"
 ASYMMETRIC_BREAK_FRAMES = 42     # one released ≥700ms before other = fray
 MUTUAL_RELEASE_FRAMES = 90       # both released within 1.5s = clean disperse
 OCCLUSION_TOLERANCE_FRAMES = 18  # tracking dropout ≤300ms = ignore
+RECENT_SEAL_FRAMES = 30          # ~500ms grace to "restore" seal in 1-hand path  # tracking dropout ≤300ms = ignore
 FRAY_HOLD_FRAMES = 180           # 3s before slow dissolve when broken alone
 
 # Orientation — fallback if node.dir is absent
@@ -70,9 +71,9 @@ _last_t = [None]
 # Each person: {"in_seal": bool, "in_seal_frames": int, "out_seal_frames": int,
 #               "release_frame": int or None, "occlusion_frames": int}
 _person_a = {"in_seal": False, "in_seal_frames": 0, "out_seal_frames": 0,
-             "release_frame": None, "occlusion_frames": 0}
+             "release_frame": None, "occlusion_frames": 0, "last_seal_frame": None}
 _person_b = {"in_seal": False, "in_seal_frames": 0, "out_seal_frames": 0,
-             "release_frame": None, "occlusion_frames": 0}
+             "release_frame": None, "occlusion_frames": 0, "last_seal_frame": None}
 _frame_counter = [0]
 _fray_state = {"active": False, "side": None, "started_frame": None}
 
@@ -402,6 +403,7 @@ def _update_person_state(person, in_seal_now, frame):
     if in_seal_now:
         person["in_seal_frames"] += 1
         person["out_seal_frames"] = 0
+        person["last_seal_frame"] = frame  # always update — useful for "recently in seal" check
         if not person["in_seal"] and person["in_seal_frames"] >= HYSTERESIS_IN_FRAMES:
             person["in_seal"] = True
             person["release_frame"] = None
@@ -410,41 +412,54 @@ def _update_person_state(person, in_seal_now, frame):
         person["in_seal_frames"] = 0
         if person["in_seal"] and person["out_seal_frames"] >= HYSTERESIS_OUT_FRAMES:
             person["in_seal"] = False
-            person["release_frame"] = frame
+            # Note: release_frame for 2-hand path is set by 1-hand path override
+            # to avoid double-stamping; here we just transition state.
 
 
 def _read_hakini_bilateral():
     """Bilateral Hakini detection: tracks two persons separately,
     returns (combined_strength, fray_active, fray_side).
-    fray_side: 'a' or 'b' — which side broke the seal first."""
+    fray_side: 'a' or 'b' — which side broke the seal first.
+
+    Per-person seal logic:
+      - 2+ hands present and touching across midline → both share in_seal.
+      - 1 hand only: missing-side person stamped released; remaining-side
+        person kept in_seal so fray window can fire.
+      - 0 hands: both released after occlusion tolerance.
+    """
     hands = op("/project1/MediaPipe/hands")
-    if hands is None:
-        return (0.0, False, None)
+    if hands is None: return (0.0, False, None)
     txt = hands.text
-    if not txt:
-        return (0.0, False, None)
+    if not txt: return (0.0, False, None)
     try:
         data = json.loads(txt)
         lms_all = data.get("gestureResults", {}).get("landmarks", [])
-        # Get faces from MediaPipe — pose face landmarks
         faces_op = op("/project1/MediaPipe/face_landmarks")
         faces_list = []
         if faces_op:
             faces_txt = faces_op.text or ""
             try:
                 faces_data = json.loads(faces_txt)
-                # Schema variance — try common keys
                 fl = faces_data.get("faceLandmarks") or faces_data.get("landmarks") or []
-                if isinstance(fl, list):
-                    faces_list = fl
-            except Exception:
-                pass
+                if isinstance(fl, list): faces_list = fl
+            except Exception: pass
     except Exception:
         return (0.0, False, None)
 
-    if len(lms_all) < 2:
-        # Not enough hands — decay smoothed value, mark both as released
-        _frame_counter[0] += 1
+    _frame_counter[0] += 1
+
+    def _fray_check():
+        if _person_a["release_frame"] is not None and _person_b["in_seal"]:
+            gap = _frame_counter[0] - _person_a["release_frame"]
+            if gap > ASYMMETRIC_BREAK_FRAMES:
+                return (True, "a")
+        if _person_b["release_frame"] is not None and _person_a["in_seal"]:
+            gap = _frame_counter[0] - _person_b["release_frame"]
+            if gap > ASYMMETRIC_BREAK_FRAMES:
+                return (True, "b")
+        return (False, None)
+
+    if len(lms_all) == 0:
         _person_a["occlusion_frames"] += 1
         _person_b["occlusion_frames"] += 1
         if _person_a["occlusion_frames"] > OCCLUSION_TOLERANCE_FRAMES:
@@ -452,23 +467,64 @@ def _read_hakini_bilateral():
         if _person_b["occlusion_frames"] > OCCLUSION_TOLERANCE_FRAMES:
             _update_person_state(_person_b, False, _frame_counter[0])
         _hakini_smoothed[0] *= 0.75
-        return (_hakini_smoothed[0], False, None)
+        fa, fs = _fray_check()
+        return (_hakini_smoothed[0], fa, fs)
 
-    _frame_counter[0] += 1
+    if len(lms_all) == 1:
+        h = lms_all[0]
+        if not h or len(h) < 9:
+            _hakini_smoothed[0] *= 0.75
+            return (_hakini_smoothed[0], False, None)
+        x = h[0]["x"]
+        if 0.45 < x < 0.55:
+            # Ambiguous which person — don't stamp release
+            _hakini_smoothed[0] *= 0.75
+            return (_hakini_smoothed[0], False, None)
+        if x < 0.5:
+            # Person A's hand remains; person B is missing.
+            _person_a["occlusion_frames"] = 0
+            _person_b["occlusion_frames"] += 1
+            # Restore A's seal if they were recently sealed (overrides 2-hand release)
+            if _person_a["last_seal_frame"] is not None:
+                if (_frame_counter[0] - _person_a["last_seal_frame"]) <= RECENT_SEAL_FRAMES:
+                    _person_a["in_seal"] = True
+                    _person_a["release_frame"] = None
+            # Stamp B's release (overwrites any stale 2-hand release stamp)
+            if _person_b["last_seal_frame"] is not None and _person_b["release_frame"] is None:
+                _person_b["in_seal"] = False
+                _person_b["release_frame"] = _frame_counter[0]
+            elif _person_b["release_frame"] is not None:
+                # Already stamped — keep older to preserve fray timing
+                _person_b["in_seal"] = False
+        else:
+            # Person B's hand remains; person A is missing.
+            _person_b["occlusion_frames"] = 0
+            _person_a["occlusion_frames"] += 1
+            if _person_b["last_seal_frame"] is not None:
+                if (_frame_counter[0] - _person_b["last_seal_frame"]) <= RECENT_SEAL_FRAMES:
+                    _person_b["in_seal"] = True
+                    _person_b["release_frame"] = None
+            if _person_a["last_seal_frame"] is not None and _person_a["release_frame"] is None:
+                _person_a["in_seal"] = False
+                _person_a["release_frame"] = _frame_counter[0]
+            elif _person_a["release_frame"] is not None:
+                _person_a["in_seal"] = False
+        _hakini_smoothed[0] *= 0.75
+        fa, fs = _fray_check()
+        return (_hakini_smoothed[0], fa, fs)
+
+    # 2+ hands path
     _person_a["occlusion_frames"] = 0
     _person_b["occlusion_frames"] = 0
 
     cluster = _cluster_hands_to_persons(lms_all, faces_list)
     if cluster is None or cluster == "DISABLE":
-        # Ambiguous attribution — fall back to non-bilateral hakini
         _hakini_smoothed[0] = 0.25 * 0.0 + 0.75 * _hakini_smoothed[0]
         return (_hakini_smoothed[0], False, None)
 
     a_hands, b_hands = cluster
-
-    # Compute best-pair seal between any A hand and any B hand
     best_seal = 0.0
-    best_sum = float('inf')
+    best_sum = float("inf")
     for ai in a_hands:
         for bi in b_hands:
             ha = lms_all[ai]; hb = lms_all[bi]
@@ -532,6 +588,13 @@ def onCook(scriptOp):
 
     if bilateral:
         hakini, fray_active, fray_side = _read_hakini_bilateral()
+        # Hold herring_phase high while either person is still in_seal OR fray is active —
+        # otherwise hakini collapses to 0 and herring disperses before fray can modulate it.
+        cb_mod = op("/project1/salish_dreamworld/dream_positions_cb").module
+        a_seal = cb_mod._person_a.get("in_seal", False) if hasattr(cb_mod, "_person_a") else False
+        b_seal = cb_mod._person_b.get("in_seal", False) if hasattr(cb_mod, "_person_b") else False
+        if a_seal or b_seal or fray_active:
+            hakini = max(hakini, 0.8)
     else:
         hakini = _read_hakini()
         fray_active = False
