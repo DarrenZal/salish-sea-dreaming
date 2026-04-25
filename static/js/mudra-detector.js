@@ -9,12 +9,19 @@
 // and return a number ∈ [0, 1]. State (smoothing) lives in the caller-managed
 // State object.
 
-// Match the Python constants exactly.
-export const MUDRA_THRESHOLD = 0.05;            // pinch closeness ≤ 0.05 = full mudra
-export const HAKINI_SUM_THRESHOLD = 1.0;        // 5-pair distance sum below this = hakini
-export const HAKINI_SMOOTHING = 0.25;           // α in EMA: smoothed = α·raw + (1-α)·prev
+// Mudra (one-hand pinch). The TD callback uses a fixed normalized threshold
+// of 0.05, which works on the gallery 3090's high-res fixed-distance cam.
+// On a laptop webcam, distance from the camera varies, so we normalize the
+// thumb-index distance by the hand's own length (wrist→middle-tip). The
+// ratio threshold below corresponds to "fingers within ~30% of one finger
+// length of each other" — practical pinch.
+export const MUDRA_RATIO_THRESHOLD = 0.30;
+export const MUDRA_SMOOTHING = 0.40;            // α in EMA — quick to fire, quick to release
 
-// Thumb tip = 4, index tip = 8, middle tip = 12, ring tip = 16, pinky tip = 20
+export const HAKINI_SUM_THRESHOLD = 1.0;        // 5-pair distance sum below this = hakini
+export const HAKINI_SMOOTHING = 0.25;
+
+// Landmark indices: wrist=0, thumb_tip=4, index_tip=8, middle_tip=12, ring_tip=16, pinky_tip=20
 const FINGERTIPS = [4, 8, 12, 16, 20];
 
 /**
@@ -23,30 +30,44 @@ const FINGERTIPS = [4, 8, 12, 16, 20];
  */
 export function createDetectorState() {
     return {
+        mudraSmoothed: 0.0,
         hakiniSmoothed: 0.0,
     };
 }
 
 /**
- * Single-hand pinch (Chin Mudra). Pure function over the first hand's
- * landmarks. Returns 0..1.
+ * Single-hand pinch (Chin Mudra). Pure function over a single hand's
+ * landmarks. Tries each detected hand and returns the strongest pinch — so
+ * pinching either hand fires the gesture, not just the first detected.
+ * Returns 0..1, smoothed via EMA.
  *
- * Matches `_read_mudra` from dream_positions_cb_morning.py:
- *   d = ‖thumb_tip - index_tip‖
- *   raw = clamp01(1 - d / 0.05)
- *   return raw * raw   ← squared for snappier curve
+ * Distance is normalized by the hand's own length (wrist→middle-tip) so a
+ * pinch fires the same way at any distance from the camera.
+ *
+ *   handLen = ‖middle_tip - wrist‖
+ *   ratio = ‖thumb_tip - index_tip‖ / handLen
+ *   raw  = clamp01(1 - ratio / MUDRA_RATIO_THRESHOLD)
  */
-export function readMudra(landmarks) {
-    if (!landmarks || landmarks.length < 1) return 0.0;
-    const lm = landmarks[0];
-    if (!lm || lm.length < 9) return 0.0;
-    const thumb = lm[4], index = lm[8];
-    const dx = thumb.x - index.x;
-    const dy = thumb.y - index.y;
-    const dz = (thumb.z || 0) - (index.z || 0);
-    const d = Math.sqrt(dx * dx + dy * dy + dz * dz);
-    const raw = clamp01(1.0 - d / MUDRA_THRESHOLD);
-    return raw * raw;
+export function readMudra(landmarks, state) {
+    let bestRaw = 0.0;
+    if (landmarks && landmarks.length >= 1) {
+        for (const lm of landmarks) {
+            if (!lm || lm.length < 21) continue;
+            const wrist = lm[0], thumb = lm[4], index = lm[8], middleTip = lm[12];
+            const handLen = dist3(wrist, middleTip);
+            if (handLen < 1e-4) continue;  // can't normalize; skip this hand
+            const pinchD = dist3(thumb, index);
+            const ratio = pinchD / handLen;
+            const raw = clamp01(1.0 - ratio / MUDRA_RATIO_THRESHOLD);
+            const r2 = raw * raw;
+            if (r2 > bestRaw) bestRaw = r2;
+        }
+    }
+    if (state) {
+        state.mudraSmoothed = MUDRA_SMOOTHING * bestRaw + (1 - MUDRA_SMOOTHING) * state.mudraSmoothed;
+        return state.mudraSmoothed;
+    }
+    return bestRaw;
 }
 
 /**
@@ -82,7 +103,7 @@ export function readHakini(landmarks, state) {
  */
 export function readGestures(landmarks, state) {
     return {
-        mudra: readMudra(landmarks),
+        mudra: readMudra(landmarks, state),
         hakini: readHakini(landmarks, state),
     };
 }
@@ -93,4 +114,11 @@ function clamp01(x) {
     if (x < 0) return 0;
     if (x > 1) return 1;
     return x;
+}
+
+function dist3(a, b) {
+    const dx = a.x - b.x;
+    const dy = a.y - b.y;
+    const dz = (a.z || 0) - (b.z || 0);
+    return Math.sqrt(dx * dx + dy * dy + dz * dz);
 }
