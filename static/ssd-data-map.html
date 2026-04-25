@@ -1857,8 +1857,23 @@
             } catch (_) { return null; }
         }
         function focusTarget(targetId) {
-            const targetNode = nodes.find(n => n.id === targetId);
-            if (targetNode) showDetail(targetNode);
+            // The original deep-link referenced `nodes` (no such symbol in
+            // this scope — silent ReferenceError). Lookup is via nodeById
+            // (populated at line ~561); falls back to data.nodes.find if
+            // nodeById hasn't been built yet.
+            let targetNode = null;
+            try {
+                if (typeof nodeById !== 'undefined' && nodeById[targetId]) {
+                    targetNode = nodeById[targetId];
+                } else if (typeof data !== 'undefined' && data && data.nodes) {
+                    targetNode = data.nodes.find(n => n.id === targetId) || null;
+                }
+            } catch (_) {}
+            if (targetNode && typeof showDetail === 'function') {
+                showDetail(targetNode);
+            } else {
+                console.warn('[deep-link] node not found:', targetId);
+            }
         }
         function arm(targetId) {
             if (morphDone) {
