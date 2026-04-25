@@ -1845,23 +1845,39 @@
         };
 
     // ── Deep-link ──────────────────────────────────────────
+    // Tolerates both raw (`#node=hub:exhibition`) and URL-encoded
+    // (`#node=hub%3Aexhibition`) forms — callers using encodeURIComponent
+    // (visitor.html, /ask) produce the encoded form.
     (function() {
-        const hashMatch = location.hash.match(/node=([a-zA-Z0-9:_.-]+)/);
-        if (hashMatch) {
-            const targetId = hashMatch[1];
-            function tryDeepLink() {
-                const targetNode = nodes.find(n => n.id === targetId);
-                if (targetNode) showDetail(targetNode);
-            }
+        function readDeepLinkTarget() {
+            try {
+                const decoded = decodeURIComponent(location.hash);
+                const m = decoded.match(/node=([a-zA-Z0-9:_.-]+)/);
+                return m ? m[1] : null;
+            } catch (_) { return null; }
+        }
+        function focusTarget(targetId) {
+            const targetNode = nodes.find(n => n.id === targetId);
+            if (targetNode) showDetail(targetNode);
+        }
+        function arm(targetId) {
             if (morphDone) {
-                tryDeepLink();
+                focusTarget(targetId);
             } else {
                 const checkDeepLink = setInterval(() => {
-                    if (morphDone) { tryDeepLink(); clearInterval(checkDeepLink); }
+                    if (morphDone) { focusTarget(targetId); clearInterval(checkDeepLink); }
                 }, 500);
-                setTimeout(() => { tryDeepLink(); clearInterval(checkDeepLink); }, 6000);
+                setTimeout(() => { focusTarget(targetId); clearInterval(checkDeepLink); }, 6000);
             }
         }
+        const initial = readDeepLinkTarget();
+        if (initial) arm(initial);
+        // Re-fire on later in-page hash changes (e.g. clicking the
+        // "explore in the graph" link from inside an open KP).
+        window.addEventListener('hashchange', () => {
+            const t = readDeepLinkTarget();
+            if (t) focusTarget(t);
+        });
     })();
 
     // ── Full-screen Chat ─────────────────────────────────────
