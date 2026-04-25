@@ -20,6 +20,11 @@ h1 { font-size: 22px; font-weight: 300; color: var(--accent); letter-spacing: 0.
 .footer { margin-top: 56px; font-size: 10px; color: var(--muted); letter-spacing: 0.05em; line-height: 1.7; }
 .footer a { color: var(--muted); text-decoration: none; border-bottom: 1px dotted var(--muted); }
 .footer a:hover { color: var(--accent); border-bottom-color: var(--accent); }
+.live-section { margin-top: 36px; padding-top: 24px; border-top: 1px solid var(--line); display: none; }
+.live-section.loaded { display: block; }
+.live-label { font-size: 10px; color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 12px; }
+.live-snapshot { width: 100%; aspect-ratio: 1; border: 1px solid var(--line); border-radius: 4px; background: rgba(122,168,200,0.03); display: block; opacity: 0; transition: opacity 0.6s; object-fit: cover; }
+.live-snapshot.loaded { opacity: 1; }
 @media (max-width: 600px) { .container { padding: 32px 18px; } h1 { font-size: 18px; } }
 </style>
 </head>
@@ -36,6 +41,10 @@ h1 { font-size: 22px; font-weight: 300; color: var(--accent); letter-spacing: 0.
     <a class="surface" href="/cloud">
       <div class="surface-title">The dream cloud</div>
       <div class="surface-desc">Constellations of all dreams visitors have submitted, drifting in language-space. Provisional.</div>
+    </a>
+    <a class="surface" href="/graph">
+      <div class="surface-title">The knowledge graph</div>
+      <div class="surface-desc">The relational map behind the installation — people, concepts, ecosystems, artifacts, and the threads between them.</div>
     </a>
     <a class="surface" href="/ask">
       <div class="surface-title">Ask the dream field</div>
@@ -55,10 +64,48 @@ h1 { font-size: 22px; font-weight: 300; color: var(--accent); letter-spacing: 0.
     </a>
   </div>
 
+  <div class="live-section" id="live-section">
+    <div class="live-label">What the sea is dreaming</div>
+    <img class="live-snapshot" id="live-snapshot" alt="Live output from the installation">
+  </div>
+
   <div class="footer">
     Salt Spring Spring Art Show — <em>Digital Ecologies: Bridging Nature and Technology</em><br>
     A project by Pravin Pillay, Carol Anne Hilton, Briony Penn, Darren Zal, and the dreaming network.
   </div>
 </div>
+
+<script>
+(function () {
+  // Live TD snapshot. Try the local /td/snapshot first (works on production
+  // :9000 where TouchDesigner uploads); fall back to the production snapshot
+  // when running on the parallel sandbox so visitors still see the room.
+  // Silently hides the section if neither responds.
+  var section = document.getElementById('live-section');
+  var img = document.getElementById('live-snapshot');
+  var blob = null;
+  var fallback = 'http://37.27.48.12:9000/td/snapshot';
+  var primary = '/td/snapshot';
+  var src = primary;
+
+  function poll() {
+    fetch(src + '?t=' + Date.now())
+      .then(function (r) { if (!r.ok) throw new Error(r.status); return r.blob(); })
+      .then(function (b) {
+        var url = URL.createObjectURL(b);
+        img.src = url;
+        img.classList.add('loaded');
+        section.classList.add('loaded');
+        if (blob) URL.revokeObjectURL(blob);
+        blob = url;
+      })
+      .catch(function () {
+        if (src === primary) { src = fallback; poll(); }
+      });
+  }
+  poll();
+  setInterval(poll, 4000);
+})();
+</script>
 </body>
 </html>
