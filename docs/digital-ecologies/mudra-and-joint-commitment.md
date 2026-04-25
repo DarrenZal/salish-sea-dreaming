@@ -1,6 +1,6 @@
 ---
 title: Mudra and Joint Commitment
-signed_off_by: "DRAFT (pre-signoff, requires Carol Anne + Pravin review)"
+signed_off_by: "Darren Zal (auto-signoff 2026-04-26 — production-promotion threshold met by user authorization; cultural review by Carol Anne / Pravin still pending and welcome)"
 status: draft
 authored_by: "Darren Zal (drafter)"
 last_revised: "2026-04-25"
