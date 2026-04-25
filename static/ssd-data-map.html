@@ -1857,10 +1857,8 @@
             } catch (_) { return null; }
         }
         function focusTarget(targetId) {
-            // The original deep-link referenced `nodes` (no such symbol in
-            // this scope — silent ReferenceError). Lookup is via nodeById
-            // (populated at line ~561); falls back to data.nodes.find if
-            // nodeById hasn't been built yet.
+            // Lookup via nodeById (populated at line ~561), falling back to
+            // data.nodes.find if the table isn't built yet.
             let targetNode = null;
             try {
                 if (typeof nodeById !== 'undefined' && nodeById[targetId]) {
@@ -1869,10 +1867,18 @@
                     targetNode = data.nodes.find(n => n.id === targetId) || null;
                 }
             } catch (_) {}
-            if (targetNode && typeof showDetail === 'function') {
-                showDetail(targetNode);
-            } else {
+            if (!targetNode) {
                 console.warn('[deep-link] node not found:', targetId);
+                return;
+            }
+            // Use handleNodeClick (not just showDetail) so hubs expand their
+            // children, cluster-summaries toggle directories, and the graph
+            // redraws — matching what a real click does. showDetail alone
+            // only opens the panel, leaving the surrounding graph collapsed.
+            if (typeof handleNodeClick === 'function') {
+                handleNodeClick(targetNode);
+            } else if (typeof showDetail === 'function') {
+                showDetail(targetNode);
             }
         }
         function arm(targetId) {
