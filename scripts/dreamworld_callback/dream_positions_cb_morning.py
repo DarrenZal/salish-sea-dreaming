@@ -44,6 +44,13 @@ HYSTERESIS_OUT_FRAMES = 12       # ~200ms at 60fps to enter "released"
 ASYMMETRIC_BREAK_FRAMES = 42     # one released ≥700ms before other = fray
 MUTUAL_RELEASE_FRAMES = 90       # both released within 1.5s = clean disperse
 OCCLUSION_TOLERANCE_FRAMES = 18  # tracking dropout ≤300ms = ignore
+# Four-hand school constants
+SCHOOL_HERRING_MIN_POINTS = 6        # minimum surface points for tiniest cluster
+SCHOOL_HERRING_BASE_LEN = 0.4        # base size for a cluster of 1 dream
+SCHOOL_HERRING_PER_DREAM = 0.05      # extra length per additional dream
+SCHOOL_RATE = 8.0                    # spring rate when school activating
+SCHOOL_RECOVER = 3.0                 # spring rate when school recovering
+SCHOOL_TRIGGER_THRESHOLD = 0.05      # school strength threshold to activate
 RECENT_SEAL_FRAMES = 30          # ~500ms grace to "restore" seal in 1-hand path  # tracking dropout ≤300ms = ignore
 FRAY_HOLD_FRAMES = 180           # 3s before slow dissolve when broken alone
 
@@ -61,9 +68,12 @@ _cache = {
     "herring": [],
     "herring_slot": {},
     "directions": {},  # node_id -> (dx, dy, dz) unit vector
+    "cluster_herrings": {},  # cluster_id -> list of (x,y,z) surface points
+    "cluster_slot_map": {},  # node_id -> (cluster_id, point_index)
 }
 _phase = [0.5]
 _herring_phase = [0.0]
+_school_phase = [0.0]   # 0..1, 4-hand school activation
 _hakini_smoothed = [0.0]
 _last_t = [None]
 
@@ -181,6 +191,102 @@ def _build_herring(region_counts):
     return points
 
 
+
+
+def _build_cluster_herring(num_points):
+    """Build a small herring shape with `num_points` surface points,
+    sized proportional to count. Returns list of (x,y,z) tuples in local frame.
+    Same shape proportions as global herring; just smaller."""
+    n = max(SCHOOL_HERRING_MIN_POINTS, int(num_points))
+    L = SCHOOL_HERRING_BASE_LEN + SCHOOL_HERRING_PER_DREAM * num_points
+    H = L * 0.23  # height proportional to length (matches herring's body ratio)
+    W = L * 0.17  # width proportional
+    # Allocate points across regions in 5 buckets:
+    # tail+stripe (15%), body (51%), belly (21%), eye (7%), fins (5%)
+    n_tail = max(1, int(n * 0.15))
+    n_body = max(1, int(n * 0.51))
+    n_belly = max(0, int(n * 0.21))
+    n_eye = max(0, int(n * 0.07))
+    n_fins = max(0, n - n_tail - n_body - n_belly - n_eye)
+    pts = []
+    # Tail (V-fork, scaled)
+    for i in range(n_tail):
+        t = i / max(1, n_tail - 1)
+        side = 1 if i % 2 == 0 else -1
+        x = -L*0.5 - L*0.17 * t
+        y = side * (H*0.07 + H*0.57 * t)
+        z = (((i*7) % 11)/10 - 0.5) * W*0.1
+        pts.append((x, y, z))
+    # Body (Fibonacci ellipsoid)
+    import math as _m
+    for i in range(n_body):
+        phi = (i * 2.39996323) % (2 * _m.pi)
+        theta = _m.acos(1 - 2 * ((i + 0.5) / n_body))
+        x = _m.cos(theta) * (L*0.4 - 0.05) + L*0.08
+        y_b = (H*0.5*0.85) * _m.sin(theta) * _m.cos(phi)
+        z_b = (W*0.5) * _m.sin(theta) * _m.sin(phi)
+        pts.append((x, y_b, z_b))
+    # Belly
+    for i in range(n_belly):
+        t = i / max(1, n_belly - 1)
+        x = -L*0.27 + L*0.67 * t
+        y = -H*0.29 - H*0.14 * _m.sin(t * _m.pi)
+        z = (((i*5) % 13)/12 - 0.5) * W*0.36
+        pts.append((x, y, z))
+    # Eye + dorsal stripe
+    for i in range(n_eye):
+        if i % 3 == 0:
+            ang = (i // 3) * 0.4
+            x = L*0.33 + L*0.013 * _m.cos(ang)
+            y = H*0.14 + H*0.057 * _m.sin(ang)
+            z = W*0.4 if (i % 6) < 3 else -W*0.4
+        else:
+            seg = max(1, n_eye // 3 + 1)
+            t = ((i // 3) % seg) / max(1, seg - 1)
+            x = -L*0.17 + L*0.5 * t
+            y = H*0.43
+            z = (((i*11) % 5)/4 - 0.5) * W*0.08
+        pts.append((x, y, z))
+    # Fins
+    for i in range(n_fins):
+        if i % 2 == 0:
+            t = i / max(1, n_fins - 1)
+            x = -L*0.13 + L*0.2 * t
+            y = H*0.43 + H*0.21 * _m.sin(t * _m.pi)
+            z = (((i*7) % 5)/4 - 0.5) * W*0.08
+        else:
+            t = i / max(1, n_fins - 1)
+            x = L*0.1 + L*0.067 * t
+            y = -H*0.21 + H*0.057 * _m.sin(t * _m.pi)
+            side = 1 if (i // 2) % 2 == 0 else -1
+            z = side * (W*0.4 + W*0.12 * t)
+        pts.append((x, y, z))
+    return pts[:n]
+
+
+def _rebuild_cluster_herrings(nodes):
+    """Build per-cluster herring point clouds + per-dream slot mapping."""
+    # Group dreams by cluster
+    by_cluster = {}
+    for n in nodes:
+        cid = n.get("cluster", -1)
+        if cid is None: cid = -1
+        by_cluster.setdefault(cid, []).append(n)
+    cluster_herrings = {}
+    cluster_slot_map = {}
+    for cid, dreams in by_cluster.items():
+        # Sort dreams by id for determinism
+        dreams_sorted = sorted(dreams, key=lambda d: str(d.get("id", "")))
+        herring_pts = _build_cluster_herring(len(dreams_sorted))
+        cluster_herrings[cid] = herring_pts
+        # Map each dream to its point in this cluster's herring
+        for i, d in enumerate(dreams_sorted):
+            point_idx = i % len(herring_pts)
+            cluster_slot_map[str(d.get("id", ""))] = (cid, point_idx)
+    _cache["cluster_herrings"] = cluster_herrings
+    _cache["cluster_slot_map"] = cluster_slot_map
+
+
 def _rebuild_herring_assignment(nodes):
     classified = []
     for n in nodes:
@@ -229,6 +335,8 @@ def _rebuild_herring_assignment(nodes):
             mag = math.sqrt(ax*ax + ay*ay + az*az) or 1.0
             dirs[nid] = (ax/mag, ay/mag, az/mag)
     _cache["directions"] = dirs
+    # Build per-cluster herrings for school mode
+    _rebuild_cluster_herrings(nodes)
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -566,6 +674,40 @@ def _read_hakini_bilateral():
 # ──────────────────────────────────────────────────────────────────────────────
 # Main onCook
 # ──────────────────────────────────────────────────────────────────────────────
+def _read_quad_hand_school():
+    """4-hand school trigger: requires 4+ hands present AND at least one
+    pair among them in Hakini-seal proximity. Returns 0..1 strength.
+    Cannot be faked solo — needs two visitors."""
+    hands = op("/project1/MediaPipe/hands")
+    if hands is None: return 0.0
+    txt = hands.text
+    if not txt: return 0.0
+    try:
+        data = json.loads(txt)
+        lms = data.get("gestureResults", {}).get("landmarks", [])
+    except Exception:
+        return 0.0
+    if len(lms) < 4: return 0.0
+    # Find best Hakini-seal pair across (4 choose 2) = 6 combinations
+    best_seal = 0.0
+    n = len(lms)
+    for i in range(n):
+        for j in range(i + 1, n):
+            ha = lms[i]; hb = lms[j]
+            if len(ha) < 21 or len(hb) < 21: continue
+            tot = 0.0
+            for tip in (4, 8, 12, 16, 20):
+                a = ha[tip]; b = hb[tip]
+                dx = a["x"] - b["x"]; dy = a["y"] - b["y"]
+                dz = a.get("z", 0) - b.get("z", 0)
+                tot += (dx*dx + dy*dy + dz*dz) ** 0.5
+            rs = max(0.0, min(1.0, 1.0 - tot / 1.0))
+            seal = rs * rs
+            if seal > best_seal:
+                best_seal = seal
+    return best_seal
+
+
 def onCook(scriptOp):
     scriptOp.isTimeSlice = False
     if not _parse(): return
@@ -582,6 +724,7 @@ def onCook(scriptOp):
     bilateral = bool(sd.fetch("hakini_bilateral", 0))
     orient = bool(sd.fetch("orient_fish", 0))
     swim = bool(sd.fetch("swim_wiggle", 0))
+    school_active = bool(sd.fetch("school_active", 0))
 
     bass = _read_bass()
     mudra = _read_mudra()
@@ -623,6 +766,19 @@ def onCook(scriptOp):
         _herring_phase[0] += (0.0 - _herring_phase[0]) * HERRING_RECOVER * dt
     _herring_phase[0] = max(0.0, min(1.0, _herring_phase[0]))
 
+    # School phase (4-hand school trigger)
+    if school_active:
+        school_strength = _read_quad_hand_school()
+    else:
+        school_strength = 0.0
+    if school_strength > SCHOOL_TRIGGER_THRESHOLD:
+        _school_phase[0] += (1.0 - _school_phase[0]) * SCHOOL_RATE * dt * school_strength
+    else:
+        _school_phase[0] += (0.0 - _school_phase[0]) * SCHOOL_RECOVER * dt
+    _school_phase[0] = max(0.0, min(1.0, _school_phase[0]))
+    sd.store("school_phase", _school_phase[0])
+    sd.store("school_strength", school_strength)
+
     sd.store("mudra_now", mudra)
     sd.store("hakini_now", hakini)
     sd.store("herring_phase", _herring_phase[0])
@@ -657,17 +813,31 @@ def onCook(scriptOp):
         x = x / SCALE; y = y / SCALE; z = z / SCALE
 
         dream_id = str(n.get("id", ""))
-        if h_phase > 0.001 and herring:
+        # SCHOOL takes priority when active: each cluster's dreams target their cluster's herring
+        s_phase = _school_phase[0]
+        if s_phase > 0.001 and _cache.get("cluster_herrings"):
+            slot_info = _cache["cluster_slot_map"].get(dream_id)
+            if slot_info is not None:
+                cid, pt_idx = slot_info
+                cluster_pts = _cache["cluster_herrings"].get(cid, [])
+                cluster_centroid = centroids.get(cid, (0, 0, 0))
+                if 0 <= pt_idx < len(cluster_pts):
+                    cx, cy, cz = cluster_pts[pt_idx]
+                    # Position cluster herring at its centroid (cluster's UMAP center)
+                    target_x = cluster_centroid[0] / SCALE + cx
+                    target_y = cluster_centroid[1] / SCALE + cy
+                    target_z = cluster_centroid[2] / SCALE + cz
+                    x = x * (1 - s_phase) + target_x * s_phase
+                    y = y * (1 - s_phase) + target_y * s_phase
+                    z = z * (1 - s_phase) + target_z * s_phase
+        elif h_phase > 0.001 and herring:
             slot = slot_map.get(dream_id, -1)
-            # Fray modifier: if fray_active, fish on the released side disperse first
             fish_h_phase = h_phase
             if bilateral and fray_active and fray_side:
-                # Heuristic: fish whose herring slot is in left half (x<0) belong to "A side"
                 if 0 <= slot < len(herring):
                     hx = herring[slot][0]
                     fish_side = 'a' if hx < 0 else 'b'
                     if fish_side == fray_side:
-                        # Disperse this fish first — degrade its herring weight
                         fish_h_phase = h_phase * max(0.0, 1.0 - (_frame_counter[0] - (_person_a["release_frame"] or _person_b["release_frame"] or _frame_counter[0])) / float(FRAY_HOLD_FRAMES))
             if 0 <= slot < len(herring):
                 tx_h, ty_h, tz_h = herring[slot]
@@ -686,8 +856,14 @@ def onCook(scriptOp):
 
         if orient:
             d = dirs_cache.get(dream_id, (1.0, 0.0, 0.0))
+            # When school_phase is high, blend orientation toward +X (schooling alignment)
+            if _school_phase[0] > 0.001:
+                school_dir = (1.0, 0.0, 0.0)
+                blend = _school_phase[0]
+                d = (d[0] * (1 - blend) + school_dir[0] * blend,
+                     d[1] * (1 - blend) + school_dir[1] * blend,
+                     d[2] * (1 - blend) + school_dir[2] * blend)
             # Convert direction vector to Euler angles (degrees)
-            # Yaw (ry) = atan2(d.x, d.z), Pitch (rx) = -asin(d.y)
             ry_rad = math.atan2(d[0], d[2] if d[2] != 0 else 0.001)
             rx_rad = -math.asin(max(-1.0, min(1.0, d[1])))
             ry_deg = math.degrees(ry_rad)
