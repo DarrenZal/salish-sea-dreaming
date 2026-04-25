@@ -77,34 +77,39 @@ h1 { font-size: 22px; font-weight: 300; color: var(--accent); letter-spacing: 0.
 
 <script>
 (function () {
-  // Live TD snapshot. Try the local /td/snapshot first (works on production
-  // :9000 where TouchDesigner uploads); fall back to the production snapshot
-  // when running on the parallel sandbox so visitors still see the room.
-  // Silently hides the section if neither responds.
+  // Live TD snapshot. Direct <img src=…> with cache-buster — browsers allow
+  // cross-origin image loading without CORS. (We don't need pixel access via
+  // canvas, so the cross-origin restriction doesn't apply.)
+  //
+  // Try the local /td/snapshot first (works on production :9000 where TD
+  // uploads); on the parallel sandbox the local endpoint 404s, so we fall
+  // back to the production snapshot URL so the surface still mirrors the
+  // wall. Reveal the section only after the first successful load.
   var section = document.getElementById('live-section');
   var img = document.getElementById('live-snapshot');
-  var blob = null;
-  var fallback = 'http://37.27.48.12:9000/td/snapshot';
   var primary = '/td/snapshot';
+  var fallback = 'http://37.27.48.12:9000/td/snapshot';
   var src = primary;
+  var probed = false;
 
-  function poll() {
-    fetch(src + '?t=' + Date.now())
-      .then(function (r) { if (!r.ok) throw new Error(r.status); return r.blob(); })
-      .then(function (b) {
-        var url = URL.createObjectURL(b);
-        img.src = url;
-        img.classList.add('loaded');
-        section.classList.add('loaded');
-        if (blob) URL.revokeObjectURL(blob);
-        blob = url;
-      })
-      .catch(function () {
-        if (src === primary) { src = fallback; poll(); }
-      });
-  }
-  poll();
-  setInterval(poll, 4000);
+  img.addEventListener('load', function () {
+    img.classList.add('loaded');
+    section.classList.add('loaded');
+  });
+
+  img.addEventListener('error', function () {
+    if (!probed && src === primary) {
+      probed = true;
+      src = fallback;
+      img.src = src + '?t=' + Date.now();
+    }
+    // After the fallback also fails (or every later miss), stay silent —
+    // the section just stays hidden until something loads.
+  });
+
+  function tick() { img.src = src + '?t=' + Date.now(); }
+  tick();
+  setInterval(tick, 4000);
 })();
 </script>
 </body>
