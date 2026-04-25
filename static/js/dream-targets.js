@@ -17,16 +17,17 @@
 
 import { assignHerringSlots } from './herring-builder.js';
 
-// Match Python constants exactly. (1/60-second-tick budget: COLLAPSE_RATE
-// of 12 means full mudra = phase moves ~0.2 toward UNITY_PHASE per frame.)
-const UNITY_PHASE     = -1.6;
-const MID_PHASE       =  0.5;
+// Spring rates for the unity-collapse (mudra) and herring-morph (hakini).
+// In TD the equivalent code mixed centroid+actual every frame; on the web
+// where /dreams/3d already supplies full individual positions, that pulled
+// the cloud into its clusters at idle. Here phase 0 = exact original
+// position; phase 1 = fully transformed.
 const COLLAPSE_RATE   = 12.0;
 const RECOVER_RATE    =  2.5;
 const HERRING_RATE    =  8.0;
 const HERRING_RECOVER =  3.0;
 
-// Match TD's per-frame smoothing on fish position lerp.
+// Per-frame smoothing on fish position lerp.
 const SMOOTHING_PER_SEC = 6.0;
 
 /**
@@ -39,19 +40,35 @@ const SMOOTHING_PER_SEC = 6.0;
  *   scale:     factor to map herring-local coords into cloud-coord space
  */
 export function createTargetState(nodes) {
-    const centroids = computeClusterCentroids(nodes);
     const { herring, slot } = assignHerringSlots(nodes);
-    // Auto-scale: pick a herring length that roughly fills the cloud's
-    // largest extent. Python uses HERRING_LEN = 3.0 in TD-world units; the
-    // browser cloud is in the original UMAP/scaled coords. Compute the
-    // cloud's max radius and scale the herring so its length matches.
+    // Snapshot the original /dreams/3d position on each node — applyTargets
+    // mutates n.x/y/z each frame so we can't read it back as the
+    // "individual" anchor. Also compute the cloud centroid (mean of
+    // actuals) which is the lerp target for mudra collapse — much more
+    // visually meaningful than the world origin (0,0,0) since UMAP isn't
+    // centered on origin.
+    let sumX = 0, sumY = 0, sumZ = 0, count = 0;
+    for (const n of nodes) {
+        if (n.isSeed) continue;
+        n._origX = n.x || 0;
+        n._origY = n.y || 0;
+        n._origZ = n.z || 0;
+        sumX += n._origX; sumY += n._origY; sumZ += n._origZ;
+        count++;
+    }
+    const cloudCenter = count > 0
+        ? { x: sumX / count, y: sumY / count, z: sumZ / count }
+        : { x: 0, y: 0, z: 0 };
+
+    // Auto-scale herring to fit the cloud's typical extent.
     const cloudR = computeCloudRadius(nodes);
     const HERRING_LOCAL_HALF_LEN = 1.5;  // half of HERRING_LEN
     const scale = cloudR > 0 ? (cloudR / HERRING_LOCAL_HALF_LEN) : 1.0;
+
     return {
-        phase: MID_PHASE,
-        herringPhase: 0.0,
-        centroids,
+        unityPhase: 0.0,        // 0 = released (idle), 1 = fully collapsed
+        herringPhase: 0.0,      // 0 = released, 1 = fully arranged as herring
+        cloudCenter,
         herring,
         slot,
         scale,
@@ -70,12 +87,16 @@ export function tickPhases(state, gestures, dtSec) {
     const m = clamp01(gestures.mudra || 0);
     const h = clamp01(gestures.hakini || 0);
 
-    // Phase: mudra collapses toward UNITY, released recovers toward MID.
-    const pullDelta    = (UNITY_PHASE - state.phase) * m * COLLAPSE_RATE * dt;
-    const recoverDelta = (MID_PHASE   - state.phase) * (1 - m) * RECOVER_RATE * dt;
-    state.phase = clamp(state.phase + pullDelta + recoverDelta, UNITY_PHASE, 1.2);
+    // unityPhase springs toward mudra value. Collapse fast, release slower
+    // (TD's COLLAPSE_RATE / RECOVER_RATE asymmetry).
+    if (m > state.unityPhase) {
+        state.unityPhase += (m - state.unityPhase) * COLLAPSE_RATE * dt;
+    } else {
+        state.unityPhase += (m - state.unityPhase) * RECOVER_RATE * dt;
+    }
+    state.unityPhase = clamp01(state.unityPhase);
 
-    // Herring phase: hakini wakes it; released recovers to 0.
+    // herringPhase: hakini wakes it; released recovers to 0.
     if (h > 0.05) {
         state.herringPhase += (1 - state.herringPhase) * HERRING_RATE * dt * h;
     } else {
@@ -87,52 +108,48 @@ export function tickPhases(state, gestures, dtSec) {
 /**
  * Compute a single fish's target position. Pure function — does not mutate.
  *
- * Algorithm (mirrors `onCook`):
- *   1. base_t   = (sin(phase) + 1) / 2     — phase position 0..1
- *   2. unity_t  = smoothstep(base_t)       — eased
- *   3. unity_lerp = bezier(centroid, actual, unity_t)   ← collapse → individual
- *   4. herring_target = scaled_herring_slot[i]
- *   5. final = lerp(unity_lerp, herring_target, herring_phase)
+ * At idle (unityPhase = 0, herringPhase = 0): returns the snapshotted
+ * original position. Identical to the v4 cloud.
+ *
+ * As mudra rises (unityPhase → 1): linearly lerps toward cloudCenter
+ * (the mean of all dream positions — the cloud's "all my relations" point).
+ *
+ * As hakini rises (herringPhase → 1): linearly lerps the result toward this
+ * dream's assigned slot in the procedural herring, scaled to cloud extent.
  */
 export function computeFishTarget(state, node) {
     const id = String(node.id);
-    const cid = (node.cluster === null || node.cluster === undefined) ? -1 : node.cluster;
-    const cent = state.centroids[cid] || { x: 0, y: 0, z: 0 };
-    const actual = { x: node.x || 0, y: node.y || 0, z: node.z || 0 };
+    const ox = (typeof node._origX === 'number') ? node._origX : (node.x || 0);
+    const oy = (typeof node._origY === 'number') ? node._origY : (node.y || 0);
+    const oz = (typeof node._origZ === 'number') ? node._origZ : (node.z || 0);
+    const cc = state.cloudCenter || { x: 0, y: 0, z: 0 };
 
-    const baseT = (Math.sin(state.phase) + 1) * 0.5;
-    // Smoothstep + Bezier weighting: w1 = 2u·t, w2 = t·t — same as TD callback.
-    const t = baseT * baseT * (3 - 2 * baseT);
-    const u = 1 - t;
-    const w1 = 2 * u * t;
-    const w2 = t * t;
-    const unityX = w1 * cent.x + w2 * actual.x;
-    const unityY = w1 * cent.y + w2 * actual.y;
-    const unityZ = w1 * cent.z + w2 * actual.z;
+    // Mudra collapse: lerp(actual, cloudCenter, unityPhase)
+    const u = state.unityPhase;
+    let px = ox * (1 - u) + cc.x * u;
+    let py = oy * (1 - u) + cc.y * u;
+    let pz = oz * (1 - u) + cc.z * u;
 
-    if (state.herringPhase <= 0.001) {
-        return { x: unityX, y: unityY, z: unityZ };
+    // Hakini herring morph: lerp(current, herring_slot, herringPhase)
+    const hp = state.herringPhase;
+    if (hp > 0.001) {
+        const slotIdx = state.slot[id];
+        if (slotIdx !== undefined) {
+            const h = state.herring[slotIdx];
+            if (h) {
+                // Herring-local coords scaled + offset to the cloud center
+                // so the herring forms where the dreams are, not at world origin.
+                const sx = h.x * state.scale + cc.x;
+                const sy = h.y * state.scale + cc.y;
+                const sz = h.z * state.scale + cc.z;
+                px = px * (1 - hp) + sx * hp;
+                py = py * (1 - hp) + sy * hp;
+                pz = pz * (1 - hp) + sz * hp;
+            }
+        }
     }
 
-    // Apply herring shape weighted by herring_phase.
-    const slot = state.slot[id];
-    if (slot === undefined) {
-        return { x: unityX, y: unityY, z: unityZ };
-    }
-    const hp = state.herring[slot];
-    if (!hp) {
-        return { x: unityX, y: unityY, z: unityZ };
-    }
-    const sx = hp.x * state.scale;
-    const sy = hp.y * state.scale;
-    const sz = hp.z * state.scale;
-
-    const hPhase = state.herringPhase;
-    return {
-        x: unityX * (1 - hPhase) + sx * hPhase,
-        y: unityY * (1 - hPhase) + sy * hPhase,
-        z: unityZ * (1 - hPhase) + sz * hPhase,
-    };
+    return { x: px, y: py, z: pz };
 }
 
 /**
