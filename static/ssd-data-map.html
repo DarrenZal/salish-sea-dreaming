@@ -843,6 +843,10 @@
                     .attr('opacity', d => isVisible(d) ? 0.85 : 0);
             }
             simulation.alpha(0.3).restart();
+            // Re-apply the active-node emphasis after the transition target
+            // values have been written; otherwise stroke-opacity / stroke
+            // tweens would erase the selection styling.
+            setTimeout(() => { if (typeof applySelection === 'function') applySelection(); }, 520);
         }
 
         // ── Graph ──────────────────────────────────────────────
@@ -974,6 +978,10 @@
             // stroke-opacity so nulling marker-end is the only way to hide them.
             .attr('marker-end', _linkMarkerEnd);
 
+        // Selected-node state — set by handleNodeClick / deep-link, cleared by
+        // resetHighlight. Visual emphasis applied via applySelection() below.
+        let _selectedNodeId = null;
+
         const nodeEl = gEl.append('g').selectAll('circle').data(data.nodes).join('circle')
             .attr('r', d => isVisible(d) ? (d.type === 'hub' ? 28 : nodeR(d)) : 0)
             .attr('fill', d => fillColor(d))
@@ -982,6 +990,26 @@
             .attr('stroke-width', d => d.type === 'hub' ? 2.5 : 1)
             .attr('stroke-opacity', d => isVisible(d) ? defaultStrokeOpacity(d) : 0)
             .style('cursor', 'pointer');
+
+        // Stamp a selection style onto the currently-active node. Re-applied
+        // after every redraw() so the emphasis survives expansion/collapse.
+        function applySelection() {
+            nodeEl
+                .attr('stroke', d => d.id === _selectedNodeId ? '#00d4ff' : strokeColor(d))
+                .attr('stroke-width', d => d.id === _selectedNodeId
+                    ? (d.type === 'hub' ? 5 : 3.5)
+                    : (d.type === 'hub' ? 2.5 : 1))
+                .attr('stroke-opacity', d => d.id === _selectedNodeId
+                    ? 1
+                    : (isVisible(d) ? defaultStrokeOpacity(d) : 0))
+                .style('filter', d => d.id === _selectedNodeId
+                    ? 'drop-shadow(0 0 6px rgba(0,212,255,0.85)) drop-shadow(0 0 14px rgba(0,212,255,0.45))'
+                    : null);
+        }
+        function setSelectedNode(d) {
+            _selectedNodeId = d ? d.id : null;
+            applySelection();
+        }
 
         const labels = gEl.append('g').selectAll('text')
             .data(data.nodes.filter(n => n.type === 'source' || n.type === 'installation')).join('text')
@@ -1115,6 +1143,7 @@
                 else expandedDirs.add(d.id);
                 redraw();
             }
+            setSelectedNode(d);
             showDetail(d);
         }
         svg.on('click', () => { if (!_suppressReset) resetHighlight(); });
@@ -1421,8 +1450,12 @@
 
         function resetHighlight() {
             document.getElementById('detail').classList.remove('active');
+            _selectedNodeId = null;
             nodeEl.attr('fill-opacity', d => isVisible(d) ? defaultOpacity(d) : 0)
-                  .attr('stroke-opacity', d => isVisible(d) ? defaultStrokeOpacity(d) : 0);
+                  .attr('stroke', d => strokeColor(d))
+                  .attr('stroke-width', d => d.type === 'hub' ? 2.5 : 1)
+                  .attr('stroke-opacity', d => isVisible(d) ? defaultStrokeOpacity(d) : 0)
+                  .style('filter', null);
             link.attr('stroke-opacity', d => _linkEndpointsVisible(d) ? 0.5 : 0)
                 .attr('marker-end', _linkMarkerEnd);
         }
@@ -1882,14 +1915,29 @@
             }
         }
         function arm(targetId) {
-            if (morphDone) {
+            // Don't wait for the initial morph (`morphDone` from the d3
+            // simulation 'end' event) — by the time this IIFE runs,
+            // nodeById and handleNodeClick are already defined. Firing
+            // immediately drops deep-link arrival from ~3-6s down to
+            // ~immediate. Mid-morph clicks are safe: handleNodeClick only
+            // toggles expansion + calls redraw, which restarts the
+            // simulation on the new shape.
+            if (typeof handleNodeClick === 'function') {
                 focusTarget(targetId);
-            } else {
-                const checkDeepLink = setInterval(() => {
-                    if (morphDone) { focusTarget(targetId); clearInterval(checkDeepLink); }
-                }, 500);
-                setTimeout(() => { focusTarget(targetId); clearInterval(checkDeepLink); }, 6000);
+                return;
             }
+            // Fallback for the (very narrow) window where the IIFE runs
+            // before handleNodeClick is defined: poll fast, give up at 2s.
+            const t0 = Date.now();
+            const tick = setInterval(() => {
+                if (typeof handleNodeClick === 'function') {
+                    focusTarget(targetId);
+                    clearInterval(tick);
+                } else if (Date.now() - t0 > 2000) {
+                    console.warn('[deep-link] handleNodeClick never appeared');
+                    clearInterval(tick);
+                }
+            }, 50);
         }
         const initial = readDeepLinkTarget();
         if (initial) arm(initial);
