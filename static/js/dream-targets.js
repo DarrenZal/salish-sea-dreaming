@@ -103,6 +103,12 @@ export function tickPhases(state, gestures, dtSec) {
         state.herringPhase += (0 - state.herringPhase) * HERRING_RECOVER * dt;
     }
     state.herringPhase = clamp01(state.herringPhase);
+
+    // Pass through the bilateral-fray signals so per-fish anchor weighting
+    // can use them (no smoothing — they're discrete states from the detector).
+    state.frayActive = !!gestures.frayActive;
+    state.remainingHandX = (typeof gestures.remainingHandX === 'number')
+        ? gestures.remainingHandX : null;
 }
 
 /**
@@ -130,21 +136,46 @@ export function computeFishTarget(state, node) {
     let py = oy * (1 - u) + cc.y * u;
     let pz = oz * (1 - u) + cc.z * u;
 
-    // Hakini herring morph: lerp(current, herring_slot, herringPhase)
+    // Hakini herring morph: lerp(current, herring_slot, herringPhase).
+    //
+    // Asymmetric fray: when state.frayActive is true (one hand removed),
+    // each fish gets a per-fish anchorWeight based on whether its herring
+    // slot is on the same screen-side as the remaining hand. Anchored
+    // fish stay at full herringPhase; un-anchored fish drop to ~0 (return
+    // to their actual position). Embodied: you can feel which side of
+    // the fish you're holding.
     const hp = state.herringPhase;
     if (hp > 0.001) {
         const slotIdx = state.slot[id];
         if (slotIdx !== undefined) {
             const h = state.herring[slotIdx];
             if (h) {
-                // Herring-local coords scaled + offset to the cloud center
-                // so the herring forms where the dreams are, not at world origin.
+                let effectiveHp = hp;
+                if (state.frayActive && typeof state.remainingHandX === 'number') {
+                    // Slot.x ∈ [-1.5, +1.5] in herring-local. Hand x ∈ [0, 1].
+                    // Map both to [-1, +1] and take dot-product sign.
+                    //
+                    // MediaPipe returns mirror-image coords (left of viewer = x≈0,
+                    // right of viewer = x≈1). The herring's +x is "head" and the
+                    // viewer sees it from one side. We don't actually need a
+                    // physically-correct mapping; we need the visual to feel
+                    // intuitive: when you remove your hand from one side, the
+                    // OPPOSITE side of the fish frays.
+                    const slotXNorm = h.x / 1.5;                          // -1..1
+                    const handXNorm = (state.remainingHandX - 0.5) * 2;   // -1..1
+                    const dot = slotXNorm * handXNorm;
+                    // dot > 0  → fish slot is on the same side as remaining hand → anchored
+                    // dot < 0  → fish is on the side that lost its hand → frays
+                    // Smooth gradient with a 0.2-wide neutral band around 0.
+                    const anchorWeight = clamp01((dot + 0.2) * 2.5);
+                    effectiveHp = hp * anchorWeight;
+                }
                 const sx = h.x * state.scale + cc.x;
                 const sy = h.y * state.scale + cc.y;
                 const sz = h.z * state.scale + cc.z;
-                px = px * (1 - hp) + sx * hp;
-                py = py * (1 - hp) + sy * hp;
-                pz = pz * (1 - hp) + sz * hp;
+                px = px * (1 - effectiveHp) + sx * effectiveHp;
+                py = py * (1 - effectiveHp) + sy * effectiveHp;
+                pz = pz * (1 - effectiveHp) + sz * effectiveHp;
             }
         }
     }

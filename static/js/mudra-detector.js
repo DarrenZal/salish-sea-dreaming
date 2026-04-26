@@ -46,6 +46,7 @@ export function createDetectorState() {
         // Bilateral-fray tracking
         lastSealTime: 0,        // ms timestamp of last frame raw hakini > SEAL_TRIGGER
         frayActive: false,      // current fray state (one hand missing after seal)
+        remainingHandX: null,   // screen-x ∈ [0,1] of the still-visible hand during fray
     };
 }
 
@@ -133,9 +134,17 @@ export function readHakini(landmarks, state) {
     state.frayActive = inFray;
 
     if (inFray) {
+        // Track the screen-x of the remaining hand so the renderer can
+        // anchor "its" half of the herring and let the other side fray.
+        // Use the wrist landmark (0) as a stable reference.
+        const rem = validHands[0];
+        if (rem && rem[0] && typeof rem[0].x === 'number') {
+            state.remainingHandX = rem[0].x;
+        }
         // Slow decay — preserves the herring shape while one hand frames it.
         state.hakiniSmoothed *= FRAY_DECAY_PER_FRAME;
     } else {
+        state.remainingHandX = null;
         state.hakiniSmoothed = HAKINI_SMOOTHING * raw + (1 - HAKINI_SMOOTHING) * state.hakiniSmoothed;
     }
     return state.hakiniSmoothed;
@@ -143,12 +152,19 @@ export function readHakini(landmarks, state) {
 
 /**
  * Convenience wrapper — read both gestures from a single landmarks snapshot.
- * Returns { mudra, hakini, frayActive }.
+ * Returns { mudra, hakini, frayActive, remainingHandX }.
+ *   remainingHandX: screen-x ∈ [0, 1] of the still-visible hand during fray.
+ *                   null when not in fray.
  */
 export function readGestures(landmarks, state) {
     const mudra = readMudra(landmarks, state);
     const hakini = readHakini(landmarks, state);
-    return { mudra, hakini, frayActive: !!state.frayActive };
+    return {
+        mudra,
+        hakini,
+        frayActive: !!state.frayActive,
+        remainingHandX: state.frayActive ? state.remainingHandX : null,
+    };
 }
 
 // Internal ───────────────────────────────────────────────────────────────────
