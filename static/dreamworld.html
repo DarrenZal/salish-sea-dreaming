@@ -615,7 +615,8 @@
     applyTargetsToNodes(targetState, ready.graphData.nodes, dt, fishMap);
     if (Camera.isActive()) {
       const hands = lastLandmarks.length;
-      setStatus(`hands ${hands}  ·  mudra ${(gestures.mudra*100|0)}%  ·  hakini ${(gestures.hakini*100|0)}%  ·  herring ${(targetState.herringPhase*100|0)}%`);
+      const fray = gestures.frayActive ? '  ·  fray' : '';
+      setStatus(`hands ${hands}  ·  mudra ${(gestures.mudra*100|0)}%  ·  hakini ${(gestures.hakini*100|0)}%  ·  herring ${(targetState.herringPhase*100|0)}%${fray}`);
     }
   }
   requestAnimationFrame(frame);

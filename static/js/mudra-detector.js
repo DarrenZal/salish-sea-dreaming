@@ -22,6 +22,16 @@ export const MUDRA_SMOOTHING = 0.40;            // α in EMA — quick to fire, 
 export const HAKINI_SUM_THRESHOLD = 1.0;        // 5-pair distance sum below this = hakini
 export const HAKINI_SMOOTHING = 0.25;
 
+// "Fray" — port of TD's asymmetric-break behavior, simplified for one
+// person across two hands. When the seal is broken by losing ONE hand
+// (camera occlusion, dropping a hand, leaving frame) but the other hand
+// stays visible, hold the herring shape elevated so it dissolves slowly
+// instead of snapping back to dispersed. Two hands gone = normal full
+// release (camera still rolling but seal genuinely ended).
+export const FRAY_RECENT_SEAL_MS = 3000;          // window after seal to consider fray
+export const FRAY_DECAY_PER_FRAME = 0.992;        // ~half-life ≈ 3s at 30fps
+export const SEAL_TRIGGER = 0.40;                  // raw hakini above this = sealed
+
 // Landmark indices: wrist=0, thumb_tip=4, index_tip=8, middle_tip=12, ring_tip=16, pinky_tip=20
 const FINGERTIPS = [4, 8, 12, 16, 20];
 
@@ -33,6 +43,9 @@ export function createDetectorState() {
     return {
         mudraSmoothed: 0.0,
         hakiniSmoothed: 0.0,
+        // Bilateral-fray tracking
+        lastSealTime: 0,        // ms timestamp of last frame raw hakini > SEAL_TRIGGER
+        frayActive: false,      // current fray state (one hand missing after seal)
     };
 }
 
@@ -74,41 +87,68 @@ export function readMudra(landmarks, state) {
 }
 
 /**
- * Two-hand Hakini: 5 fingertip-pair distances summed across the first two
- * hands; raw = clamp01(1 - sum / 1.0); returns raw² smoothed at α=0.25.
+ * Two-hand Hakini: 5 fingertip-pair distances summed across two hands;
+ * raw = clamp01(1 - sum / 1.0)²; returns smoothed value at α=0.25.
  *
- * Matches `_read_hakini`.
+ * Asymmetric-break ("fray") behavior:
+ *   - 0 hands visible        → normal EMA toward raw=0 (fast release)
+ *   - 1 hand visible AND
+ *     recently sealed        → SLOW decay (~3s half-life) so herring
+ *                              shape lingers — the "fray" window
+ *   - 2+ hands               → normal Hakini math
+ *
+ * Mirrors the spirit of TD's _read_hakini_bilateral without the 2-person
+ * face/midline split. Sets state.frayActive so the caller can surface it.
  */
 export function readHakini(landmarks, state) {
+    const now = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+    const validHands = (landmarks || []).filter(h => h && h.length >= 21);
+    const handsCount = validHands.length;
+
     let raw = 0.0;
-    if (landmarks && landmarks.length >= 2) {
-        const h1 = landmarks[0], h2 = landmarks[1];
-        if (h1 && h1.length >= 21 && h2 && h2.length >= 21) {
-            let total = 0.0;
-            for (const tip of FINGERTIPS) {
-                const a = h1[tip], b = h2[tip];
-                const dx = a.x - b.x;
-                const dy = a.y - b.y;
-                const dz = (a.z || 0) - (b.z || 0);
-                total += Math.sqrt(dx * dx + dy * dy + dz * dz);
-            }
-            const rs = clamp01(1.0 - total / HAKINI_SUM_THRESHOLD);
-            raw = rs * rs;
+    if (handsCount >= 2) {
+        const h1 = validHands[0], h2 = validHands[1];
+        let total = 0.0;
+        for (const tip of FINGERTIPS) {
+            const a = h1[tip], b = h2[tip];
+            const dx = a.x - b.x;
+            const dy = a.y - b.y;
+            const dz = (a.z || 0) - (b.z || 0);
+            total += Math.sqrt(dx * dx + dy * dy + dz * dz);
         }
+        const rs = clamp01(1.0 - total / HAKINI_SUM_THRESHOLD);
+        raw = rs * rs;
     }
-    state.hakiniSmoothed = HAKINI_SMOOTHING * raw + (1 - HAKINI_SMOOTHING) * state.hakiniSmoothed;
+
+    // Track "we were just sealed" timestamp.
+    if (raw > SEAL_TRIGGER) {
+        state.lastSealTime = now;
+    }
+    const sinceSeal = now - (state.lastSealTime || 0);
+
+    // Fray = exactly one hand visible AND we were sealed within the recent
+    // window. With 2+ hands but no seal, this is just open hands → fall
+    // through to normal EMA. With 0 hands, normal release (no fray).
+    const inFray = (handsCount === 1 && state.lastSealTime > 0 && sinceSeal < FRAY_RECENT_SEAL_MS);
+    state.frayActive = inFray;
+
+    if (inFray) {
+        // Slow decay — preserves the herring shape while one hand frames it.
+        state.hakiniSmoothed *= FRAY_DECAY_PER_FRAME;
+    } else {
+        state.hakiniSmoothed = HAKINI_SMOOTHING * raw + (1 - HAKINI_SMOOTHING) * state.hakiniSmoothed;
+    }
     return state.hakiniSmoothed;
 }
 
 /**
  * Convenience wrapper — read both gestures from a single landmarks snapshot.
- * Returns { mudra, hakini } each ∈ [0, 1].
+ * Returns { mudra, hakini, frayActive }.
  */
 export function readGestures(landmarks, state) {
-    return {
-        mudra: readMudra(landmarks, state),
-        hakini: readHakini(landmarks, state),
-    };
+    const mudra = readMudra(landmarks, state);
+    const hakini = readHakini(landmarks, state);
+    return { mudra, hakini, frayActive: !!state.frayActive };
 }
 
 // Internal ───────────────────────────────────────────────────────────────────
