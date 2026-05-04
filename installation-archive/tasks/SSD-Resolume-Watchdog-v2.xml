@@ -1,0 +1,83 @@
+﻿<?xml version="1.0" encoding="UTF-16"?>
+
+<Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
+
+  <RegistrationInfo>
+
+    <Date>2026-04-19T17:00:00</Date>
+
+    <Author>DESKTOP-37616PR\user</Author>
+
+    <Description>Long-running Resolume Arena process watchdog. Checks every 2min; restarts via SSD-Resolume if Arena.exe absent. Exponential backoff + 5-restarts-per-hour limit + CRITICAL alert on crash-loop. Writes heartbeat to C:\Users\user\heartbeats\resolume_watchdog.hb for meta-watchdog observation. Addresses the Apr 18 23:21 + Apr 19 15:22 Arena heap-corruption crash pattern.</Description>
+
+    <URI>\SSD-Resolume-Watchdog-v2</URI>
+
+  </RegistrationInfo>
+
+  <Principals>
+
+    <Principal id="Author">
+
+      <UserId>S-1-5-21-3151823897-1990050577-3676455961-1000</UserId>
+
+      <LogonType>InteractiveToken</LogonType>
+
+      <RunLevel>HighestAvailable</RunLevel>
+
+    </Principal>
+
+  </Principals>
+
+  <Settings>
+
+    <DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries>
+
+    <StopIfGoingOnBatteries>false</StopIfGoingOnBatteries>
+
+    <Enabled>false</Enabled>
+
+    <ExecutionTimeLimit>PT0S</ExecutionTimeLimit>
+
+    <MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy>
+
+    <RestartOnFailure>
+
+      <Count>3</Count>
+
+      <Interval>PT1M</Interval>
+
+    </RestartOnFailure>
+
+    <StartWhenAvailable>true</StartWhenAvailable>
+
+    <IdleSettings>
+
+      <StopOnIdleEnd>true</StopOnIdleEnd>
+
+      <RestartOnIdle>false</RestartOnIdle>
+
+    </IdleSettings>
+
+  </Settings>
+
+  <Triggers>
+
+    <LogonTrigger />
+
+    <BootTrigger />
+
+  </Triggers>
+
+  <Actions Context="Author">
+
+    <Exec>
+
+      <Command>powershell.exe</Command>
+
+      <Arguments>-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File C:\Users\user\resolume_watchdog.ps1</Arguments>
+
+    </Exec>
+
+  </Actions>
+
+</Task>

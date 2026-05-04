@@ -1,0 +1,75 @@
+﻿<?xml version="1.0" encoding="UTF-16"?>
+
+<Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
+
+  <RegistrationInfo>
+
+    <Date>2026-04-16T01:25:06</Date>
+
+    <Author>DESKTOP-37616PR\user</Author>
+
+    <URI>\SSD-Post-Boot-Verify</URI>
+
+  </RegistrationInfo>
+
+  <Principals>
+
+    <Principal id="Author">
+
+      <UserId>S-1-5-21-3151823897-1990050577-3676455961-1000</UserId>
+
+      <LogonType>InteractiveToken</LogonType>
+
+      <RunLevel>HighestAvailable</RunLevel>
+
+    </Principal>
+
+  </Principals>
+
+  <Settings>
+
+    <DisallowStartIfOnBatteries>true</DisallowStartIfOnBatteries>
+
+    <StopIfGoingOnBatteries>true</StopIfGoingOnBatteries>
+
+    <MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy>
+
+    <IdleSettings>
+
+      <Duration>PT10M</Duration>
+
+      <WaitTimeout>PT1H</WaitTimeout>
+
+      <StopOnIdleEnd>true</StopOnIdleEnd>
+
+      <RestartOnIdle>false</RestartOnIdle>
+
+    </IdleSettings>
+
+  </Settings>
+
+  <Triggers>
+
+    <LogonTrigger>
+
+      <StartBoundary>2026-04-16T01:25:00</StartBoundary>
+
+      <Delay>PT1S</Delay>
+
+    </LogonTrigger>
+
+  </Triggers>
+
+  <Actions Context="Author">
+
+    <Exec>
+
+      <Command>powershell.exe</Command>
+
+      <Arguments>-ExecutionPolicy Bypass -WindowStyle Hidden -File C:\Users\user\post_boot_verify.ps1</Arguments>
+
+    </Exec>
+
+  </Actions>
+
+</Task>
