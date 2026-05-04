@@ -42,10 +42,21 @@ scp scripts/gallery_audio.py windows-desktop:C:/Users/user/gallery_audio.py
 
 ## Current Status
 
-**Date:** 2026-04-24
-**Status:** EXHIBITION LIVE (Apr 10–26) — final 2 days. **Three audio-reactive TD scenes + MediaPipe hand tracking** built for Saturday Apr 26 closing-day VJ set. `.toe` + scripts + species images bundled, shared with Prav via Proton Drive.
+**Date:** 2026-05-03
+**Status:** **EXHIBITION CLOSED — 3090 returned to regular dev mode.** Per Prav's Signal request ("set up 3090 again, lets save all those start up and healing commands and return this machine to regular dev mode"), pulled the full installation auto-launch + self-healing stack into `installation-archive/` (96 files, 6.1MB, commit `ba94a83`) then disabled 21 of 23 `SSD-*` Task Scheduler entries on the 3090. Only `SSD-SSH-Tunnel` + `SSD-Tunnel-Watchdog` left running so we can still reach the box. Branch `mudra-living-intelligence-2026-04-26` pushed to GitHub with upstream tracking. Signal DM confirmation sent to Prav (ts `1777868635067`).
+
+**Reverse tunnel via poly was DOWN** during this session — accessed via WireGuard (`windows-desktop-wg` → `10.100.0.30`); Tailscale also timed out. WireGuard is the most reliable path right now.
 
 **License Policy:** COMMERCIAL USE — CC0, CC BY, CC BY-SA only. CC BY-NC excluded. Collaborator materials (Moonfish, Denning) under `collaborator permission` — see `training-data/licenses-collaborators.md`. Full credits: `docs/credits-attribution.md`.
+
+**What's Done (post-exhibition dev-mode return, 2026-05-03):**
+- Pulled 64 scripts from `C:\Users\user\` (.py/.ps1/.bat/.ahk + hidden `.ssd_secrets.ps1`)
+- Exported all 23 `SSD-*` Task Scheduler XML definitions (re-importable)
+- Pulled 8 `.toe` lineage tips from Desktop (production `SSD_gallery_2026-04-06_0321.14.toe` + variants)
+- Disabled all installation auto-launchers + watchdogs; killed running watchdog instances
+- Kept 2 SSH tunnel tasks running for remote access
+- README at `installation-archive/README.md` documents inventory + restore procedure
+- Surfaced `scp` truncation gotcha to memory: macOS scp silently truncates `.toe` files at 200KB; use `scp -O` legacy protocol
 
 **What's Done (Saturday VJ prep, 2026-04-23):**
 - **Three TD scenes live-built via TD MCP**:
@@ -60,9 +71,10 @@ scp scripts/gallery_audio.py windows-desktop:C:/Users/user/gallery_audio.py
 **Prior production stack (intact):** Autolume 120 kimg + StreamDiffusion sd-turbo + Resolume Arena + visitor web app + auto-heal + health monitoring + SSH reverse tunnel (`windows-desktop-remote`).
 
 **What's Left:**
-1. **Friday 2026-04-25** — morning sync with Prav after he loads bundle; test scenes on his machine (path updates needed for `images/marine/` + MediaPipe.tox); NDI routing from Darren's laptop into Prav's Resolume setup
-2. **Saturday 2026-04-26** — live VJ/DJ closing session; rehearsal AM, show evening; 3 laptops + 3 MIDI controllers per Prav's plan
-3. **Post-show** (deferred): WASAPI loopback rewrite of `gallery_audio.py`, visitor-app chat-mode bug, SD food-prompt quirk
+1. **Wait on Prav** — he may ask for additional cleanup, dev-tool installs, or eventually a restore-to-installation-mode. Restore command: `Get-ScheduledTask -TaskName 'SSD-*' | Enable-ScheduledTask`.
+2. **Investigate poly reverse tunnel outage** — `SSD-SSH-Tunnel` was Running on 3090 but `windows-desktop-remote` (poly:2222) refused connection. Tunnel-side (poly) listener may have died or `clean_tunnel.sh` cron wiped it. Low priority since WireGuard works.
+3. **Tailscale path also failed** (`100.91.172.10` timed out) — possibly the 24h auth key from Apr 20 expired and 3090 was never re-joined. Low priority.
+4. **Post-show backlog** (deferred): WASAPI loopback rewrite of `gallery_audio.py`, visitor-app chat-mode bug, SD food-prompt quirk.
 
 ## Briony Style Transfer — Options for StreamDiffusion
 
@@ -297,3 +309,4 @@ curl http://localhost:8351/health  # check if KOI backend running
 | `4337d388` | 2026-03-26–27 | Moonfish + Denning integration | Strategic pivot: video as primary exhibition material, not just corpus input. 8 hero segments subclipped, 3 uploaded to Drive for Prav. 416 underwater frames extracted. Shotlist + render packet sent to Prav. Two-track plan: Track A (exhibition lock by April 1) + Track B (TELUS training, subordinate). New scripts: extract_video_frames.py, contact_sheet.py. |
 | `af3eb5d9` | 2026-04-22 | ops | Silence false-positive Telegram alert: disabled `audio_monitor` health probe check in `health_probe.ps1` (3090 has no mic; `audio_silent` was already disabled Apr 20 for same reason). Deployed to 3090 via scp, committed + pushed. |
 | `f82e40c5` | 2026-04-23 | TD VJ prep + gallery fixes | **Pivot day per Prav's Signal directive.** (A) Gallery: hardened prompt filter (regex + gpt-4.1-mini moderation) + new co-dream label deployed to poly. (B) Three audio-reactive TD scenes built live via TD MCP: `salish_audio` (mycelium, hand-conducted), `salish_prisms` (128 species cards, mic-reactive), `salish_dreamworld` (live /dreams/3d fetch with music-driven unity→cluster→individual bezier breathing). (C) MediaPipe hand tracking integrated via `hand_pos` Constant CHOP bridge. (D) Bundle (184MB .toe + scripts + species images + README) uploaded to Proton Drive, link sent to Prav on Signal. Key TD gotchas discovered and documented: `instancing` (not `instanceactive`) is master toggle; LFO CHOP `rate` unreliable — use `absTime.seconds`; webclientDAT response format varies; per-instance textures need `instancetexs` TOPMulti. |
+| `156cd786` | 2026-05-03 | ops + archive | **Post-exhibition dev-mode return.** Tunneled to 3090 via WireGuard (poly tunnel + Tailscale both down). Pulled full installation stack into `installation-archive/` (96 files, 6.1MB): 64 scripts from `C:\Users\user\` + 23 `SSD-*` task XML exports + 8 `.toe` lineage tips. Disabled 21 of 23 SSD-* tasks; kept `SSD-SSH-Tunnel` + `SSD-Tunnel-Watchdog` for remote access. Killed running watchdog instances. Commit `ba94a83` pushed to GitHub on `mudra-living-intelligence-2026-04-26` (with upstream tracking). Signal DM to Prav (ts `1777868635067`) confirming dev-mode return. **Discovered:** macOS scp silently truncates `.toe` files at 200KB; `scp -O` (legacy protocol) is the workaround. |
