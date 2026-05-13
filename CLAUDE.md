@@ -1,6 +1,26 @@
+<!-- workstream: ssd -->
+
 # Salish Sea Dreaming
 
 > *"We are the Salish Sea, dreaming itself awake."*
+
+> 🌅 **Fresh session start:** run **`/whats-next`** for ranked priorities. CLAUDE.md (this file) auto-loads — no extra command needed. For orchestrator-mode bootstrap behavior, see **Session Start Protocol** below.
+
+## Session Start Protocol
+
+When a fresh session opens here, do these in order before responding to anything else:
+
+1. **Read the canonical plan in full:** `~/.claude/plans/ok-so-i-polymorphic-melody.md` (14-section strategic plan; lint-clean; 3 Codex review rounds resolved). Don't paraphrase from memory — the plan is the source of truth for Phase 2.
+2. **Status-check overnight surfaces** in parallel:
+   - `ls -lt ~/Documents/Notes/Signal*Dreaming*Chat.md ~/Documents/Notes/M37*Salish*Sea*Dreaming*Chat.md ~/Documents/Notes/Signal*Salish*Sea*Dreaming*Tactical*Chat.md | head -5` — any modified in last 24h means new Signal activity worth reading
+   - `ls ~/projects/salish-sea-dreaming/docs/next-iteration/_research/prompt-*__*.md 2>/dev/null` — deep-research outputs returned?
+   - Remind operator to check Proton inbox for Prav's reply on the venue thread (subject `Re: 720 dpi projectors in the Hubble Space`) — Claude can't read Proton directly
+3. **Run `/whats-next`** for ranked priorities (reads this file + plan + tasks).
+4. **Triage today's top 3 actions** with decision gates + ownership (Darren / Prav / Austin / Carol Anne / Natalia).
+5. **Frame the session as orchestrator** — high-level coordination, delegate to sub-agents only when operator asks or work is genuinely independent (parallel web research, codebase exploration). Direct tool calls for everything else. Per logged pattern 2026-05-13: don't auto-spawn sub-agents after a velocity push from the operator.
+6. **Honor the project memory entries** — esp. `feedback_exploration_over_lockin.md`, `feedback_visitor_interactivity_primary.md`, `feedback_austin_no_ai_generation.md`, `feedback_ssd_email_address_per_thread.md` (in `~/.claude/projects/-Users-darrenzal-projects-salish-sea-dreaming/memory/`). These are user-posture corrections from prior sessions and shape behavior here.
+
+If today's CLAUDE.md "Date" is more than ~3 days stale, flag that a fresh `/end` is needed soon.
 
 Interactive AI art installation exploring the Salish Sea ecosystem. The vision: not humans looking at nature through technology, but the Salish Sea using technology to perceive itself.
 
@@ -42,39 +62,45 @@ scp scripts/gallery_audio.py windows-desktop:C:/Users/user/gallery_audio.py
 
 ## Current Status
 
-**Date:** 2026-05-03
-**Status:** **EXHIBITION CLOSED — 3090 returned to regular dev mode.** Per Prav's Signal request ("set up 3090 again, lets save all those start up and healing commands and return this machine to regular dev mode"), pulled the full installation auto-launch + self-healing stack into `installation-archive/` (96 files, 6.1MB, commit `ba94a83`) then disabled 21 of 23 `SSD-*` Task Scheduler entries on the 3090. Only `SSD-SSH-Tunnel` + `SSD-Tunnel-Watchdog` left running so we can still reach the box. Branch `mudra-living-intelligence-2026-04-26` pushed to GitHub with upstream tracking. Signal DM confirmation sent to Prav (ts `1777868635067`).
+**Date:** 2026-05-13
+**Status:** **Phase 2 sprint Day 3 of ~14** — Indigenomics IMPACT activation at **HR MacMillan Space Centre, Hubble Space**, late May (~May 25 doors; May 22–24 install window). Comprehensive plan complete + Codex-reviewed; Phase 0 scaffolding shipped; Prav email sent via Proton awaiting his forward to venue group (Michael Unger / Lorraine Lowe / Bryce Tordiffe / Natalia Lebedinskaia).
 
-**Reverse tunnel via poly was DOWN** during this session — accessed via WireGuard (`windows-desktop-wg` → `10.100.0.30`); Tailscale also timed out. WireGuard is the most reliable path right now.
+**📋 Read first:** `~/.claude/plans/ok-so-i-polymorphic-melody.md` — 14-section strategic plan (lint-clean, 3 Codex `/review-plan` rounds at x-high reasoning). Canonical source of truth for Phase 2.
 
-**License Policy:** COMMERCIAL USE — CC0, CC BY, CC BY-SA only. CC BY-NC excluded. Collaborator materials (Moonfish, Denning) under `collaborator permission` — see `training-data/licenses-collaborators.md`. Full credits: `docs/credits-attribution.md`.
+**Venue identity (clarified):** Indigenomics IMPACT IS the Space Centre show (same event — earlier plans treated separately). Lorraine approved 1080p+ projector upgrade 2026-05-09. Pre-event install + test access secured. 1100 Chestnut St, Vancouver. Territory: xʷməθkʷəy̓əm (Musqueam) / Sḵwx̱wú7mesh (Squamish) / səlilwətaɬ (Tsleil-Waututh).
 
-**What's Done (post-exhibition dev-mode return, 2026-05-03):**
-- Pulled 64 scripts from `C:\Users\user\` (.py/.ps1/.bat/.ahk + hidden `.ssd_secrets.ps1`)
-- Exported all 23 `SSD-*` Task Scheduler XML definitions (re-importable)
-- Pulled 8 `.toe` lineage tips from Desktop (production `SSD_gallery_2026-04-06_0321.14.toe` + variants)
-- Disabled all installation auto-launchers + watchdogs; killed running watchdog instances
-- Kept 2 SSH tunnel tasks running for remote access
-- README at `installation-archive/README.md` documents inventory + restore procedure
-- Surfaced `scp` truncation gotcha to memory: macOS scp silently truncates `.toe` files at 200KB; use `scp -O` legacy protocol
+**License Policy:** COMMERCIAL USE — CC0, CC BY, CC BY-SA only. CC BY-NC excluded. Full credits + audit: `docs/space-center/credits-and-licenses-2026-05.md`.
 
-**What's Done (Saturday VJ prep, 2026-04-23):**
-- **Three TD scenes live-built via TD MCP**:
-  - `salish_audio` (mycelium) — audio-reactive + hand-conducted via MediaPipe webcam (`scripts/mycelium_audio.py`)
-  - `salish_prisms` — 128 Salish Sea species portraits as instanced 3D cards, mic-reactive (`scripts/salish_prisms.py`)
-  - `salish_dreamworld` — live HTTP fetch of `/dreams/3d`, music-driven unity→cluster→individual bezier breathing (`scripts/salish_dreamworld.py`)
-- **MediaPipe hand tracking** — installed via torinmb plugin; `hand_pos` CHOP bridge via Execute DAT JSON parser (`scripts/setup_hand_bridge.py`)
-- **Gallery live-show fixes deployed**: regex + GPT-4.1-mini LLM prompt filter (wrestlers/politicians/weapons/trucks) + new label "What would you co-dream with the Salish Sea?" (`scripts/gallery_server.py` on poly)
-- **Mac audio dev tools**: `scripts/play_audio_osc.py` (file playback + OSC), `scripts/fake_audio_osc.py` (synthetic breathe/peak/silent modes)
-- **TD key gotchas documented inline** (bit us hard): Geometry COMP `instancing` is master toggle (not `instanceactive`); per-instance textures via `instancetexs` TOPMulti + `instancetexindex` channel; LFO CHOP `rate` behaves unreliably — use `absTime.seconds` direct; webclientDAT response format differs between initial/re-fetch (parse from first `{`)
+**What's Done (Phase 2 plan + Phase 0 kickoff, 2026-05-11 → 13):**
+- Comprehensive plan + 3 Codex rounds resolved 30+ open questions; remaining strategic items are Prav-conversation-owned and documented as Stakeholder Alignment dependencies
+- 5 deep-research prompts paste-ready at `docs/next-iteration/_research/prompt-0[1-5]*.md` for parallel ChatGPT / Gemini / Claude.ai Deep Research triangulation
+- Phase 0 scaffolding in `docs/space-center/`: `austin-consent-map.md` (Day-2 screenshare template), `credits-and-licenses-2026-05.md` (Day-8 lockdown audit), `license-audit.md`, `draft-email-to-michael-unger-2026-05-12.md`
+- Vault People notes: created `People/Michael Unger.md`, updated `People/Natalia Lebedinskaia.md` with full contact + expanded role
+- Email to Prav sent via Proton 2026-05-13 (subject: "Re: 720 dpi projectors in the Hubble Space") asking him to forward venue-group draft; correction follow-up sent re: cc address
+- **Root-cause fix:** built `proton-send` skill at `~/projects/darren-workflow/skills/proton-send/` wrapping local Proton Mail Bridge SMTP — Proton sends now first-class in any session
+- 9 new memory entries: see `~/.claude/projects/-Users-darrenzal-projects-salish-sea-dreaming/memory/MEMORY.md`
+- Austin's "no AI generation in my style" stance captured (May 5 meeting; Xwalacktun teaching) — LoRA-on-Austin's-portfolio dropped from May default; primary morph technique = manual decomposition + TD interpolation of his actual vectors
+- TELUS confirmed 3× H200 available (Apr 4 ops data); parallel Jupyter strategy validated. Phase 1 "Landscape Dissolution" (Boids+depth+ControlNet) flagged as adaptable to formline morphs.
+- 5090 sourcing scoped: Memory Express + Canada Computers Vancouver have AIB 32GB ~$2,500–3,500 CAD; full build $7–8k feasible
 
-**Prior production stack (intact):** Autolume 120 kimg + StreamDiffusion sd-turbo + Resolume Arena + visitor web app + auto-heal + health monitoring + SSH reverse tunnel (`windows-desktop-remote`).
+**Prior session work (compressed, see claude-mem for detail):** Phase 2 planning kickoff 2026-05-04 (Austin research, 127-image portfolio scrape); post-exhibition return 2026-05-03 (96-file installation-archive, scp -O gotcha); Saturday VJ prep 2026-04-23 (3 audio-reactive TD scenes, MediaPipe `hand_pos` bridge).
 
-**What's Left:**
-1. **Wait on Prav** — he may ask for additional cleanup, dev-tool installs, or eventually a restore-to-installation-mode. Restore command: `Get-ScheduledTask -TaskName 'SSD-*' | Enable-ScheduledTask`.
-2. **Investigate poly reverse tunnel outage** — `SSD-SSH-Tunnel` was Running on 3090 but `windows-desktop-remote` (poly:2222) refused connection. Tunnel-side (poly) listener may have died or `clean_tunnel.sh` cron wiped it. Low priority since WireGuard works.
-3. **Tailscale path also failed** (`100.91.172.10` timed out) — possibly the 24h auth key from Apr 20 expired and 3090 was never re-joined. Low priority.
-4. **Post-show backlog** (deferred): WASAPI loopback rewrite of `gallery_audio.py`, visitor-app chat-mode bug, SD food-prompt quirk.
+**Prior production stack (intact):** Autolume 120 kimg + StreamDiffusion sd-turbo + Resolume Arena + visitor web app + auto-heal + SSH reverse tunnel. **Briony layer DROPPED** for Phase 2 (aesthetic mismatch with Austin's Coast Salish lines).
+
+**What's Left (next session, priority-ordered):**
+1. **5090 decision (BLOCKING TODAY 2026-05-13):** order from Memory Express / Canada Computers Vancouver, or punt to next venue. Confirm budget with Prav.
+2. **Status check on Prav reply** to the Proton email — has he forwarded venue-group draft to Michael Unger? Any edits requested?
+3. **Run 5 deep-research prompts** in parallel external tools (paste-ready files in `docs/next-iteration/_research/`); save outputs as `prompt-NN__claude.md` / `__gemini.md` / `__chatgpt.md` for triangulation
+4. **Austin asset gate Thu May 14 (Day 4):** first batch in? YES → kick off TELUS H200 parallel render. NO → continue formline-decomposition experiments on already-scraped `austin-reference/` with verbal per-piece OK gating
+5. **Carol Anne sign-off** on protocol/sharing posture (async via Signal — Prav-owned)
+6. **Formline decomposition experiments START** on austin-reference/: 3–5 hero pieces (Salish Spirit Thunderbird, Westridge Orca, Whitecaps Sínulhka, MST Thunderbird House Post, KwiKwi); review with Austin via Signal screenshare
+7. **TELUS H200 access provisioning** with Carol Anne — EOD Wed May 13
+8. **Track A items** (Resolume Advanced Output remote automation, WASAPI rewrite, tunnel hardening) — parallel to content work
+9. **Older deferred (stretch only):** visitor-app chat-mode bug, SD food-prompt quirk
+
+**Open questions (Prav-conversation-owned — Stakeholder Alignment in plan):** Austin contract signed? Indigenomics organizer thesis approval? Sponsor expectation (transit-triptych vs ceremonial)? Compensation alignment across collaborators?
+
+See `Tasks/2026-05-05-*` and `Tasks/2026-05-08-*` for the 18 individual open tasks from the latest meetings (10 already auto-closed against same-day evidence).
 
 ## Briony Style Transfer — Options for StreamDiffusion
 
@@ -310,4 +336,6 @@ curl http://localhost:8351/health  # check if KOI backend running
 | `af3eb5d9` | 2026-04-22 | ops | Silence false-positive Telegram alert: disabled `audio_monitor` health probe check in `health_probe.ps1` (3090 has no mic; `audio_silent` was already disabled Apr 20 for same reason). Deployed to 3090 via scp, committed + pushed. |
 | `f82e40c5` | 2026-04-23 | TD VJ prep + gallery fixes | **Pivot day per Prav's Signal directive.** (A) Gallery: hardened prompt filter (regex + gpt-4.1-mini moderation) + new co-dream label deployed to poly. (B) Three audio-reactive TD scenes built live via TD MCP: `salish_audio` (mycelium, hand-conducted), `salish_prisms` (128 species cards, mic-reactive), `salish_dreamworld` (live /dreams/3d fetch with music-driven unity→cluster→individual bezier breathing). (C) MediaPipe hand tracking integrated via `hand_pos` Constant CHOP bridge. (D) Bundle (184MB .toe + scripts + species images + README) uploaded to Proton Drive, link sent to Prav on Signal. Key TD gotchas discovered and documented: `instancing` (not `instanceactive`) is master toggle; LFO CHOP `rate` unreliable — use `absTime.seconds`; webclientDAT response format varies; per-instance textures need `instancetexs` TOPMulti. |
 | `156cd786` | 2026-05-03 | ops + archive | **Post-exhibition dev-mode return.** Tunneled to 3090 via WireGuard (poly tunnel + Tailscale both down). Pulled full installation stack into `installation-archive/` (96 files, 6.1MB): 64 scripts from `C:\Users\user\` + 23 `SSD-*` task XML exports + 8 `.toe` lineage tips. Disabled 21 of 23 SSD-* tasks; kept `SSD-SSH-Tunnel` + `SSD-Tunnel-Watchdog` for remote access. Killed running watchdog instances. Commit `ba94a83` pushed to GitHub on `mudra-living-intelligence-2026-04-26` (with upstream tracking). Signal DM to Prav (ts `1777868635067`) confirming dev-mode return. **Discovered:** macOS scp silently truncates `.toe` files at 200KB; `scp -O` (legacy protocol) is the workaround. |
-| — | 2026-05-04 | next-iteration kickoff | **Phase 2 planning + Austin Harry / INDIGITAL collaboration prep.** Researched Austin Harry (Sḵwx̱wú7mesh Wolf Clan + Nam̓gis Thunderbird Clan; son of Xwalacktun, brother of James Harry; game-industry background; Salish Spirit at VanLive! is closest precedent for SSD). Pulled 127 INDIGITAL portfolio images (99 MB) into gitignored `austin-reference/` via new `tools/scrape_indigital.py` (stdlib, manifest with sha256, idempotent, dry-run flag). Synthesized meeting-notes digest of Prav's post-show "next step" ideas (VVVV, three-venue trajectory, visitor memory archive, Halact for MOVE37XR). Produced four deliverables under `docs/next-iteration/`: research dossier `_research/indigital-research.md`, `austin-collab-brief.md` (v0.1, awaiting Prav review), `technical-roadmap.md` (5 tracks: A touring resilience, B visitor memory, C VVVV spike, D Indigenous collab tooling, E corpus evolution), `venue-strategy.md` (Indigenomics May → MOVE37XR Oct → DEVCON Nov → Life at the Center 2027). Plan reviewed via Codex `/review-plan` round 1; 5 dispositions applied (consent posture, research-file-first, multi-source citations, Darren+Prav approval gate). Approval flow: Darren → Prav (Signal) → external use only after Prav's first call with Austin. |
+| `240a8327` | 2026-05-04 | Phase 2 planning + Austin/INDIGITAL prep | Researched Austin Harry / INDIGITAL (Sḵwx̱wú7mesh Wolf + Nam̓gis Thunderbird; Xwalacktun's son; Salish Spirit @ VanLive! = closest SSD precedent). Pulled 127 portfolio images into gitignored `austin-reference/` via new `tools/scrape_indigital.py`. Produced 4 docs under `docs/next-iteration/`: research dossier, Austin brief v0.1, technical roadmap (5 tracks), venue strategy (Indigenomics May → MOVE37XR Oct → DEVCON Nov → Life at Center 2027). Codex `/review-plan` round 1 applied. Commit `13699ed` pushed; Signal sent to Prav (ts `1777961376697`) with 3 open decisions. |
+| `91bcf2a6` | 2026-05-11 | Meeting-notes batch processing | Fully processed three SSD meeting notes (5/5 main, 5/5 Austin onboarding, 5/8 sprint planning): populated YAML + structured bodies; created 11 new entity vault notes (Austin Harry, Xwalacktun, INDIGITAL, Mohawk Nation, HR MacMillan Space Center, NewTech, Coast Salish Design, Sandra Semchuk, Chris Jordan, Institute for Global Health Research, Style Transfer, Spout, Berlin); ingested entities to KOI via `vault_ingest_extraction`; applied wikilinks across bodies; overrode 7 bad backend merges (Austin→Austin via Guard A, Sonia Su→Sen via B, Indigenomics Impact→Indigenomics AI via E ×2, Chris Jordan→Chris Krug via B); created 28 task files in `Tasks/` + registered all with backend; auto-closed 10 stale SSD tasks with quoted same-day evidence; propagated `mentionedIn` backlinks to 30 entity notes; captured 20 facts to KOI knowledge graph in 3 episodes; logged 7 bad merges + 2 patterns + 2 tooling issues to `Meta/Entity Resolution Issues.md`. No code changes to repo. |
+| `64276b6e` | 2026-05-11 → 13 | Phase 2 plan + Phase 0 kickoff + proton-send root-cause fix | **Indigenomics IMPACT @ Hubble Space (Space Centre) strategic plan + Phase 0 kickoff.** Built comprehensive 14-section plan at `~/.claude/plans/ok-so-i-polymorphic-melody.md` through 3 Codex `/review-plan` rounds at x-high (lint-clean strategic type; 30+ open questions resolved across rounds; remaining strategic items documented as Prav-conversation-owned Stakeholder Alignment dependencies). Resolved Indigenomics IMPACT = Space Centre show (same event). 5 deep-research prompts saved paste-ready at `docs/next-iteration/_research/prompt-0[1-5]*.md` for parallel ChatGPT/Gemini/Claude.ai Deep Research triangulation. Phase 0 scaffolding: `docs/space-center/austin-consent-map.md` + `credits-and-licenses-2026-05.md` + `license-audit.md` + drafts. Vault: `People/Michael Unger.md` created, `People/Natalia Lebedinskaia.md` expanded. **Email to Prav sent via Proton 2026-05-13** asking him to forward venue-group draft (Michael/Lorraine/Bryce/Natalia). **Root-cause fix:** built `proton-send` skill + Python script at `~/projects/darren-workflow/{scripts,skills}/proton-send/` wrapping local Proton Mail Bridge SMTP — Proton sends now first-class alongside Gmail MCP. 9 new memory entries (`reference_*`, `feedback_*`, `project_*`) capturing venue identity, contact chain, Austin's "no AI generation" stance, exploration-over-lock-in posture, proton-send skill, SSD-uses-Proton-not-Gmail address rule. User-driven plan corrections: visitor-app + MediaPipe restored as PRIMARY (not Tier-2), 5090 active R&D track, Austin's stated preference for interactive morphing of existing pieces (not AI-generation) shifted plan defaults. TELUS = 3× H200 confirmed; "Landscape Dissolution" Phase 1 technique flagged adaptable to formline morphs. 5090 sourcing scoped (Memory Express + Canada Computers Vancouver, $7–8k full build). No git commits this session (per user convention; commit when ready). |

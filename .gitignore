@@ -131,3 +131,6 @@ stylegan2/
 # Generated school-marketing output (regenerable from scripts/generate_school_marketing*.py)
 output/school-marketing/
 tools/mediapipe/*.tox
+
+# iNat species thumbnail corpus — cached/regenerable from scripts/, no reason to track
+static/thumbs/

@@ -1,0 +1,53 @@
+Hi Prav,
+
+Thanks for the FYI forward on Lorraine's projector approval — great news. I drafted a follow-up to Michael that confirms the operational scope items that follow from her greenlight so they don't surface late during install: cabling, install windows, Bryce hours, Wi-Fi for the visitor web app, audio levels, after-hours access, staff training, sound-bleed coordination with the dome.
+
+Below is the draft for the venue group. Review and forward to Michael (cc'ing Lorraine, Bryce, Natalia, and me) if it reads right to you, or send back edits. I left it under your name since it'll feel more natural coming from the existing contact. Happy to send it myself if you'd prefer.
+
+One ask: please cc me (darrenzal@protonmail.com) on whatever lands in the venue group from this point forward, so replies thread to me directly and you don't have to keep forwarding context.
+
+---
+
+DRAFT FOR THE VENUE GROUP
+To:      Michael Unger <michael.unger@spacecentre.ca>
+Cc:      Lorraine Lowe <lorraine.lowe@spacecentre.ca>
+         Bryce Tordiffe <bryce.tordiffe@spacecentre.ca>
+         Natalia Lebedinskaia <le.natalia@gmail.com>
+         Darren Zal <darrenzal@protonmail.com>
+Subject: Re: 720 dpi projectors in the Hubble Space
+
+Hi Michael,
+
+Thanks again to you and Lorraine for the green light on the projector upgrade for our Indigenomics IMPACT activation in the Hubble Space. As we move into installation planning for late May, I want to make sure we're aligned on a few operational points that follow from the projector replacement — quick confirms or any flags from your side would help us avoid surprises during install.
+
+Scope items I'd appreciate your confirmation on:
+
+1. Video + power cabling changes — we'll be running our own HDMI + power cabling between the projectors and our GPU rig. OK to make these changes in the Hubble Space, or any restrictions (cable routing, conduit, fire-safety constraints)?
+
+2. Install + test windows — we'd like pre-event access for installation and testing. Specifically: 2 full days for mount + projector setup + composition calibration (proposing Fri May 22 + Sat May 23), then a dress-rehearsal day (Sun May 24) before doors. What windows can you make available? Do these need to be outside public hours?
+
+3. Bryce's hours for projector install oversight — you mentioned Bryce works closest on projector installs but is on limited contractor hours. Can we allocate a specific window for him during our install days? We'd want oversight for the rigging and EDID handoff in particular.
+
+4. Wi-Fi access for visitor interaction — our installation includes a visitor web-app component (QR code → visitors submit prompts from their phone → wall responds in real-time). It needs reliable Wi-Fi reaching the wall position. Is there a guest network or staff Wi-Fi we can use, or should we bring our own hotspot?
+
+5. Audio levels in the Hubble Space — given the dome theatre's proximity, are there sound-bleed restrictions on what we can play at show levels? Audio is integral to the piece; want to make sure we're within Space Centre tolerances.
+
+6. After-hours access during the run — for any remote intervention if our auto-heal system flags an issue (we have a robust monitoring setup). Who's the contact and what's the process?
+
+7. Staff training time — we'd like ~60 minutes with Space Centre education staff on doors-day morning to walk through the docent script, visitor-engagement points, and escalation procedure. Can we get that scheduled?
+
+8. Sound-bleed coordination with adjacent programming — anything happening in the dome or other Space Centre spaces during our run that we should coordinate with?
+
+Logistics-side, Natalia (cc'd) is our Vancouver-local coordinator — she'll handle equipment rental scheduling and on-site logistics, and can be your primary contact for day-of details. Darren Zal (cc'd) is our technical lead — please loop him in on anything install-related too. I'll continue to be the lead on creative direction and any decisions that need to flow through Lorraine.
+
+Happy to do a 15-minute call this week if any of the above is easier to talk through than email.
+
+Thanks again — we're excited to bring this to the Hubble Space and to the Indigenomics IMPACT audience.
+
+Warmly,
+Pravin
+
+---
+
+Thanks,
+Darren
