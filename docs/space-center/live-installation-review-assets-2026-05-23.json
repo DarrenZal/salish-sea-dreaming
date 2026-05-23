@@ -96,6 +96,26 @@
       "proton_subfolder": "05_RnD_Stills_and_Contact_Sheets",
       "uses_austin_source": true,
       "show_recommendation": "no as-is"
+    },
+    {
+      "id": "abstract_cymatic_path_a_v002",
+      "title": "Abstract Cymatic Wavefront Overlap Path A v002",
+      "priority": "supporting_rnd",
+      "role": "field-derived wavefront primitive R&D reference",
+      "local_path": "track2-deterministic/morph_outputs_INTERNAL/abstract_cymatic_wavefront_overlap_path_a_v002_2026-05-22/abstract_cymatic_wavefront_overlap_path_a_v002.mp4",
+      "proton_subfolder": "05_RnD_Stills_and_Contact_Sheets",
+      "uses_austin_source": false,
+      "show_recommendation": "R&D / atmospheric reference only"
+    },
+    {
+      "id": "abstract_cymatic_path_b_v001",
+      "title": "Abstract Cymatic Wave Equation Overlap Path B v001",
+      "priority": "supporting_rnd",
+      "role": "wave-equation / water-simulation R&D reference",
+      "local_path": "track2-deterministic/morph_outputs_INTERNAL/abstract_cymatic_wave_equation_overlap_path_b_v001_2026-05-22/abstract_cymatic_wave_equation_overlap_path_b_v001.mp4",
+      "proton_subfolder": "05_RnD_Stills_and_Contact_Sheets",
+      "uses_austin_source": false,
+      "show_recommendation": "R&D / atmospheric reference only"
     }
   ]
 }

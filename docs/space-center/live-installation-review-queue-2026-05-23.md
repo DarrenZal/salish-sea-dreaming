@@ -80,6 +80,8 @@ These are not lead review artifacts, but they explain what was learned.
 
 Current verdict: useful R&D / atmospheric references, not primary Austin-style primitive material.
 
+These are staged in the Proton Drive package under `05_RnD_Stills_and_Contact_Sheets`.
+
 ## Resolume Layer Plan
 
 Recommended separation:
