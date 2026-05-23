@@ -1,0 +1,101 @@
+{
+  "project": "salish-sea-dreaming-live-installation-review",
+  "date": "2026-05-23",
+  "status": "internal_show_development",
+  "proton_drive_target": "/Users/darrenzal/Library/CloudStorage/ProtonDrive-darrenzal@protonmail.com-folder/Salish Sea Dreaming/SSD Live Installation Review - 2026-05-23",
+  "github_policy": {
+    "commit_to_repo": [
+      "curation documents",
+      "manifests",
+      "scripts",
+      "contact-sheet references"
+    ],
+    "do_not_commit_to_repo": [
+      "large MP4/MOV render outputs",
+      "ProRes alpha masters"
+    ],
+    "reason": "track2-deterministic/morph_outputs_INTERNAL is ignored; heavy review media belongs on Proton Drive."
+  },
+  "assets": [
+    {
+      "id": "spine_v004_1",
+      "title": "Anchor Graph Spine v004.1 - Nature Cosmic Sun to Raven Sun",
+      "priority": "lead",
+      "role": "main Austin review artifact; complete UHD loop checkpoint",
+      "local_path": "track2-deterministic/morph_outputs_INTERNAL/anchor_graph_spine_v004_1_raven_collapse_polish_2026-05-21/anchor_graph_spine_v004_1_raven_collapse_polish.mp4",
+      "proton_subfolder": "01_Spine_Endpoint",
+      "uses_austin_source": true,
+      "show_recommendation": "likely yes"
+    },
+    {
+      "id": "primitive_ripples_v001_1_alpha",
+      "title": "Radiating Primitive Ripples v001.1 - Alpha Layer",
+      "priority": "lead",
+      "role": "composable Austin-style primitive ripple layer for Resolume",
+      "local_path": "track2-deterministic/morph_outputs_INTERNAL/abstract_radiating_primitive_ripples_v001_1_orientation_polish_2026-05-23/abstract_radiating_primitive_ripples_v001_1_orientation_polish_alpha_prores4444.mov",
+      "proton_subfolder": "02_Primitive_Ripples_Layer",
+      "uses_austin_source": false,
+      "show_recommendation": "yes as overlay/alpha layer if playback allows"
+    },
+    {
+      "id": "primitive_ripples_v001_1_overlay_black",
+      "title": "Radiating Primitive Ripples v001.1 - Black Overlay Fallback",
+      "priority": "lead",
+      "role": "fallback primitive ripple layer for Add/Screen/Lighten blending",
+      "local_path": "track2-deterministic/morph_outputs_INTERNAL/abstract_radiating_primitive_ripples_v001_1_orientation_polish_2026-05-23/abstract_radiating_primitive_ripples_v001_1_orientation_polish_overlay_black.mp4",
+      "proton_subfolder": "02_Primitive_Ripples_Layer",
+      "uses_austin_source": false,
+      "show_recommendation": "yes as performant fallback"
+    },
+    {
+      "id": "primitive_ripples_v001_1_preview_composite",
+      "title": "Radiating Primitive Ripples v001.1 - Moonfish Preview Composite",
+      "priority": "preview",
+      "role": "review preview only; not the preferred show master",
+      "local_path": "track2-deterministic/morph_outputs_INTERNAL/abstract_radiating_primitive_ripples_v001_1_orientation_polish_2026-05-23/abstract_radiating_primitive_ripples_v001_1_orientation_polish_over_moonfish-water.mp4",
+      "proton_subfolder": "02_Primitive_Ripples_Layer",
+      "uses_austin_source": false,
+      "show_recommendation": "preview only"
+    },
+    {
+      "id": "waterfall_v002b_moonfish_60s",
+      "title": "Waterfall Vertical Phrase v002b over Moonfish Water - 60s",
+      "priority": "lead",
+      "role": "water atmosphere layer praised by Pravin",
+      "local_path": "track2-deterministic/morph_outputs_INTERNAL/water_flow_phrase_grammar_v002b_2026-05-22/waterfall_vertical_phrase_v002_60s__over_moonfish-water.mp4",
+      "proton_subfolder": "03_Water_Flow_Layers",
+      "uses_austin_source": false,
+      "show_recommendation": "yes"
+    },
+    {
+      "id": "waterfall_v002b_layer_only_60s",
+      "title": "Waterfall Vertical Phrase v002b - Layer Only 60s",
+      "priority": "lead",
+      "role": "separate water-flow layer for live mixing",
+      "local_path": "track2-deterministic/morph_outputs_INTERNAL/water_flow_phrase_grammar_v002b_2026-05-22/waterfall_vertical_phrase_v002_60s.mp4",
+      "proton_subfolder": "03_Water_Flow_Layers",
+      "uses_austin_source": false,
+      "show_recommendation": "yes"
+    },
+    {
+      "id": "orca_fluid_silhouette_v001",
+      "title": "Orca Fluid Silhouette Reveal v001",
+      "priority": "candidate",
+      "role": "figural animal reveal prototype",
+      "local_path": "track2-deterministic/morph_outputs_INTERNAL/figural_orca_fluid_silhouette_reveal_v001_2026-05-22/figural_orca_fluid_silhouette_reveal_v001.mp4",
+      "proton_subfolder": "04_Orca_Figural_Prototype",
+      "uses_austin_source": true,
+      "show_recommendation": "maybe; likely needs primitive-pulse/authored-resolution pass"
+    },
+    {
+      "id": "orca_sdf_graph_still_v001",
+      "title": "Orca SDF Graph Reveal Still v001",
+      "priority": "supporting_rnd",
+      "role": "R&D still informing future primitive-pulse Orca reveal",
+      "local_path": "track2-deterministic/morph_outputs_INTERNAL/figural_orca_sdf_graph_reveal_still_v001_2026-05-23/figural_orca_sdf_graph_reveal_still_v001_with_authored_hint.png",
+      "proton_subfolder": "05_RnD_Stills_and_Contact_Sheets",
+      "uses_austin_source": true,
+      "show_recommendation": "no as-is"
+    }
+  ]
+}
