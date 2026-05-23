@@ -71,6 +71,21 @@ Not a show video. This is a still-image integration test that informed the next 
 
 Review question: Does the idea of sparse primitive pulses inside a fluid silhouette feel worth pursuing for the next Orca pass?
 
+### 6. Primitive Field v002 Flocking Layers
+
+Older ambient primitive grammar loop, now re-exported as clean composable layers with no baked background and no text header.
+
+- Dark-palette alpha: `track2-deterministic/morph_outputs_INTERNAL/primitive_field_v002_flocking_layer_exports_2026-05-23/primitive_field_v002_flocking_dark_palette_alpha_prores4444.mov`
+- Dark-palette black overlay: `track2-deterministic/morph_outputs_INTERNAL/primitive_field_v002_flocking_layer_exports_2026-05-23/primitive_field_v002_flocking_dark_palette_overlay_black.mp4`
+- Light-palette alpha: `track2-deterministic/morph_outputs_INTERNAL/primitive_field_v002_flocking_layer_exports_2026-05-23/primitive_field_v002_flocking_light_palette_alpha_prores4444.mov`
+- Light-palette black overlay: `track2-deterministic/morph_outputs_INTERNAL/primitive_field_v002_flocking_layer_exports_2026-05-23/primitive_field_v002_flocking_light_palette_overlay_black.mp4`
+- Contact sheet: `track2-deterministic/morph_outputs_INTERNAL/primitive_field_v002_flocking_layer_exports_2026-05-23/primitive_field_v002_flocking_layer_exports_contact_sheet.png`
+- Role: ambient primitive-grammar particle layer for live composition
+- Uses Austin source artwork: no
+- Show decision: maybe; good as low-opacity background/foreground texture over real footage
+
+Review question: Does the primitive field add useful live texture when layered over underwater footage, or does it feel too particle/flocking-like for this installation?
+
 ## Optional R&D References
 
 These are not lead review artifacts, but they explain what was learned.
@@ -107,6 +122,7 @@ Suggested subfolders:
 - `03_Water_Flow_Layers`
 - `04_Orca_Figural_Prototype`
 - `05_RnD_Stills_and_Contact_Sheets`
+- `06_Primitive_Field_Layers`
 - `00_Index`
 
 ## Current Curation Call
@@ -118,5 +134,6 @@ Use the following as the first review set:
 3. `abstract_radiating_primitive_ripples_v001_1_orientation_polish_overlay_black.mp4`
 4. `waterfall_vertical_phrase_v002_60s__over_moonfish-water.mp4`
 5. `figural_orca_fluid_silhouette_reveal_v001.mp4`
+6. `primitive_field_v002_flocking_dark_palette_alpha_prores4444.mov`
 
 Keep the SDF still and wavefront/cymatic experiments as supporting R&D unless Austin or Pravin wants to go deeper into process.

@@ -116,6 +116,46 @@
       "proton_subfolder": "05_RnD_Stills_and_Contact_Sheets",
       "uses_austin_source": false,
       "show_recommendation": "R&D / atmospheric reference only"
+    },
+    {
+      "id": "primitive_field_v002_dark_alpha",
+      "title": "Primitive Field v002 Flocking - Dark Palette Alpha Layer",
+      "priority": "candidate",
+      "role": "ambient primitive-grammar particle layer for footage composition",
+      "local_path": "track2-deterministic/morph_outputs_INTERNAL/primitive_field_v002_flocking_layer_exports_2026-05-23/primitive_field_v002_flocking_dark_palette_alpha_prores4444.mov",
+      "proton_subfolder": "06_Primitive_Field_Layers",
+      "uses_austin_source": false,
+      "show_recommendation": "maybe; use low-opacity over footage"
+    },
+    {
+      "id": "primitive_field_v002_dark_overlay",
+      "title": "Primitive Field v002 Flocking - Dark Palette Black Overlay",
+      "priority": "candidate",
+      "role": "performant fallback for Add/Screen/Lighten blending",
+      "local_path": "track2-deterministic/morph_outputs_INTERNAL/primitive_field_v002_flocking_layer_exports_2026-05-23/primitive_field_v002_flocking_dark_palette_overlay_black.mp4",
+      "proton_subfolder": "06_Primitive_Field_Layers",
+      "uses_austin_source": false,
+      "show_recommendation": "maybe; fallback if alpha is not needed"
+    },
+    {
+      "id": "primitive_field_v002_light_alpha",
+      "title": "Primitive Field v002 Flocking - Light Palette Alpha Layer",
+      "priority": "candidate",
+      "role": "alternate ambient primitive-grammar layer",
+      "local_path": "track2-deterministic/morph_outputs_INTERNAL/primitive_field_v002_flocking_layer_exports_2026-05-23/primitive_field_v002_flocking_light_palette_alpha_prores4444.mov",
+      "proton_subfolder": "06_Primitive_Field_Layers",
+      "uses_austin_source": false,
+      "show_recommendation": "maybe; compare against dark-palette layer"
+    },
+    {
+      "id": "primitive_field_v002_light_overlay",
+      "title": "Primitive Field v002 Flocking - Light Palette Black Overlay",
+      "priority": "candidate",
+      "role": "alternate performant fallback for Add/Screen/Lighten blending",
+      "local_path": "track2-deterministic/morph_outputs_INTERNAL/primitive_field_v002_flocking_layer_exports_2026-05-23/primitive_field_v002_flocking_light_palette_overlay_black.mp4",
+      "proton_subfolder": "06_Primitive_Field_Layers",
+      "uses_austin_source": false,
+      "show_recommendation": "maybe; compare against dark-palette layer"
     }
   ]
 }
