@@ -75,6 +75,8 @@ Review question: Does the idea of sparse primitive pulses inside a fluid silhoue
 
 Older ambient primitive grammar loop, now re-exported as clean composable layers with no baked background and no text header.
 
+Primary Proton Drive location: `06_Primitive_Field_Layers`. A duplicate copy is also placed directly in `05_RnD_Stills_and_Contact_Sheets` in case Proton Drive delays surfacing the newly-created top-level `06` folder.
+
 - Dark-palette alpha: `track2-deterministic/morph_outputs_INTERNAL/primitive_field_v002_flocking_layer_exports_2026-05-23/primitive_field_v002_flocking_dark_palette_alpha_prores4444.mov`
 - Dark-palette black overlay: `track2-deterministic/morph_outputs_INTERNAL/primitive_field_v002_flocking_layer_exports_2026-05-23/primitive_field_v002_flocking_dark_palette_overlay_black.mp4`
 - Light-palette alpha: `track2-deterministic/morph_outputs_INTERNAL/primitive_field_v002_flocking_layer_exports_2026-05-23/primitive_field_v002_flocking_light_palette_alpha_prores4444.mov`
