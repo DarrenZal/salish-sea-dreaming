@@ -134,3 +134,37 @@ tools/mediapipe/*.tox
 
 # iNat species thumbnail corpus — cached/regenerable from scripts/, no reason to track
 static/thumbs/
+
+# v2 ingest rehearsal directory — workflow proof, not real Austin material
+austin-v2-ingest-rehearsal/
+
+# Austin curated source files and generated morph renders — private/local only
+austin-v2-ingest/
+track2-deterministic/morph_outputs/
+track2-deterministic/morph_outputs_INTERNAL/
+
+# Private operator archives (visitor dreams, consent-sensitive) — never commit
+private-archive/
+
+# --- Post-IMPACT consolidation 2026-06-10 ---
+
+# Session scratch (screenshots, debug captures, overnight test dirs)
+.tmp-*
+v2-mudra-debug-panel.png
+v6-dreamworld-impact-mobile.png
+ssd-graph-v6-after-fix.png
+memex-configurator-2026-05-16.png
+
+# Bob Turner research corpus (230 MB media — host out-of-band)
+bob-turner-corpus/
+
+# TouchDesigner working files (3 GB: frame sequences, .tox checkpoints)
+td/
+
+# Track 2 morph engine renders (67 GB, regenerable) — keep only morph_pairs.csv (force-added)
+track2-deterministic/
+
+# Autolume sweep render artifacts (PNG/video, regenerable; misfiled under docs/)
+docs/space-center/autolume-sweep-2026-05-21/
+docs/space-center/autolume-sweep-2026-05-21-v2/
+docs/space-center/autolume-wild30s-2026-05-21/
