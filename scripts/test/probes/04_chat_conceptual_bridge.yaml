@@ -1,0 +1,26 @@
+category: chat_conceptual_bridge
+description: "Same tools across dreams, commitments, bioregions — the SSD architectural insight"
+type: chat
+event: impact-2026
+wait_seconds: 7
+probes:
+  - name: D1-economics-connection
+    query: "how does this installation relate to economics?"
+    must_contain: "commitment|field|methodology|relational|indigenomics"
+    must_not_contain: "this installation is indigenomics"
+  - name: D2-commitment-pool
+    query: "what is a commitment pool?"
+    must_contain: "promise|registry|value|shared|relational"
+  - name: D3-bioregion
+    query: "what is a bioregion?"
+    must_contain: "smallest actionable|hydrosphere|biosphere|whole.system"
+    must_not_contain: "this installation is the bioregion"
+  - name: D4-dreams-economics
+    query: "are dreams and economics related here?"
+    must_contain: "same.{0,12}tools|field.{0,10}map|methodology|substrate|across.{0,15}field"
+  - name: D5-salish-sea-connection
+    query: "what is the connection to the Salish Sea?"
+    must_contain: "bioregion|ecological|salish sea|coast|water"
+  - name: D6-field-mapping
+    query: "what do you mean by field-mapping?"
+    must_contain: "embed|cluster|umap|emerg|gather"

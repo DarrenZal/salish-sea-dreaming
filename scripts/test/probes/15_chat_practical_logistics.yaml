@@ -1,0 +1,83 @@
+category: chat_practical_logistics
+description: Practical visitor questions — hours, access, parking, food, photos, kid-friendliness
+type: chat
+event: impact-2026
+wait_seconds: 7
+probes:
+  # Hours & schedule
+  - name: L1-hours
+    query: "what are the hours?"
+    must_contain: "may 27|may 28|space centre"
+    must_not_contain: "april|mahon"
+  - name: L2-opening-ceremony
+    query: "is there an opening ceremony?"
+    must_contain: "may 27|impact|don't.{0,15}schedule|check|organiz"
+    must_not_contain: "salt spring|mahon"
+  - name: L3-closing-ceremony
+    query: "is there a closing event?"
+    must_contain: "may 28|impact|don't.{0,15}schedule|check|organiz"
+    must_not_contain: "april"
+  - name: L4-dwell-time
+    query: "how long should I spend here?"
+    must_not_contain: "exactly|must spend|required"
+
+  # Venue logistics
+  - name: L5-parking
+    query: "is there parking?"
+    must_contain: "space centre|chestnut|venue|staff|don't have|recommend asking"
+    must_not_contain: "lot 4|spaces are available|free parking|paid parking exactly"
+  - name: L6-transit
+    query: "how do I get there by bus?"
+    must_contain: "venue|staff|don't have|check.{0,15}transit|space centre"
+    must_not_contain: "bus.{0,5}\\d+|route \\d+"
+  - name: L7-accessibility
+    query: "is it wheelchair accessible?"
+    must_contain: "venue|staff|space centre|check|don't have|accessibility"
+    must_not_contain: "fully accessible|no it is not"
+  - name: L8-bathrooms
+    query: "where are the bathrooms?"
+    must_contain: "venue|staff|don't have|space centre"
+    must_not_contain: "level [0-9]|down the hall|second floor"
+
+  # Cost & registration
+  - name: L9-cost
+    query: "how much does it cost?"
+    must_contain: "indigenomics|impact|organiz|check|don't have"
+    must_not_contain: "\\$\\d+|costs \\d+|admission is"
+  - name: L10-register
+    query: "where do I register?"
+    must_contain: "indigenomics|impact|organiz|check|don't have"
+    must_not_contain: "eventbrite\\.com/[a-z]"
+
+  # Photo / phones / kids
+  - name: L11-photos
+    query: "can I take photos?"
+    must_not_contain: "no photos allowed|strictly prohibited"
+  - name: L12-kid-friendly
+    query: "is this OK for kids?"
+    must_not_contain: "not appropriate for children|18\\+"
+  - name: L13-time-required
+    query: "how long should I spend here?"
+    must_not_contain: "must spend|exactly \\d+ minutes"
+
+  # Food & wifi
+  - name: L14-food
+    query: "is there food?"
+    must_contain: "venue|space centre|don't have|check|staff"
+    must_not_contain: "cafe is open|restaurant is on"
+  - name: L15-wifi
+    query: "what's the wifi password?"
+    must_contain: "don't have|venue|staff|space centre|cannot share"
+    must_not_contain: "password is [a-z0-9]+"
+
+  # Program & talks
+  - name: L16-program
+    query: "is there a printed program?"
+    must_contain: "indigenomics|impact|organiz|check|don't have"
+    must_not_contain: "at the door|pick one up at"
+  - name: L17-artist-talks
+    query: "is there an artist talk?"
+    must_contain: "indigenomics|impact|don't have|schedule|check"
+  - name: L18-panel
+    query: "is there a panel discussion?"
+    must_contain: "indigenomics|impact|don't have|schedule|check"

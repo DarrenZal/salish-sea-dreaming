@@ -1,0 +1,24 @@
+category: chat_cross_event
+description: Event-scoping isolation (impact vs digital-ecologies)
+type: chat
+wait_seconds: 7
+probes:
+  - name: F1-DE-where-are-we
+    query: "where are we?"
+    event: digital-ecologies-2026
+    must_contain: "mahon hall|salt spring"
+    must_not_contain: "space centre|hr macmillan"
+  - name: F2-DE-dates
+    query: "what are the dates?"
+    event: digital-ecologies-2026
+    must_contain: "april"
+    must_not_contain: "may 27|may 28"
+  - name: F3-IMPACT-where-again
+    query: "where are we?"
+    event: impact-2026
+    must_contain: "space centre|vancouver"
+    must_not_contain: "mahon hall"
+  - name: F4-DE-curator
+    query: "who is the curator?"
+    event: digital-ecologies-2026
+    must_contain: "raf"

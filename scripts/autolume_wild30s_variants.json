@@ -1,0 +1,8 @@
+[
+  {
+    "name": "wild_psi120_30s",
+    "trunc_psi": 1.2,
+    "noise_seed": 0,
+    "noise_anim": false
+  }
+]

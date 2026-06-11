@@ -1,0 +1,30 @@
+category: live_show_integration
+description: "End-to-end visitor flows touching server + relay + KG (passive — no 3090 modification)"
+type: live_show
+wait_seconds: 5  # 5s between probes to clear /prompt rate limit (server enforces 3s)
+probes:
+  - name: LS1-submit-with-consent-appears-in-kg
+    flow: submit_prompt_check_kg
+    prompt_text: "test framework: visitor submission renders in KG"
+    consent_on: true
+    must_appear_within_seconds: 30
+    event: impact-2026
+
+  - name: LS2-consent-off-does-not-appear
+    flow: consent_off_does_not_appear
+    prompt_text: "test framework: consent-off hidden"
+    check_after_seconds: 10
+    event: impact-2026
+
+  - name: LS3-snapshot-arrives-after-relay-roundtrip
+    flow: submit_prompt_check_snapshot
+    prompt_text: "test framework: snapshot pipeline"
+    must_appear_within_seconds: 45
+
+  - name: LS4-head-on-snapshot-is-200
+    flow: head_supported_on_snapshot
+    wait_seconds: 30  # bumped from 12s — snap upload can lag under load (LS3 already uses 45s)
+
+  - name: LS5-graph-redirect-preserves-query
+    flow: graph_redirect_preserves_query
+    query_string: "event=digital-ecologies-2026&focus=offering:1"

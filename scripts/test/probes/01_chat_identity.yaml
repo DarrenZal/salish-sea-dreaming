@@ -1,0 +1,28 @@
+category: chat_identity
+description: Factual show identity (single-turn, IMPACT default)
+type: chat
+event: impact-2026
+wait_seconds: 7
+probes:
+  - name: A1-installation-name
+    query: "what is the name of this installation?"
+    must_contain: "salish sea dreaming"
+    must_not_contain: "mahon hall|salt spring|part of.{0,10}digital ecologies|curated by raf"
+  - name: A2-where-are-we
+    query: "where are we right now?"
+    must_contain: "space centre|vancouver"
+    must_not_contain: "mahon hall|salt spring"
+  - name: A3-dates
+    query: "what are the dates?"
+    must_contain: "may 27|may 28"
+    must_not_contain: "april 10|april 26"
+  - name: A4-city
+    query: "what city is this in?"
+    must_contain: "vancouver"
+    must_not_contain: "salt spring"
+  - name: A5-bigger-event
+    query: "is this part of a bigger event?"
+    must_contain: "impact|indigenomics"
+  - name: A6-territories
+    query: "whose territory are we on?"
+    must_contain: "musqueam|sḵwx̱wú7mesh|squamish|tsleil-waututh|unceded"

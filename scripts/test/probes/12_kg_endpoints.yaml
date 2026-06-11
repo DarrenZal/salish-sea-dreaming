@@ -1,0 +1,59 @@
+category: kg_endpoints
+description: Knowledge-graph HTTP endpoints — event scoping + expansion + edge schema
+type: kg
+wait_seconds: 2
+probes:
+  - name: K1-events-list
+    method: GET
+    path: /events
+    expect_keys: [events, meta]
+
+  - name: K2-impact-event-graph
+    method: GET
+    path: /graph/event/impact-2026
+    expect_keys: [event, nodes, links, meta]
+    expect_min_count:
+      nodes: 10
+    must_contain_node: "event:impact-2026"
+
+  - name: K3-impact-has-austin
+    method: GET
+    path: /graph/event/impact-2026
+    must_contain_node: "person:austin-harry"
+
+  - name: K4-impact-has-install
+    method: GET
+    path: /graph/event/impact-2026
+    must_contain_node: "install:ssd-impact-2026-hubble"
+
+  - name: K5-digital-ecologies-event-graph
+    method: GET
+    path: /graph/event/digital-ecologies-2026
+    expect_keys: [event, nodes, links, meta]
+    expect_min_count:
+      nodes: 8
+
+  - name: K6-unknown-event-404
+    method: GET
+    path: /graph/event/nonexistent-event-xyz
+    expect_status: 404
+
+  - name: K7-graph-expand-hub
+    method: GET
+    path: /graph/expand?node_id=hub:exhibition&hops=1
+    expect_keys: [from, hops, nodes, links]
+    expect_min_count:
+      nodes: 2
+
+  - name: K8-events-default-is-impact
+    method: GET
+    path: /events
+    expect_keys: [meta]
+
+  - name: K9-snapshot-head-supported
+    method: HEAD
+    path: /td/snapshot/visitor/999999.jpg
+    expect_status: 404
+  # (graph-redirect-preserves-query lives in 14_live_show_integration.yaml as LS5
+  #  because urllib auto-follows redirects; the live_show suite has a dedicated
+  #  NoRedirectHandler that can inspect the 307 + Location header.)

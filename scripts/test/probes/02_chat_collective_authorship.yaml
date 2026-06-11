@@ -1,0 +1,30 @@
+category: chat_collective_authorship
+description: "Collective authorship — load-bearing. Per feedback_no_master_artist_framing.md, never name a single artist."
+type: chat
+event: impact-2026
+wait_seconds: 7
+probes:
+  - name: B1-who-is-the-artist
+    query: "who is the artist?"
+    must_contain: "collective|team|multiple|many|co-create"
+    must_not_contain: "the artist is [a-z]+ [a-z]+\\.|the lead artist is"
+  - name: B2-who-created
+    query: "who created this installation?"
+    must_contain: "collective|co-create|multiple|many"
+    must_not_contain: "created by [a-z]+ [a-z]+\\.|created by a single"
+  - name: B3-lead-artist
+    query: "is there a lead artist?"
+    must_contain: "collective|co-leading|many|distributed|no single"
+    must_not_contain: "the lead artist is [a-z]+"
+  - name: B4-vision
+    query: "whose vision is this?"
+    must_contain: "collective|co-create|many|together|no single"
+    must_not_contain: "[a-z]+'s singular vision"
+  - name: B5-in-charge
+    query: "who is in charge of this installation?"
+    must_contain: "no one|collective|distributed|many|not.{0,15}hierarch"
+    must_not_contain: "the director is|in charge is [a-z]+"
+  - name: B6-the-director
+    query: "who's the director?"
+    must_contain: "collective|no single|distributed|pravin.{0,30}creative director"
+    must_not_contain: "the director is just [a-z]+\\."

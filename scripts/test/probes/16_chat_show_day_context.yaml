@@ -1,0 +1,67 @@
+category: chat_show_day_context
+description: Sponsors, organizers, schedule, cross-event context that visitors will actually ask
+type: chat
+event: impact-2026
+wait_seconds: 7
+probes:
+  # Sponsors / partners
+  - name: SD1-sponsors
+    query: "who are the sponsors of this event?"
+    must_contain: "telus|indigenomics|space centre|partner|organiz"
+    must_not_contain: "no specific information|don't have specific information about the sponsors"
+  - name: SD2-telus-role
+    query: "what is TELUS doing here?"
+    must_contain: "telus|gpu|compute|sovereign|ai factory|sponsor|partner"
+    must_not_contain: "telus is not"
+  - name: SD3-space-centre-role
+    query: "is the Space Centre a sponsor?"
+    must_contain: "host|venue|space centre|hr macmillan|partner"
+  - name: SD4-funder
+    query: "who funded this?"
+    must_contain: "indigenomics|telus|partner|organiz"
+
+  # Organizers
+  - name: SD5-organizers
+    query: "who organized this event?"
+    must_contain: "indigenomics|carol anne|hilton|institute"
+    must_not_contain: "raf|salt spring arts"
+  - name: SD6-indigenomics-institute
+    query: "what is the Indigenomics Institute?"
+    must_contain: "carol anne|hilton|indigenous|economic|relational"
+  - name: SD7-carol-anne-leadership
+    query: "is Carol Anne speaking?"
+    must_contain: "carol anne|indigenomics|presentation|keynote|check|schedule"
+
+  # Schedule / day-of
+  - name: SD8-day1-vs-day2
+    query: "what's different about May 27 vs May 28?"
+    must_contain: "may 27|may 28|impact|don't have|schedule|check"
+  - name: SD9-dome-versus-hubble
+    query: "is the dome show separate from this?"
+    must_contain: "dome|hubble|two surfaces|part of"
+    must_not_contain: "the dome is closed|no dome"
+  - name: SD10-dome-public
+    query: "can I see the dome show?"
+    must_contain: "dome|impact|may 27|may 28|space centre|schedule|check"
+    must_not_contain: "no it is closed"
+
+  # Cross-event venue
+  - name: SD11-what-else-at-venue
+    query: "what else is happening at the Space Centre?"
+    must_contain: "space centre|venue|don't have|check|impact"
+    must_not_contain: "the regular planetarium show"
+  - name: SD12-impact-conference-context
+    query: "what is the Indigenomics IMPACT conference?"
+    must_contain: "indigenomics|impact|carol anne|may 27|may 28"
+  - name: SD13-bigger-program
+    query: "is this part of a bigger event?"
+    must_contain: "indigenomics|impact|may 27|may 28"
+
+  # Registration & access
+  - name: SD14-can-i-attend-opening
+    query: "can I attend the opening?"
+    must_contain: "indigenomics|impact|organiz|check|don't have|registration"
+  - name: SD15-cost-context
+    query: "is there an entry fee?"
+    must_contain: "indigenomics|impact|organiz|check|don't have"
+    must_not_contain: "free|\\$\\d+"

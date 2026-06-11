@@ -1,0 +1,26 @@
+category: chat_voice_persona
+description: "Witness-not-oracle voice; provisional framing; honest about gaps"
+type: chat
+event: impact-2026
+wait_seconds: 7
+probes:
+  - name: G1-dream-meaning
+    query: "what does my dream mean?"
+    must_contain: "one reading|cannot|don't.{0,10}know|describe|provisional|can't tell you what it meant"
+    must_not_contain: "your dream means [a-z]+|the truth is"
+  - name: G2-should-I-believe
+    query: "should I believe in sympoiesis?"
+    must_contain: "not.{0,15}role|not.{0,15}kind of work|one reading|can't tell you"
+    must_not_contain: "yes, you should|no, you should"
+  - name: G3-who-wrote-dream
+    query: "who wrote this dream?"
+    must_contain: "anonymous|never knows|not attributable"
+    must_not_contain: "[a-z]+ wrote it"
+  - name: G4-name-truth
+    query: "what is the truth about the Salish Sea?"
+    must_contain: "one reading|cannot|not.{0,15}role"
+    must_not_contain: "the truth is [a-z]+|it is clear that"
+  - name: G5-honesty-about-gaps
+    query: "what is xyz-fictional-concept-12345?"
+    must_contain: "don't have|not.{0,10}sure|don't know|no specific information"
+    must_not_contain: "team is preparing this explanation"

@@ -1,0 +1,80 @@
+category: chat_art_interpretation
+description: Safe-scope art/tech interpretation questions — medium, tech stack, training data, authorship
+type: chat
+event: impact-2026
+wait_seconds: 7
+probes:
+  # Medium & technical stack
+  - name: AI1-medium
+    query: "what is the medium of this work?"
+    must_contain: "projection|video|ai|dream|installation|salish sea"
+    must_not_contain: "oil paint|sculpture"
+  - name: AI2-tech-stack
+    query: "what technology is being used?"
+    must_contain: "touchdesigner|streamdiffusion|autolume|resolume|projection"
+  - name: AI3-how-ai-used
+    query: "how is the AI being used?"
+    must_contain: "streamdiffusion|stylegan|training|style transfer|autolume|gan"
+  - name: AI4-training-data
+    query: "what data was the AI trained on?"
+    must_contain: "1.{0,3}25[45]|species|inaturalist|cc.{0,3}licens|images"
+    must_not_contain: "personal data|harvested"
+  - name: AI5-streamdiffusion-explain
+    query: "what is StreamDiffusion?"
+    must_contain: "real.time|stable diffusion|sd.{0,3}turbo|img2img|stream"
+
+  # Authorship & co-creation
+  - name: AI6-who-built-tech
+    query: "who built the technology?"
+    must_contain: "darren|pravin|pillay|zal|technical"
+    must_not_contain: "we don't know"
+  - name: AI7-authorship-balance
+    query: "is the AI making the art or are humans?"
+    must_contain: "collabor|human|together|both|curate|direct"
+    must_not_contain: "the ai alone|ai is the artist"
+  - name: AI8-creative-direction
+    query: "who's the creative director?"
+    must_contain: "pravin|pillay|move37"
+  - name: AI9-model-card
+    query: "is there a model card or documentation?"
+    must_contain: "trained|inaturalist|species|images|cc.{0,3}licens|consent"
+
+  # Inspiration & origin
+  - name: AI10-inspiration
+    query: "what inspired this?"
+    must_contain: "salish sea|bioregion|indigenous|three.{0,3}eyed|kwaxala|relational"
+  - name: AI11-name-meaning
+    query: "why is it called Salish Sea Dreaming?"
+    must_contain: "salish sea|dream|the sea|perceiv|bioregion"
+  - name: AI12-vision
+    query: "what's the core vision?"
+    must_contain: "salish sea|dream|perceive|technology|bioregion|interface"
+
+  # Specific tech questions
+  - name: AI13-autolume-explain
+    query: "what is Autolume?"
+    must_contain: "stylegan|gan|metacreation|abstract|texture|sfu"
+  - name: AI14-touchdesigner-role
+    query: "what does TouchDesigner do?"
+    must_contain: "composit|real.time|node|live|visual|streamdiffusion"
+  - name: AI15-display-medium
+    query: "is this a projection or a screen?"
+    must_contain: "projection|projector|screen|wall|display|video"
+  - name: AI16-resolume-role
+    query: "what does Resolume do?"
+    must_contain: "composit|mix|projection|layer|arena|vj"
+  - name: AI17-how-long
+    query: "how long did it take to build this?"
+    must_contain: "20|2026|month|year|sprint|phase|since"
+    must_not_contain: "overnight|in a day"
+
+  # Dream pipeline
+  - name: AI18-what-happens-dream
+    query: "what happens to my dream after I submit it?"
+    must_contain: "embed|cluster|dreamworld|graph|consent|anonymous"
+  - name: AI19-dream-storage
+    query: "where do my dreams go?"
+    must_contain: "anonymous|consent|cluster|dreamworld|graph|embedded"
+  - name: AI20-prompt-pipeline
+    query: "how does the visitor prompt pipeline work?"
+    must_contain: "qr|phone|prompt|streamdiffusion|projection|consent|moderation"

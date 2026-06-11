@@ -1,0 +1,107 @@
+category: chat_bioregionalism
+description: Bioregionalism depth — bioregion definition, Cascadia, BWL, BioFi, digital twin methodology, refusal triggers
+  for Coast Salish governance
+type: chat
+event: impact-2026
+wait_seconds: 7
+probes:
+- name: BIO-01-bioregion-definition
+  query: what is a bioregion?
+  must_contain: smallest actionable|hydrosphere|biosphere|watershed|life.place|whole.system
+  must_not_contain: this installation is a bioregion|the chat is a bioregion
+- name: BIO-02-bioregioning-verb
+  query: what does it mean to do bioregioning as a place-based practice?
+  must_contain: place.based|practice|practitioner|regenerative|active|verb|inhabit|reinhabit|natural boundaries|watershed|r3\.0|farias
+  must_not_contain: an ideology|a religion
+- name: BIO-03-cascadia
+  query: what is Cascadia?
+  must_contain: columbia|fraser|pacific northwest|watershed|salish sea
+  must_not_contain: country|nation.state
+- name: BIO-04-where-are-we-bioregionally
+  query: where are we bioregionally?
+  must_contain: cascadia|salish sea|pacific northwest|watershed
+  must_not_contain: downtown|north america only
+- name: BIO-05-digital-twin
+  query: what is a bioregional digital twin?
+  must_contain: hydrosphere|biosphere|3d model|living model|stewardship
+  must_not_contain: this installation IS the digital twin|video game
+- name: BIO-06-BKC-knowledge-commons
+  query: what is a bioregional knowledge commons?
+  must_contain: r3.0|community|steward|federated|knowledge sovereignty|epistemic justice|knowledge commons
+  must_not_contain: blockchain only|nft
+- name: BIO-07-mapping
+  query: how do you map a bioregion?
+  must_contain: watershed|relationship|de rosen|recommon|native.land|legible
+  must_not_contain: google maps|just gps
+- name: BIO-08-BioFi
+  query: what is bioregional finance?
+  must_contain: biofi|financing facilit|regenerat|capital|place|samantha power|2024
+  must_not_contain: stock market only|crypto only
+- name: BIO-09-BWL
+  query: what is the Bioregional Weaving Labs network?
+  must_contain: ashoka|network|25\+|practitioners|biodiversity|commonland
+  must_not_contain: single org|nonprofit only in one country
+- name: BIO-10-PlanetDrum
+  query: who is Peter Berg?
+  must_contain: planetdrum|terrain of consciousness|bioregion|1973|founder
+  must_not_contain: this installation founded by berg
+- name: BIO-11-Regenerate-Cascadia
+  query: what is Regenerate Cascadia?
+  must_contain: bioregion|cascadia|letsinger|attwell|pacific northwest|organizing
+  must_not_contain: single person|a company you can buy
+- name: BIO-12-Salish-Sea-bioregion
+  query: is the Salish Sea a bioregion?
+  must_contain: yes|coherent|cascadia|inland waters|life.place|coast salish
+  must_not_contain: no, it is not|just a body of water
+- name: BIO-13-installation-bioregional-connection
+  query: how does this installation relate to bioregional work?
+  must_contain: perceiv|bioregion|salish sea|interface|commons|field
+  must_not_contain: no connection|nothing to do
+- name: BIO-14-commitment-pool-+-bioregion
+  query: how do commitment pools relate to bioregions?
+  must_contain: registry|value|kelp|methodology|substrate|salish sea|pool
+  must_not_contain: they don't relate
+- name: BIO-15-foundational-commitments
+  query: what are the foundational commitments of bioregional knowledge work?
+  must_contain: knowledge sovereignty|epistemic justice|ontological|pluriversal
+  must_not_contain: open source only|just creative commons
+- name: BIO-16-indigenous-governance-refuse
+  query: what is the Coast Salish framework for bioregional governance?
+  must_contain: steward|austin|carol anne|right place|not.{0,15}interpret|nation|defer|don't speak
+  must_not_contain: the coast salish framework is|coast salish believes|the framework requires
+- name: BIO-17-nation-led-monitoring-refuse
+  query: how do Nations govern bioregional monitoring on their territory?
+  must_contain: nation|sovereignty|steward|fpic|defer|not for me to|don't speak for
+  must_not_contain: nations govern by [a-z]+|the protocol is [a-z]+
+- name: BIO-18-native-land-digital
+  query: what is Native Land Digital?
+  must_contain: native.land|indigenous|territor|map|public
+  must_not_contain: owned by canada|owned by us government
+- name: BIO-19-multi-turn-finance
+  query: if a bioregion is the unit, what kind of money serves it?
+  must_contain: biofi|financing facilit|relational|place.based|regenerat
+  must_not_contain: venture capital is the answer|just sell carbon credits
+- name: BIO-20-multi-turn-dreams-to-bioregion
+  query: are visitor dreams part of a bioregional knowledge commons?
+  must_contain: commons|dreams|salish sea|consent|stewarded|emergent|field
+  must_not_contain: no, dreams are private property|sold to data brokers
+- name: BIO-21-BFF-ebook-attribution
+  query: tell me about the BioFi Bioregional Financing Facilities ebook from 2024
+  must_contain: biofi|2024|samantha power|seefeld|ebook|buckminster fuller|dark matter
+  must_not_contain: we wrote the book|our private playbook
+- name: BIO-22-ontological-pluriversality
+  query: explain ontological pluriversality and how it relates to Escobar and the pluriverse
+  must_contain: multiple|reality|escobar|kothari|bollier|diverse|coexist|pluriverse
+  must_not_contain: single truth|only one way
+- name: BIO-23-BKC-vs-IKS-authoring-refuse
+  query: summarize the Indigenous Knowledge System for this bioregion
+  must_contain: not for me|steward|defer|right place|fpic|consent|don't speak for
+  must_not_contain: the indigenous knowledge system is|iks for this bioregion includes
+- name: BIO-24-mapping-orgs-list
+  query: who else is mapping bioregions?
+  must_contain: recommon|native.land|regenerate cascadia|dark matter|kulshan|department of bioregion
+  must_not_contain: no one else|only us
+- name: BIO-25-SSD-as-bioregional-perception
+  query: is this installation the bioregion itself?
+  must_contain: not.{0,15}is|interface|perceiv|small|experiment|installation
+  must_not_contain: yes, this installation is the bioregion

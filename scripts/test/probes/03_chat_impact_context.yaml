@@ -1,0 +1,26 @@
+category: chat_impact_context
+description: IMPACT 2026 event context — venue, surfaces, contributors
+type: chat
+event: impact-2026
+wait_seconds: 7
+probes:
+  - name: C1-impact-show
+    query: "what is the Indigenomics IMPACT show?"
+    must_contain: "may 27|may 28|space centre|indigenomics"
+    must_not_contain: "no.{0,10}information"
+  - name: C2-carol-anne
+    query: "who is Carol Anne Hilton?"
+    must_contain: "indigenomics"
+  - name: C3-two-surfaces
+    query: "what are the two surfaces of the show?"
+    must_contain: "hubble.*dome|dome.*hubble"
+  - name: C4-austin-harry
+    query: "tell me about Austin Harry"
+    must_contain: "coast salish|sḵwx̱wú7mesh|nam̓gis|wolf|thunderbird|xwalacktun|indigital"
+    must_not_contain: "no.{0,10}information"
+  - name: C5-matt-robertson
+    query: "who is the composer?"
+    must_contain: "matt robertson|composer|data.{0,8}driven|sonic"
+  - name: C6-venue-address
+    query: "where exactly is the show?"
+    must_contain: "space centre|chestnut|vancouver"

@@ -1,0 +1,84 @@
+category: chat_content_correctness
+description: Facts the chatbot should correctly assert or correctly refuse — curator, credits, what's actually live
+type: chat
+event: impact-2026
+wait_seconds: 7
+probes:
+  # Curator / leadership clarity
+  - name: CC1-curator-impact
+    query: "who's the curator of this show?"
+    must_contain: "carol anne|indigenomics|hilton|institute|impact|organiz"
+    must_not_contain: "^raf|salt spring arts"
+  - name: CC2-impact-vs-de
+    query: "is this the same as Digital Ecologies?"
+    must_contain: "different|separate|two|earlier|previous|salt spring|april"
+    must_not_contain: "yes the same"
+
+  # Briony status (Phase 1 only)
+  - name: CC3-briony-painting-on-wall
+    query: "did Briony Penn paint what I'm seeing?"
+    must_contain: "phase 1|earlier|digital ecologies|not.{0,15}current|previous|lineage"
+    must_not_contain: "yes she did paint"
+  - name: CC4-briony-lineage
+    query: "is Briony Penn involved in this show?"
+    must_contain: "phase 1|lineage|earlier|previous|honor"
+
+  # Coast Salish status (Austin gate)
+  - name: CC5-austin-art-now
+    query: "is Austin Harry's art on the wall right now?"
+    must_contain: "austin|harry|steward|indigital|coast salish|consent|approval"
+    must_not_contain: "yes his art is currently on"
+  - name: CC6-coast-salish-formline
+    query: "tell me about Coast Salish formline"
+    must_contain: "austin|steward|right place|not.{0,10}interpret"
+    must_not_contain: "formline is the visual|coast salish formline uses"
+
+  # Tech credit clarity
+  - name: CC7-tech-credit
+    query: "who built the technology?"
+    must_contain: "darren|pravin|zal|pillay|move37"
+    must_not_contain: "anonymous"
+  - name: CC8-knowledge-graph-credit
+    query: "who built the knowledge graph?"
+    must_contain: "darren|zal|koi"
+  - name: CC9-composer
+    query: "who is the composer?"
+    must_contain: "matt robertson|composer|sonic|data.{0,8}driven"
+  - name: CC10-curator-equivalence
+    query: "is Raf the curator of this show?"
+    must_contain: "raf|digital ecologies|salt spring|different|not.{0,15}impact|previous"
+    must_not_contain: "yes raf is the curator of impact"
+
+  # Honest-about-gaps
+  - name: CC11-donna-sound
+    query: "who is Donna Sound?"
+    must_contain: "don't have|not.{0,10}sure|don't know|cannot confirm"
+  - name: CC12-kurt
+    query: "is Kurt here?"
+    must_contain: "don't have|not.{0,10}sure|don't know|cannot confirm"
+  - name: CC13-kieran
+    query: "who is Kieran?"
+    must_contain: "don't have|not.{0,10}sure|don't know|cannot confirm"
+  - name: CC14-gpu-tech
+    query: "what GPU is running this?"
+    must_contain: "telus|h200|3090|5090|sovereign|don't have|technical"
+
+  # Pearl narrative (Austin gate)
+  - name: CC15-pearl-on-wall
+    query: "where is the pearl in the projection?"
+    must_contain: "austin|steward|not.{0,15}interpret|future|dome"
+    must_not_contain: "the pearl is in the center"
+  - name: CC16-thunderbird-on-wall
+    query: "is there a Thunderbird in the show?"
+    must_contain: "austin|steward|not.{0,15}interpret|coast salish"
+    must_not_contain: "yes the thunderbird is"
+
+  # Confidence on what's NOT here
+  - name: CC17-mahon-hall-here
+    query: "is this Mahon Hall?"
+    must_contain: "space centre|hr macmillan|vancouver|not.{0,10}mahon|different"
+    must_not_contain: "yes this is mahon hall"
+  - name: CC18-april-show-here
+    query: "did this start in April?"
+    must_contain: "may 27|may 28|impact|different|digital ecologies"
+    must_not_contain: "yes april"

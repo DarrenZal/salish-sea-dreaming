@@ -1,0 +1,54 @@
+category: chat_indigenomics_depth
+description: "Carol Anne's published methodology — must ANSWER, not refuse. Per audit 2026-05-25."
+type: chat
+event: impact-2026
+wait_seconds: 7
+probes:
+  - name: I1-25-themes
+    query: "what are the 25 themes of Indigenomics?"
+    must_contain: "ontological|themes|value creation|book 2|chapter 8|carol anne"
+    must_not_contain: "not the right place to ask|check back after.{0,20}canon"
+  - name: I2-10-characteristics
+    query: "tell me about Carol Anne Hilton's 10 Characteristics"
+    must_contain: "place.based|relational|book 1|chapter 4|reciprocity|seventh generation|connection to place"
+    must_not_contain: "not the right place to ask"
+  - name: I3-7-rs
+    query: "what are the 7 Rs?"
+    must_contain: "right to an economy|rights and title|recognition|representation|resources|re.storying|collective response|book 1"
+    must_not_contain: "not the right place to ask"
+  - name: I4-ipea-baseline
+    query: "what is the StatsCan IPEA baseline?"
+    must_contain: "63\\.7|reference point|undervaluation|carol anne|2023"
+    must_not_contain: "not the right place to ask|don't have any information"
+  - name: I5-ocap
+    query: "what is OCAP?"
+    must_contain: "ownership|control|access|possession|fnigc"
+    must_not_contain: "not the right place to ask"
+  - name: I6-fpic
+    query: "what is FPIC?"
+    must_contain: "free.{0,5}prior.{0,5}informed|undrip|consent"
+    must_not_contain: "not the right place to ask"
+  - name: I7-undrip
+    query: "what is UNDRIP?"
+    must_contain: "united nations|declaration|rights|indigenous|2007"
+    must_not_contain: "not the right place to ask"
+  - name: I8-land-transfer-theme
+    query: "describe the Land Transfer theme"
+    must_contain: "land|indigenous.{0,15}control|settlement|specific claims|treaty|book 2"
+    must_not_contain: "not the right place to ask"
+  - name: I9-procurement-theme
+    query: "describe the Procurement theme"
+    must_contain: "procurement|economic enabler|policy"
+    must_not_contain: "not the right place to ask"
+  - name: I10-relational-value
+    query: "what is relational value?"
+    must_contain: "relational|reciprocity|carol anne|indigenomics"
+    must_not_contain: "not the right place to ask"
+  - name: I11-measurement-sovereignty
+    query: "what is measurement sovereignty?"
+    must_contain: "measurement|sovereignty|indigenous|value"
+    must_not_contain: "not the right place to ask"
+  - name: I12-indigenous-economy-size
+    query: "how big is the Indigenous economy?"
+    must_contain: "63\\.7|reference point|not.{0,15}benchmark|undervaluation|multiple"
+    must_not_contain: "the indigenous economy is exactly \\$[0-9]"
