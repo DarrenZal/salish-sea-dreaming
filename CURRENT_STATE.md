@@ -1,5 +1,7 @@
 # SSD Phase 2 — Current State (snapshot 2026-05-16 eve)
 
+> ⚠️ **SUPERSEDED (2026-06-10).** This is a pre-show snapshot kept for history. For current state see the project `CLAUDE.md` "Current Status" block, `docs/space-center/debrief-impact-2026.md`, and `docs/space-center/next-installation-improvements.md`.
+
 > One-page reorientation index. Last updated 2026-05-16 evening after the Prav call + Squamish Longhouse dome thread resolution.
 >
 > If you're picking this up tomorrow, read the **Active dependencies** section first — it tells you whether you're blocked or unblocked.

@@ -28,14 +28,19 @@ Interactive AI art installation exploring the Salish Sea ecosystem. The vision: 
 
 ## 3090 Remote Access (SSH)
 
-The 3090 at Prav's studio (108 Fraser Rd, Salt Spring) is accessible via SSH from anywhere using a reverse tunnel through poly.
+The 3090 is now at **Darren's house** (moved from Prav's studio, 108 Fraser Rd; staying for a while). Accessible via SSH three ways:
 
-**From local network (same house):**
+**Direct LAN (same house):**
 ```bash
-ssh windows-desktop          # direct, 10.0.0.81
+ssh windows-desktop          # direct, 192.168.1.68 (DHCP, as of 2026-06-10)
 ```
 
-**From anywhere (remote):**
+**Tailscale (stable, survives IP changes):**
+```bash
+ssh windows-desktop-tailscale   # 100.91.172.10
+```
+
+**From anywhere (reverse tunnel):**
 ```bash
 ssh windows-desktop-remote   # via reverse tunnel through poly (37.27.48.12:2222)
 ```
@@ -62,36 +67,35 @@ scp scripts/gallery_audio.py windows-desktop:C:/Users/user/gallery_audio.py
 
 ## Current Status
 
-> ⏳ **Open thread (2026-05-29):** IMPACT show over; post-show dream archival + `ongoing`-view flip + seeding is **deferred ~1 day** (live page left as-is for a social-media share). Checkpoint done → `private-archive/impact-2026-checkpoint-2026-05-29.json`. Full checklist + consent facts in **`TODO.md`**.
+> ⏳ **Open thread (consent — still pending):** post-show visitor-dream archival is **sequenced but not executed** — flip default to `ongoing` view → seed curated dreams → archive the 63 non-consented-but-served IMPACT dreams (retain, stop serving). Touches the live poly `ssd-v5` service + needs operator seed-curation. Steps + consent facts in **`TODO.md`** and Phase 7 of `~/.claude/plans/ok-so-the-shw-snuggly-tide.md`. Baseline checkpoint: `private-archive/impact-2026-checkpoint-2026-05-29.json`.
 
-**Date:** 2026-05-19
-**Status:** **Phase 2 sprint Day 9 — SSD Meeting 2 (2026-05-18 Austin call) processed + koi-backend hardened (8 root-cause fixes) + SSD prep call (2026-05-18) processed.** Also (this evening, cross-project): process-note completion gate built and shipped in darren-workflow (PR #9 merged to main; PR #10 follow-on open; 131 tests passing; launchd-fired autonomous strict-phase flip live and validated). Darren arrives Salt Spring today ~3pm for 4-day intensive sprint at Pravin's studio. IMPACT 2026 = May 27–28 at HR MacMillan Space Centre. Two surfaces: **Hubble** = SSD installation + **Dome** = Living Intelligence cosmic-journey.
+**Date:** 2026-06-10
+**Status:** **Between installations — IMPACT 2026 over (May 27–28, HR MacMillan Space Centre; GREEN show-morning call, 188/196 probe sweep, no P0 visitor-blockers).** 3090 quiesced to R&D idle. Next target: **MOVE37XR Dome Theatre, Oct 2026** (then DEVCON ETH Mumbai, Nov 2026).
 
-**📋 Read first:** `~/.claude/plans/ok-so-i-polymorphic-melody.md` (14-section Phase 2 plan) + `CURRENT_STATE.md`. `docs/space-center/` holds Phase 2 working docs.
+**📋 Read first:** `~/.claude/plans/ok-so-i-polymorphic-melody.md` (14-section Phase 2 plan) + `docs/space-center/debrief-impact-2026.md` + `docs/space-center/next-installation-improvements.md`. `docs/space-center/` holds Phase 2 working docs.
 
-**Venue:** Indigenomics IMPACT = Space Centre. 1100 Chestnut St, Vancouver. Lorraine approved 1080p+. **License:** CC0 / CC BY / CC BY-SA only.
+**Venue (past):** Indigenomics IMPACT = Space Centre, 1100 Chestnut St, Vancouver. **License:** CC0 / CC BY / CC BY-SA only.
 
-**What's Done (this session `ebcddf4d`, 2026-05-19):**
-- **2026-05-18 SSD Meeting 2 fully processed** (Austin/Pravin/Darren/Eve): transcript + meeting note populated; 11 Otter screenshots embedded under `media/2026-05-18-ssd-meeting-2/`; 12 tasks created + registered with backend; 4 new entity notes (James Nexw'Kalus-Xwalacktun Harry, Matt Robertson, Thunderbird, Formline); 15 KG facts captured; 22 entity notes' `mentionedIn` full-synced from backend (after Round 2 fixes). **Style transfer DROPPED** — pivot to Coast Salish primitives (Crescent/Circle/Trigon) as compositional layer over marine footage. Pearl narrative = dome year-out; IMPACT = "ontological teaser." 5 prior stale SSD tasks auto-closed (5090 procurement + style-transfer LoRA training superseded by today's decisions).
-- **Eight koi-processor / process-note bugs investigated and patched** (see `memory/reference_koi_backend_fixes_2026_05_19`): (1) `MentionedInDocument.first_seen` NULL → HTTP 500; (2) sensor RIDs leaking into vault `mentionedIn` arrays (SQL filter + path-extraction branch); (3) `add_knowledge` defaulting new entities to Concept regardless of type (added `subject_type`/`object_type` to FactInput + MCP schema); (4) MOVE37XR→MOVE37 prefix-extension false merge (strict-prefix guard in `passes_token_overlap_check`); (5) process-note Check 2 missed YAML-side dangling wikilinks; (6) MOVE37XR Project→Organization type drift; (7) 50 stale `document_entity_links` RIDs (44 rewritten + 6 deleted); (8) `TypeMismatch` surfacing on `EpisodeCreateResponse`. **Three repos have uncommitted fixes** (`koi-processor`, `personal-koi-mcp`, `darren-workflow`).
-- **Three new memory files**: `feedback_finish_the_backend_flow_when_chained_from_meeting_notes` (don't substitute manual flow for MCP pipeline), `feedback_defer_with_a_signal_not_a_hedge` (audit "intentionally deferred" — most are 10–20 min of work), `reference_yaml_and_data_writing_hygiene` (never regex YAML; validate the data not the script).
+**What's Done (consolidation session, 2026-06-10):**
+- **3090 → R&D idle.** Stopped + disabled the live show stack (`SSD-Autolume`/`-Watchdog`, `SSD-Relay`, `SSD-TD-Watchdog`, `SSD-TouchDesigner`) + killed leftover processes; only `SSD-SSH-Tunnel` + `SSD-Tunnel-Watchdog` remain. SSH preserved.
+- **IMPACT production stack archived** → `installation-archive/impact-2026/` (production `SSD-exhibition.toe` + 27 task XMLs + 19 show scripts + README with re-enable procedure + quirks). Mirrors the April `installation-archive/` pattern.
+- **Git consolidated + pushed** (`cd4995a..da67904`): 5 commits, 493 files / +166K lines. Hardened `.gitignore` (excludes `bob-turner-corpus/`, `td/`, `track2-deterministic/` renders, sweeps, `.tmp-*`); committed the 182-script R&D corpus + ~150 research docs + the test suite.
+- **Show learnings harvested** → `debrief-impact-2026.md` (what worked / what failed / quirks / collaborator feedback) + `next-installation-improvements.md` (MOVE37XR pre-work). Durable lessons already in memory from the May sprint.
 
-**Prior session work (compressed):** Verification gate v1 + Pravin call (`8695b704`); Phase 2 sprint plan + v2 LoRA pipeline + Track 2 morph engine (`63a5fec1`); Phase 2 plan + proton-send skill (`64276b6e`); meeting-notes batch (`91bcf2a6`); Austin/INDIGITAL research (`240a8327`); post-exhibition archive (`156cd786`).
+**3090 location:** now at **Darren's house** (192.168.1.68 LAN / Tailscale 100.91.172.10 / poly reverse tunnel). Was at Pravin's studio. Will stay at Darren's for a while.
 
-**Prior production stack (intact, dormant):** Autolume 120 kimg + StreamDiffusion sd-turbo + Resolume + visitor app + auto-heal + SSH tunnel. **Briony layer DROPPED** for Phase 2. **Style-transfer-of-Austin's-work DROPPED** 2026-05-18.
+**Prior session work (compressed):** SSD Meeting 2 + 8 koi-backend fixes (`ebcddf4d`); process-note completion gate (`4a9a7b17`); Verification gate v1 + Pravin call (`8695b704`); Phase 2 sprint plan + v2 LoRA + Track 2 morph engine (`63a5fec1`); Phase 2 plan + proton-send (`64276b6e`); April post-exhibition archive (`156cd786`).
 
-**What's Left (next session, priority-ordered):**
-1. **Tue 2026-05-19 ~3pm: Darren arrives Salt Spring** for 4-day intensive sprint at Pravin's studio. Bring 5090 if Memory Express delivered Mon. Primary work: primitive-following-motion experiments + Autolume retrain + TD audio-reactive integration + dome closing-panel short. Pravin teaching on spec/flow-coding + agent orchestration.
-2. **Wed 2026-05-20 3:30pm: next Austin review meeting** — show primitive-following-motion experiments; iterate on dreaming-field composition (4 water states: ocean/river/still pond/mist).
-3. **Memory Express 5090 — Sun AM call to confirm build, pickup Friday.** Pravin's card via Move 37. Windows 11 Home, Asus TUF.
-4. **Eve + Shawn: data set assembly** for Matt's composition (tide, herring/salmon spawn, wind, precipitation, LiDAR canopy, Burrard Inlet ship traffic, urban traffic, SkyTrain, shoreline ambient). Matt lands Fri 2026-05-22.
-5. **Austin: share Coast Salish primitives presentation + Thunderbird model** when bandwidth allows (he flagged limited capacity this week).
-6. **Closing-panel dome short** — compose email to Dan Tell weaving SSD + IndigenomicsAI knowledge graphs.
-7. **Revise Austin side-thread reply** at `/tmp/austin-reply-2026-05-16.md` (Layer 3 flagged it last session — DO NOT SEND without operator confirmation).
-8. **Commit the 3 uncommitted-fix repos** (`koi-processor`, `personal-koi-mcp`, `darren-workflow`) when operator approves.
-9. **Send-audit weekly check** — `python3 ~/projects/darren-workflow/scripts/send-audit/review.py --since-days 7`; promote Layer 3 warn → strict when clean.
+**Prior production stack (intact, dormant — re-enable via `installation-archive/impact-2026/README.md`):** Autolume 120 kimg + StreamDiffusion sd-turbo + Resolume + visitor app + auto-heal + SSH tunnel. **Briony layer + style-transfer-of-Austin's-work both DROPPED** (Phase 2 = Coast Salish primitives Crescent/Circle/Trigon).
 
-**Open questions:** Austin drive arrival timing? Memex stock + long-weekend hours? "Pearl" vs "spindle whorl" framing for Austin's vision (Susan Point's lineage uses spindle whorl — open question per Pravin gating). Per `feedback_austin_consent_trust_floor.md`: per-output sign-off is the floor.
+**What's Left (priority-ordered):**
+1. **Visitor-dream consent archival** (the open thread above) — sequenced in Phase 7 of `~/.claude/plans/ok-so-the-shw-snuggly-tide.md`; fires on operator go (needs seed-curation).
+2. **MOVE37XR Oct prep** — work the `next-installation-improvements.md` list: finish the `_label_clusters` TELUS port, persist the NDI config, fix the Autolume sweep recording bug, build the 4K→equirectangular dome pipeline, adopt visitor-perspective test discipline.
+3. **`_label_clusters` 10-line fix** — swap `openai_client` → `chat_client` in `gallery_server.py:1603` (removes 401 log noise).
+4. **Optional 3090 disk free-up** (~200 GB) — candidates in `docs/space-center/3090-disk-archive-candidates.md`; deferred pending an external destination.
+5. **Arshia follow-up** — positive post-show note (Signal, May 28); reconnect before MOVE37XR given the Autolume lineage.
+
+**Open questions:** "Pearl" vs "spindle whorl" framing for Austin's vision (Susan Point's lineage uses spindle whorl — Pravin gating). Per `feedback_austin_consent_trust_floor.md`: per-output sign-off is the floor.
 
 ## Briony Style Transfer — Options for StreamDiffusion
 
