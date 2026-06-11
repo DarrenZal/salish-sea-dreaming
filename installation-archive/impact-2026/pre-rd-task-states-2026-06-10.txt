@@ -1,0 +1,81 @@
+# IMPACT 2026 pre-R&D-mode 3090 snapshot
+# Captured: 2026-06-10 17:13:31 local 3090 time
+# Hostname: DESKTOP-37616PR
+
+=== SSD-* scheduled task states ===
+
+TaskName                                State
+--------                                -----
+SSD-Ambient-Audio                    Disabled
+SSD-Audio                            Disabled
+SSD-Autolume-Sweep                   Disabled
+SSD-Autolume-Wild30s                 Disabled
+SSD-Daily-Diagnostic                 Disabled
+SSD-Display-Restore                  Disabled
+SSD-Display-Watchdog                 Disabled
+SSD-Fire-20min-20260523_1222         Disabled
+SSD-Fire-Baseline-Long-20260523_1336 Disabled
+SSD-Health-Monitor                   Disabled
+SSD-Health-Probe                     Disabled
+SSD-Meta-Watchdog                    Disabled
+SSD-Post-Boot-Verify                 Disabled
+SSD-Relay-Watchdog                   Disabled
+SSD-Resolume                         Disabled
+SSD-Resolume-Kick                    Disabled
+SSD-Resolume-Rebind-UIA              Disabled
+SSD-Resolume-UIA-Probe               Disabled
+SSD-Resolume-Watchdog                Disabled
+SSD-Resolume-Watchdog-v2             Disabled
+SSD-TouchDesigner                       Ready
+SSD-Autolume                          Running
+SSD-Autolume-Watchdog                 Running
+SSD-Relay                             Running
+SSD-SSH-Tunnel                        Running
+SSD-TD-Watchdog                       Running
+SSD-Tunnel-Watchdog                   Running
+
+
+
+=== Running show-related processes ===
+
+Name               Id WS_MB StartTime            
+----               -- ----- ---------            
+AbletonAudioCpl 25428  13.8 2026-06-10 2:34:00 PM
+python          23636   1.1 2026-06-10 2:33:57 PM
+python          24956    81 2026-06-10 2:34:02 PM
+python          24976     1 2026-06-10 2:34:02 PM
+python          21320  86.3 2026-06-10 2:32:58 PM
+python          11504   1.8 2026-06-10 2:32:32 PM
+python          15964     9 2026-06-10 2:32:35 PM
+python          20780 259.3 2026-06-10 2:33:56 PM
+TouchDesigner   21044 366.4 2026-06-10 2:33:10 PM
+
+
+
+=== python command lines (to identify which is what) ===
+
+
+ProcessId   : 11504
+CommandLine : "C:\Users\user\streamdiffusion-env\Scripts\python.exe" C:\Users\user\td_relay.py
+
+ProcessId   : 15964
+CommandLine : "C:\Program Files\Python310\python.exe" C:\Users\user\td_relay.py
+
+ProcessId   : 21320
+CommandLine : python  C:\Users\user\autolume_autostart.py --pkl "C:\Users\user\Documents\models\network-snapshot-000120.pkl" --preset "C:\Users\user\Documents\presets\0" --autolume-dir "C:\Users\user\autolume"
+
+ProcessId   : 20780
+CommandLine : "C:\Users\user\miniconda3\envs\autolume\python.exe" "-c" "from multiprocessing.spawn import spawn_main; spawn_main(parent_pid=21320, pipe_handle=4572)" "--multiprocessing-fork"
+
+ProcessId   : 23636
+CommandLine : "C:\Users\user\miniconda3\envs\autolume\python.exe" "-c" "from multiprocessing.spawn import spawn_main; spawn_main(parent_pid=21320, pipe_handle=5184)" "--multiprocessing-fork"
+
+ProcessId   : 24976
+CommandLine : venv\Scripts\python.exe  streamdiffusionTD\td_main.py
+
+ProcessId   : 24956
+CommandLine : "C:\Users\user\AppData\Local\Programs\Python\Python311\python.exe" streamdiffusionTD\td_main.py
+
+
+
+
