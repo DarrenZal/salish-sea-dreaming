@@ -1,0 +1,49 @@
+verifications:
+  - claim: "The draft is staged and awaiting operator proof before send."
+    location: "Header"
+    source:
+      type: file
+      ref: "/Users/darrenzal/.claude/plans/ssd-tonight-2026-05-16-and-gan-resolution-question.md"
+      evidence: "Pacing posture requires proof before send for all Pravin-facing comms."
+  - claim: "Pravin sent agent-generated research on the SD/Autolume/4K stack."
+    location: "Opening paragraph"
+    source:
+      type: quote
+      ref: "Pravin Signal messages to operator 2026-05-16 ~8:39 PM and ~9:06 PM, content quoted in operator's message to Claude same evening — covers Stable Diffusion vs SDXL, StreamDiffusionTD v0.3.1, Autolume 512x512 @ 24fps on RTX 5000, NVIDIA Upscaler TOP, TensorRT speedups and LoRA limitations, three-mode table (Safe/Balanced/Hero), the 'Tao of the machine' framing."
+      evidence: "Direct quotations from Pravin's Signal messages forwarded by operator to Claude same evening. Operator explicitly noted 'prav's agent might be wrong btw' before requesting this reflection draft."
+  - claim: "Pravin's framing was 'don't chase native 4K, build a 4K output pipeline.'"
+    location: "Opening paragraph"
+    source:
+      type: quote
+      ref: "Pravin Signal message 2026-05-16 ~9:06 PM forwarding agent research: 'Yes — the clue is right. Do not chase native 4K generation. Chase a 4K output pipeline. The practical architecture is: AI core at 512 / 768 / 1024 → realtime post-processing → AI upscaling → 4K compositing/output.'"
+      evidence: "Direct quotation from Pravin's Signal message."
+  - claim: "This converges with the hypothesis we'd been working toward independently."
+    location: "Opening paragraph"
+    source:
+      type: file
+      ref: "/Users/darrenzal/.claude/plans/ssd-tonight-2026-05-16-and-gan-resolution-question.md"
+      evidence: "The plan's Context section (Conclusion paragraph) and Step 3 three-way scoping both name 'keep 120 kimg @ 512 + real-time Real-ESRGAN x4 upscale on the 5090 + Resolume composition' as the working hypothesis. This was developed in conversation earlier on 2026-05-16 evening, before Pravin's agent research was forwarded. The two architectures are equivalent in their core claim (low-res generative core + AI upscale + high-res composite/output)."
+  - claim: "Our working path is 'path 2' = keep 120 kimg @ 512 + upscale + Resolume composition."
+    location: "Opening paragraph"
+    source:
+      type: file
+      ref: "/Users/darrenzal/projects/salish-sea-dreaming/docs/space-center/drafts/arshia-3way-gan-autolume-question-2026-05-16.md"
+      evidence: "The Arshia message body explicitly lists path 2 as 'keep 120 kimg at 512 and do real-time Real-ESRGAN x4 upscale on the 5090' and states the working assumption is Autolume as a Resolume layer/window for the main piece."
+  - claim: "We incorporated the NVIDIA Upscaler TOP point into the Arshia question as an explicit 'Pravin's agent flagged this, we have not verified' framing."
+    location: "Middle paragraph"
+    source:
+      type: file
+      ref: "/Users/darrenzal/projects/salish-sea-dreaming/docs/space-center/drafts/arshia-3way-gan-autolume-question-2026-05-16.md"
+      evidence: "The Arshia message body side note reads exactly: 'Pravin has been doing parallel research and his read converges with this direction. His agent also flagged NVIDIA Upscaler TOP in TouchDesigner as a possible alternative to Real-ESRGAN for the upscale step — we have not verified that claim. Worth your read?'"
+  - claim: "The Arshia question was sent to the SSD Tactical group at ~23:25 PDT with Signal timestamp 1779000294779."
+    location: "Closing paragraph"
+    source:
+      type: quote
+      ref: "signal-send command output 2026-05-16 evening, transmitting arshia-message-body-2026-05-16.txt to 'Salish Sea Dreaming Tactical' group: 'Sent: timestamp=1779000294779'. Unix timestamp 1779000294779 corresponds to 2026-05-16 ~23:24:54 PDT."
+      evidence: "Direct output from the signal-send script invocation earlier this turn. Timestamp captured in the script's stdout and recorded in CURRENT_STATE.md."
+  - claim: "The Arshia question is addressed to Arshia."
+    location: "Closing paragraph"
+    source:
+      type: file
+      ref: "/Users/darrenzal/projects/salish-sea-dreaming/docs/space-center/drafts/arshia-message-body-2026-05-16.txt"
+      evidence: "The message body opens with the greeting 'Hey Arshia — we are trying to sanity-check the Autolume resolution axis...'"

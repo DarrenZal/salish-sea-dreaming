@@ -1,0 +1,77 @@
+verifications:
+  - claim: "got all four things you asked for done tonight"
+    location: "first line"
+    source:
+      type: file
+      ref: "/Users/darrenzal/projects/salish-sea-dreaming/docs/space-center/STATE-2026-05-22-pipeline-build.md"
+      evidence: "STATE doc Pravin Ask Scoresheet section enumerates Pravin's four 2026-05-21 asks (alpha-channel water-flow, waterfall inversion, intricate Autolume dreaming, 4K scaling pipeline) as delivered with artifact paths."
+
+  - claim: "4K is working — we can render the Autolume dreams at full wall resolution now"
+    location: "first checkmark"
+    source:
+      type: file
+      ref: "/Users/darrenzal/projects/salish-sea-dreaming/scripts/telus_upscale.py"
+      evidence: "Pipeline script exists. Validated end-to-end by smoke test (1920×1080→3840×2160 in 60s on TELUS H200) and by Autolume integration test (512²→3840×2160 in 5.4min). Specs captured in STATE doc."
+
+  - claim: "The wild/dreamy version you liked is ready as a 30-second loop"
+    location: "first checkmark"
+    source:
+      type: file
+      ref: "/Users/darrenzal/projects/salish-sea-dreaming/docs/space-center/autolume-wild30s-2026-05-21/wild_psi120_30s.mp4"
+      evidence: "ffprobe shows 512×512 at 30fps with 864 frames, duration 28.8s. The 'wild' label refers to truncation ψ=1.2 (vs preset default 0.8), captured in scripts/autolume_sweep.py DEFAULT_VARIANTS as variant 03_wild_psi120."
+
+  - claim: "two versions: one with the square content centered (black bars on the sides), and one cropped to fill the whole frame"
+    location: "first checkmark"
+    source:
+      type: file
+      ref: "/Users/darrenzal/projects/salish-sea-dreaming/docs/space-center/autolume-wild30s-2026-05-21/"
+      evidence: "Two 4K files at this path: wild_psi120_30s_4k_letterbox.mp4 (64MB) and wild_psi120_30s_4k_crop.mp4 (108MB). Both ffprobe 3840×2160 H.264 yuv420p 28.8s. Letterbox preserves the 2048×2048 upscaled square content with black side-bars. Crop takes center 16:9 slice and scales to fill."
+
+  - claim: "Four other Autolume flavors at 4K too — a tighter one, a wilder one, an 'alive' one with shifting noise, and a different starting seed"
+    location: "second checkmark"
+    source:
+      type: file
+      ref: "/Users/darrenzal/projects/salish-sea-dreaming/docs/space-center/autolume-sweep-2026-05-21-v2/"
+      evidence: "Four files: 01_baseline_4k_crop.mp4 (ψ=0.8, the production aesthetic baseline), 02_tight_psi050_4k_crop.mp4 (ψ=0.5, denser), 04_noise_drift_4k_crop.mp4 (ψ=0.8 anim=True, animated noise = 'alive texture'), 05_seed42_4k_crop.mp4 (ψ=0.8 seed=42, different latent trajectory). Note: 'wilder' (ψ=1.2) is the wild_psi120 variant referenced separately as the 30s flagship; described in 14s sweep version is also in Proton folder 02 for parity comparison."
+
+  - claim: "Alpha-channel versions of the water-flow layers — current, waterfall, and a new one going the opposite way (rising from earth to sky, like transpiration)"
+    location: "third checkmark"
+    source:
+      type: file
+      ref: "/Users/darrenzal/projects/salish-sea-dreaming/track2-deterministic/morph_outputs_INTERNAL/water_flow_phrase_grammar_v002b_2026-05-22/"
+      evidence: "Three .mov files with alpha channel: current_streamline_field_v002.mov, waterfall_vertical_phrase_v002.mov, transpiration_vertical_phrase_v002.mov. ffprobe shows prores codec yuva444p12le pixel format (12-bit RGBA), 1920×1080, 144 frames. Transpiration scene defined in scripts/water_flow_phrase_grammar_v002_alpha_and_inverse.py transp_path function with y = (H - WF_MY) - t * (H - 2*WF_MY) — y decreases with t = upward motion."
+
+  - claim: "Two versions of the rising scene: crescents pointing down (catching vapor from below), and pointing up (opening to the sky)"
+    location: "third checkmark"
+    source:
+      type: file
+      ref: "/Users/darrenzal/projects/salish-sea-dreaming/scripts/water_flow_phrase_grammar_v002_transpiration_crescentup.py"
+      evidence: "Script defines render_phrase_on_path_crescent_up which copies v002.render_phrase_on_path but calls draw_crescent with open_angle=ang (forward, toward terminus = sky) instead of ang+pi (backward, toward origin = earth). Output transpiration_vertical_phrase_v002_crescentup.{mp4,mov} exists in v002b dir. Default crescent direction on the original transpiration scene unchanged from v002 (cups back toward origin = down on rising phrases)."
+
+  - claim: "Composite previews of all four water layers over the Moonfish underwater footage"
+    location: "fourth checkmark"
+    source:
+      type: file
+      ref: "/Users/darrenzal/projects/salish-sea-dreaming/track2-deterministic/morph_outputs_INTERNAL/water_flow_phrase_grammar_v002b_2026-05-22/"
+      evidence: "Four *__over_moonfish-water.mp4 composites present (current_streamline, waterfall, transpiration, transpiration_crescentup). Composite recipe in scripts/water_flow_phrase_grammar_v002b_composites.py uses /Users/darrenzal/projects/salish-sea-dreaming/media/collaborators/moonfish-video/underwater/P1099653.mp4 as the underwater footage source at 0.55 additive opacity."
+
+  - claim: "The sun rays at the top of the frame become the 'stars' the rising phrases reach toward. Reads strong."
+    location: "fourth checkmark"
+    source:
+      type: file
+      ref: "/Users/darrenzal/projects/salish-sea-dreaming/track2-deterministic/morph_outputs_INTERNAL/water_flow_phrase_grammar_v002b_2026-05-22/midpoint_stills/transpiration_vertical_phrase_v002__over_moonfish-water_mid.png"
+      evidence: "Midpoint frame visually verified during render: P1099653 Moonfish footage has prominent sun-piercing light columns at top of frame; transpiration phrases (circle at bottom, crescents rising, trigon at top) ascend toward this light source. 'Reads strong' is an editorial aesthetic claim grounded in directly-observed composite."
+
+  - claim: "Everything's in Proton Drive: Salish Sea Dreaming → SSD Phase 2 - Pravin Internal Update - 2026-05-22"
+    location: "fifth paragraph"
+    source:
+      type: file
+      ref: "/Users/darrenzal/Library/CloudStorage/ProtonDrive-darrenzal@protonmail.com-folder/Salish Sea Dreaming/SSD Phase 2 - Pravin Internal Update - 2026-05-22/"
+      evidence: "Folder exists locally on Proton-mounted filesystem with 5 subfolders (01_Autolume_4K_Wild_30s, 02_Autolume_4K_Sweep_5_Variants, 03_Water_Flow_v002b_Layers, 04_Water_Flow_v002b_Alpha_ProRes, 05_Source_Sweep_512) totaling 1.2GB. Proton Drive Mac app syncs from this path in background. ProtonDrive sync completion not yet verified at draft time — relying on Pravin reading at AM after sync has had hours to complete."
+
+  - claim: "There's a README at the top walking through what's where and what to pick"
+    location: "fifth paragraph"
+    source:
+      type: file
+      ref: "/Users/darrenzal/Library/CloudStorage/ProtonDrive-darrenzal@protonmail.com-folder/Salish Sea Dreaming/SSD Phase 2 - Pravin Internal Update - 2026-05-22/00_README_INTERNAL_ONLY.txt"
+      evidence: "README file exists at folder root; contains folder map for all 5 subfolders + 'Decision points for your morning review' section with 6 checkboxes (variant picks, length, framing, transpiration crescent A/B, water-flow tweaks, HAP Alpha question)."

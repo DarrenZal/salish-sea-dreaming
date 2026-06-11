@@ -1,0 +1,35 @@
+SSD Phase 2 - Water Flow Phrase Grammar v002 Upload - 2026-05-20
+
+Status: INTERNAL REVIEW ONLY.
+
+These are not Austin-approved and are not public-ready. They are internal
+primitive water-flow studies for Pravin / Austin review.
+
+Lead clip:
+- current_streamline_field_v002.mp4
+  Strongest current upload in this folder. It shows sparse current paths carrying
+  circle -> crescent -> crescent -> trigon phrase bundles. This is currently one
+  of the clearest water-dynamics / flow-following primitive grammar studies.
+
+Useful composite:
+- current_streamline_field_v002__over_moonfish-water.mp4
+  Same current grammar over Moonfish open-water footage. Useful for judging
+  whether the additive layer reads over real underwater footage.
+
+Secondary clip:
+- waterfall_vertical_phrase_v002.mp4
+  The layer-only vertical-water phrase is visually useful, but the composite
+  preview is over kelp forest footage, not an actual waterfall. Treat it as a
+  vertical-flow layer test, not a literal waterfall/footage match.
+
+Context:
+- waterfall_vertical_phrase_v002__over_kelp-forest.mp4
+  Included only as a compositing/readability test over kelp. The kelp is waving
+  underwater, so this composite may feel semantically mismatched even if the
+  primitive layer itself is promising.
+
+Recommended review order:
+1. current_streamline_field_v002.mp4
+2. current_streamline_field_v002__over_moonfish-water.mp4
+3. waterfall_vertical_phrase_v002.mp4
+4. waterfall_vertical_phrase_v002__over_kelp-forest.mp4

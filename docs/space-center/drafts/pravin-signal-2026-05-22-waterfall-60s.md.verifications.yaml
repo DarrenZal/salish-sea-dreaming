@@ -1,0 +1,42 @@
+verifications:
+  - claim: "60s waterfall composite is up"
+    location: "first paragraph"
+    source:
+      type: file
+      ref: "/Users/darrenzal/projects/salish-sea-dreaming/track2-deterministic/morph_outputs_INTERNAL/water_flow_phrase_grammar_v002b_2026-05-22/waterfall_vertical_phrase_v002_60s__over_moonfish-water.mp4"
+      evidence: "ffprobe confirmed: 1920x1080 H.264, duration 59.96s, 24fps. File size 50.1MB. Uploaded to Drive folder ID 1mexjv5h8KjFH0Gjm_oGBcGsRD_jLWnem (folder 03) returning file ID 1TU0vn969eHFGTQ0mkDTciGjK1extd9gV via mcp__google-workspace__create_drive_file."
+
+  - claim: "https://drive.google.com/file/d/1TU0vn969eHFGTQ0mkDTciGjK1extd9gV/view?usp=drivesdk"
+    location: "first paragraph (the link)"
+    source:
+      type: file
+      ref: "drive file ID 1TU0vn969eHFGTQ0mkDTciGjK1extd9gV"
+      evidence: "URL returned directly by mcp__google-workspace__create_drive_file response. File created in folder 1mexjv5h8KjFH0Gjm_oGBcGsRD_jLWnem which inherits 'Anyone with link (writer)' permissions from parent SSD shared Drive 1UvJ6G65FbSRngtCy0hMFpUwqhadfywFr."
+
+  - claim: "In folder 03 alongside the 6s version"
+    location: "second paragraph"
+    source:
+      type: file
+      ref: "drive folder 1mexjv5h8KjFH0Gjm_oGBcGsRD_jLWnem"
+      evidence: "Folder 03_Water_Flow_v002b_Layers contains the original 6s waterfall_vertical_phrase_v002__over_moonfish-water.mp4 (per prior Signal 1779470500105 verifications) plus the new 60s version uploaded today. Same folder."
+
+  - claim: "Same blend recipe, just longer"
+    location: "second paragraph"
+    source:
+      type: file
+      ref: "/tmp/waterfall_60s_render.py"
+      evidence: "Render script imports v002.make_composite() with identical params to the original 6s composite (start=4.0, opacity=0.55, footage_dim=-0.10). Only difference: n_frames=1440 instead of 144, and the layer mp4 was ffmpeg-looped 10x to match. Phrase formula q = (f/n + off) % 1.0 wraps seamlessly at cycle boundaries, so loop is visually continuous."
+
+  - claim: "Used the first minute of the Moonfish clip (0:04 to 1:04)"
+    location: "second paragraph"
+    source:
+      type: file
+      ref: "/tmp/waterfall_60s_render.py"
+      evidence: "Composite invocation: start=4.0s offset into P1099653.mp4, duration=60s (n_frames=1440 @ 24fps). So Moonfish footage used is seconds 4 through 64 of the 428-second original."
+
+  - claim: "checked frames at t=30s, t=55s, t=58s, no scuba head in this window"
+    location: "second paragraph"
+    source:
+      type: file
+      ref: "/Users/darrenzal/projects/salish-sea-dreaming/track2-deterministic/morph_outputs_INTERNAL/water_flow_phrase_grammar_v002b_2026-05-22/midpoint_stills/waterfall_vertical_phrase_v002_60s__over_moonfish-water_mid.png + /tmp/waterfall_60s_t55.png + /tmp/waterfall_60s_t58.png"
+      evidence: "Three frame samples extracted via ffmpeg -ss and visually read by Claude via Read tool. All three show underwater greens with sun-ray columns at top of frame and waterfall phrases (crescents falling, trigons at bottom of lanes) — no human/diver figure present. Scuba head Pravin referenced in the original 6s clip was apparently a transient or located outside the 0:04-1:04 window (full clip is 428s; original 6s composite used 0:04-0:10 and Pravin loved it, so that window was also clean)."

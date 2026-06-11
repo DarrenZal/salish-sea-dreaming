@@ -1,0 +1,49 @@
+verifications:
+  - claim: "A compact internal packet exists in Proton Drive at Salish Sea Dreaming/SSD Phase 2 - Pravin Internal Update - 2026-05-20."
+    location: "body, paragraph 1"
+    source:
+      type: file
+      ref: "/Users/darrenzal/Library/CloudStorage/ProtonDrive-darrenzal@protonmail.com-folder/Salish Sea Dreaming/SSD Phase 2 - Pravin Internal Update - 2026-05-20/00_README_INTERNAL_ONLY.txt"
+      evidence: "The packet README exists at that Proton Drive path, and the file-list verification showed the packet contents under the same folder."
+  - claim: "The packet includes Evan coastline, H6 kelp true 4K, and Moonfish dense salmon school cropped/upscaled for Hubble/Resolume testing."
+    location: "body, lane 1"
+    source:
+      type: file
+      ref: "docs/space-center/mvp-fallback-resolume-package-2026-05-19.md"
+      evidence: "The MVP fallback doc lists the Evan, H6 kelp, and Moonfish P1099653 dense salmon school exports, including source resolution, crop/upscale details, and Resolume testing purpose."
+  - claim: "The fallback lane is the stable floor."
+    location: "body, lane 1"
+    source:
+      type: file
+      ref: "docs/space-center/mvp-fallback-resolume-package-2026-05-19.md"
+      evidence: "The doc describes the package as the stable floor for the Hubble wide wall and as the fallback-only layer group if Austin-derived layers are muted."
+  - claim: "The packet includes sun-from-seed and falling-snowflake topology/cymatics loops plus a contact sheet."
+    location: "body, lane 2"
+    source:
+      type: file
+      ref: "track2-deterministic/morph_outputs_INTERNAL/cymatic_topology_cells_v004_2026-05-20/README.md"
+      evidence: "The v004 README lists the sun-from-seed and falling-snowflake MP4s and the v004 midpoint contact sheet."
+  - claim: "Topology/cymatics clips are internal only, not Austin-approved, not public-ready, and not a cultural meaning claim."
+    location: "body, lane 2"
+    source:
+      type: file
+      ref: "track2-deterministic/morph_outputs_INTERNAL/cymatic_topology_cells_v004_2026-05-20/README.md"
+      evidence: "The README states the v004 packet status as INTERNAL ONLY, Austin-review-needed, not Austin-approved, not public, and not a cultural meaning claim."
+  - claim: "Fallback footage is usable for internal projector tests."
+    location: "body, current read"
+    source:
+      type: file
+      ref: "docs/space-center/mvp-fallback-resolume-package-2026-05-19.md"
+      evidence: "The MVP doc says the package is usable for projector/Resolume testing now, while public showing still needs media/license confirmation."
+  - claim: "Static salmon/style-transfer is parked."
+    location: "body, current read"
+    source:
+      type: file
+      ref: "docs/space-center/functional-salmon-vs-static-replication-2026-05-20.md"
+      evidence: "The decision brief says static Austin-like style replication is parked and the salmon lane's next step is Austin review, not more rendering."
+  - claim: "The topology/cymatics lane needs one more correction pass around exact primitive-region taxonomy."
+    location: "body, current read"
+    source:
+      type: file
+      ref: "docs/space-center/topology-cell-region-taxonomy-2026-05-20.md"
+      evidence: "The taxonomy doc disambiguates region names and ends with B-specific constraints for avoiding wrong region selection and random placement."

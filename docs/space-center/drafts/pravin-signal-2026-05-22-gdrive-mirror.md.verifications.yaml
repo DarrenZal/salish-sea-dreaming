@@ -1,0 +1,63 @@
+verifications:
+  - claim: "Mirrored everything to the shared SSD Drive"
+    location: "first paragraph"
+    source:
+      type: file
+      ref: "https://drive.google.com/drive/folders/1xP0dzNpibCJetoiRXmMG6zXcLg0weYZO"
+      evidence: "Folder created via mcp__google-workspace__create_drive_file inside parent folder 1UvJ6G65FbSRngtCy0hMFpUwqhadfywFr (the SalishSeaDreaming shared Drive folder Pravin pointed to). 27 files uploaded successfully across 4 subfolders + midpoint_stills sub-subfolder. README at root."
+
+  - claim: "https://drive.google.com/drive/folders/1xP0dzNpibCJetoiRXmMG6zXcLg0weYZO"
+    location: "first paragraph (the link itself)"
+    source:
+      type: file
+      ref: "drive folder ID 1xP0dzNpibCJetoiRXmMG6zXcLg0weYZO"
+      evidence: "Folder ID returned by mcp__google-workspace__create_drive_file response. Verified via mcp__google-workspace__get_drive_shareable_link which returned the same URL and listed sharing as 'Anyone with the link (writer)' inherited from parent."
+
+  - claim: "Inherits the SalishSeaDreaming Drive permissions"
+    location: "second paragraph"
+    source:
+      type: file
+      ref: "https://drive.google.com/drive/folders/1UvJ6G65FbSRngtCy0hMFpUwqhadfywFr"
+      evidence: "get_drive_shareable_link on the new folder returned: 'Anyone with the link (writer) [id: anyoneWithLink]', plus Eve, Darren (owner), Shawn as named writers. Same access pattern as parent SSD shared Drive."
+
+  - claim: "Same content, same folder structure"
+    location: "first paragraph"
+    source:
+      type: file
+      ref: "/Users/darrenzal/Library/CloudStorage/ProtonDrive-darrenzal@protonmail.com-folder/Salish Sea Dreaming/SSD Phase 2 - Pravin Internal Update - 2026-05-22/"
+      evidence: "Same 4 subfolder names (01_Autolume_4K_Wild_30s, 02_Autolume_4K_Sweep_5_Variants, 03_Water_Flow_v002b_Layers, 04_Water_Flow_v002b_Alpha_ProRes) + midpoint_stills under 03 + same 00_README_INTERNAL_ONLY.txt. Source files for upload came from the canonical repo paths (track2-deterministic/morph_outputs_INTERNAL/water_flow_phrase_grammar_v002b_2026-05-22/ and docs/space-center/autolume-{wild30s,sweep}-2026-05-21*/) — bit-for-bit identical to what's in the Proton folder."
+
+  - claim: "Skipped the source 512² clips (reference only, not needed for your picks)"
+    location: "third paragraph"
+    source:
+      type: file
+      ref: "/Users/darrenzal/projects/salish-sea-dreaming/docs/space-center/autolume-sweep-2026-05-21-v2/"
+      evidence: "Five 512² source MP4s (01_baseline.mp4 etc.) are in repo + Proton folder 05_Source_Sweep_512 but not uploaded to Drive. They're reference-only — the 4K versions in folder 02 are the deliverable for Pravin's review."
+
+  - claim: "01 (wild_psi120 30s in both framings)"
+    location: "third paragraph"
+    source:
+      type: file
+      ref: "drive folder 1eWtMBYrWmIYjv6Z72tDnryvl70Z0quJy"
+      evidence: "Two MP4s uploaded: wild_psi120_30s_4k_letterbox.mp4 (ID 1sMzj61UeeCMOtvJYOrA2ei5T2hNfBNwZ) and wild_psi120_30s_4k_crop.mp4 (ID 13_OId14BFO77A5QrOBXCSvJ7DQb81dwx). Source files at /Users/darrenzal/projects/salish-sea-dreaming/docs/space-center/autolume-wild30s-2026-05-21/."
+
+  - claim: "02 (5-variant sweep at 4K)"
+    location: "third paragraph"
+    source:
+      type: file
+      ref: "drive folder 12Tjsl39Xl0jcjFukw1U8BiChXHgHtFtd"
+      evidence: "Five MP4s uploaded: 01_baseline_4k_crop, 02_tight_psi050_4k_crop, 03_wild_psi120_14s_4k_letterbox, 04_noise_drift_4k_crop, 05_seed42_4k_crop. Source files in repo dirs autolume-sweep-2026-05-21-v2/ and autolume-sweep-2026-05-21/."
+
+  - claim: "03 (water-flow layers + Moonfish composites + midpoint stills)"
+    location: "third paragraph"
+    source:
+      type: file
+      ref: "drive folder 1mexjv5h8KjFH0Gjm_oGBcGsRD_jLWnem"
+      evidence: "8 MP4s uploaded (4 layer MP4s + 4 Moonfish composites). Subfolder midpoint_stills (ID 1nEh1i9IDlmLqINhthZXMgqSKmq0BCxBw) contains 8 PNGs (4 layer + 4 composite). Source files in repo track2-deterministic/morph_outputs_INTERNAL/water_flow_phrase_grammar_v002b_2026-05-22/."
+
+  - claim: "04 (alpha-channel ProRes versions)"
+    location: "third paragraph"
+    source:
+      type: file
+      ref: "drive folder 1lLtYK5ZdfghL_H24FmFHdLfU5rjTdV4s"
+      evidence: "4 ProRes 4444 RGBA MOVs uploaded: current_streamline, waterfall_vertical, transpiration_vertical, transpiration_vertical_crescentup. Source files in repo water_flow_phrase_grammar_v002b_2026-05-22/. yuva444p12le pixel format = 12-bit RGBA with alpha channel."

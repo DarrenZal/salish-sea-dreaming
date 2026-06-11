@@ -1,0 +1,49 @@
+verifications:
+  - claim: "Matt's soundtrack landing tonight"
+    location: "opening"
+    source:
+      type: quote
+      ref: "Matt just sent through the new data-poetic soundtrack for the installation loop and live mix performance. I have been layering it in with my 'deep transmission' pallet and honestly… it is extraordinary."
+      evidence: "Pravin's Signal this session 2026-05-23 late, quoted verbatim in operator's paste."
+  - claim: "He earned that 11-year run with Björk for a reason"
+    location: "opening"
+    source:
+      type: quote
+      ref: "I shared with Austin that it makes complete sense why Björk kept Matt close for 11 years"
+      evidence: "Pravin's Signal this session 2026-05-23 late, quoted verbatim — Pravin himself made the Björk connection."
+  - claim: "319 MB MP4 / 3840×2160 / 60s / H.264"
+    location: "link line"
+    source:
+      type: file
+      ref: "/tmp/4k-heroes/H1_salmon_school_4k_lanczos.mp4"
+      evidence: "ffprobe this session showed: width=3840 height=2160 duration=59.926533 r_frame_rate=60000/1001 codec_name=h264. ls -lh shows 319M file size. Operator uploaded this file to Proton Drive and pasted the resulting share link this session."
+  - claim: "H2 Herring + H3-H5 + H7-H8 in 4K"
+    location: "palette paragraph"
+    source:
+      type: conversation_ref
+      ref: "ls of /tmp/4k-heroes/ this session 2026-05-23 evening: H2_herring_in_kelp_4k_lanczos.mp4 (431M), H3_kelp_cathedral_4k_lanczos.mp4 (578M), H4_dense_school_4k_lanczos.mp4 (215M), H5_reef_garden_4k_lanczos.mp4 (132M), H7_spawn_feast_4k_lanczos.mp4 (121M), H8_milky_water_4k_lanczos.mp4 (106M)"
+      evidence: "All 6 additional hero clips lanczos-upscaled to 4K and verified on local disk this session before Signal draft."
+  - claim: "1.6 GB combined"
+    location: "palette paragraph"
+    source:
+      type: conversation_ref
+      ref: "Sum of H2 + H3 + H4 + H5 + H7 + H8 file sizes from /tmp/4k-heroes/: 431+578+215+132+121+106 = 1583 MB ≈ 1.6 GB"
+      evidence: "Arithmetic from ls -lh output this session."
+  - claim: "HAP Alpha for alpha-channel layers; ProRes 4444 also works but bigger"
+    location: "codec paragraph"
+    source:
+      type: file
+      ref: "/Users/darrenzal/projects/salish-sea-dreaming/docs/space-center/drafts/pravin-signal-2026-05-23-evening-deliverables.md (sister-draft context this session)"
+      evidence: "HAP Alpha is the standard Resolume-friendly codec for alpha-channel layers (documented widely in Resolume forums and the Alley transcoder's role); ProRes 4444 supports alpha at higher bitrate. Both supported by Alley as transcode targets. Operator confirmed HAP Alpha rec via AskUserQuestion this session 2026-05-23 late."
+  - claim: "Wednesday 8:30pm Chambar"
+    location: "logistics line"
+    source:
+      type: quote
+      ref: "we have a very special late dinner planned for the Data Team at my friends restaurant Chambar in Vancouver. Reservation is for 8:30 -  it will be after the VIP reception on Wednesday."
+      evidence: "Pravin's Signal this session 2026-05-23 late, quoted verbatim."
+  - claim: "Cat surgery, your mum"
+    location: "closing acknowledgement"
+    source:
+      type: quote
+      ref: "cat surgery Tuesday, then Mum ending..."
+      evidence: "Pravin's Signal this session 2026-05-23 late, partially quoted — operator's paste truncated with 'Read more' so context confirms cat surgery + mum's medical situation are both factors Pravin cited."

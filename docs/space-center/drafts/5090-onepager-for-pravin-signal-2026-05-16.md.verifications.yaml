@@ -1,0 +1,79 @@
+verifications:
+  - claim: "The draft is staged awaiting the Sunday Memory Express call outcome."
+    location: "Header"
+    source:
+      type: file
+      ref: "/Users/darrenzal/.claude/plans/ssd-tonight-2026-05-16-and-gan-resolution-question.md"
+      evidence: "Implementation Step 4 says to stage the 5090 one-pager with the `[STAGED — AWAITING SUNDAY MEMEX CALL OUTCOME]` header and not send it."
+  - claim: "Recommended path: execute the call decision if Memory Express Victoria confirms Sunday/holiday hours and floor stock."
+    location: "Paragraph 1"
+    source:
+      type: file
+      ref: "/Users/darrenzal/Documents/Notes/Meetings/The Salish Sea Dreaming/2026-05-16 The Salish Sea Dreaming Meeting.md"
+      evidence: "The meeting note records the decision to buy a complete custom PC from Memory Express Victoria and says Darren should call Sunday morning to confirm long-weekend hours before going in."
+  - claim: "The path is a complete 5090-class build through Memory Express Victoria, not a card-only upgrade."
+    location: "Paragraph 1"
+    source:
+      type: file
+      ref: "/Users/darrenzal/Documents/Notes/Meetings/The Salish Sea Dreaming/2026-05-16 The Salish Sea Dreaming Meeting.md"
+      evidence: "The meeting note decisions say to buy a complete custom PC from Memory Express Victoria and not just put the 5090 card into the existing 3090 machine because ownership accounting is messy."
+  - claim: "Call target spec: RTX 5090, 64 GB RAM, 1 TB SSD, 1 TB HDD, and liquid cooling."
+    location: "Paragraph 1"
+    source:
+      type: file
+      ref: "/Users/darrenzal/Documents/Notes/Meetings/The Salish Sea Dreaming/2026-05-16 The Salish Sea Dreaming Meeting.md"
+      evidence: "The meeting note frontmatter and decisions record the target build spec as 5090 GPU + 64 GB RAM + 1 TB HDD + 1 TB SSD, liquid cooling."
+  - claim: "The mid-tier RTX 5090 targets are ASUS TUF OC, MSI Gaming Trio OC, MSI Vanguard SOC, Zotac Solid OC, and Gigabyte Gaming OC."
+    location: "Paragraph 1"
+    source:
+      type: file
+      ref: "/Users/darrenzal/projects/salish-sea-dreaming/docs/space-center/5090-procurement-options-for-pravin-call-2026-05-16.md"
+      evidence: "The procurement doc's TL;DR, GPU tier section, and phone script list these as the target mid-tier AIB cards."
+  - claim: "Call target price was about $8K base plus about $600 for 64 GB RAM, with fans/accessories TBD."
+    location: "Paragraph 2"
+    source:
+      type: file
+      ref: "/Users/darrenzal/Documents/Notes/Meetings/The Salish Sea Dreaming/2026-05-16 The Salish Sea Dreaming Meeting.md"
+      evidence: "The meeting note records the target custom-build estimate as about $8K with the video card, 1 TB HDD, and 1 TB SSD, plus about $600 to upgrade RAM to 64 GB and fans/accessories TBD."
+  - claim: "Procurement audit says a mid-tier GPU path is roughly $8,000-$9,000 all-in."
+    location: "Paragraph 2"
+    source:
+      type: file
+      ref: "/Users/darrenzal/projects/salish-sea-dreaming/docs/space-center/5090-procurement-options-for-pravin-call-2026-05-16.md"
+      evidence: "The TL;DR says the new estimated turnkey is about $8,000-$8,700 CAD, while the updated spec says total all-in including spares is about $8,000-$9,000 CAD. This depends on landing a mid-tier GPU in the stated band."
+  - claim: "If only Astral OC is local, the all-in cost is about $10.1K."
+    location: "Paragraph 2"
+    source:
+      type: file
+      ref: "/Users/darrenzal/projects/salish-sea-dreaming/docs/space-center/5090-procurement-options-for-pravin-call-2026-05-16.md"
+      evidence: "The procurement doc says if MemEx Victoria only carries Astral OC at $5,430 and Best Buy cannot guarantee delivery, the all-in jumps back to about $10,100. The Astral number came from an independent audit and is marked for phone reconfirmation."
+  - claim: "If MemEx walk-in pricing matches the configurator reality check, MemEx may be $11K-$13K and should be paused/reconsidered."
+    location: "Paragraph 2"
+    source:
+      type: file
+      ref: "/Users/darrenzal/projects/salish-sea-dreaming/docs/space-center/5090-procurement-options-for-pravin-call-2026-05-16.md"
+      evidence: "The MemEx Victoria configurator reality check says that if walk-in pricing matches configurator pricing, Path A self-build is realistically $11K-$13K, not $8K."
+  - claim: "Memory Express Victoria is at 2680 Blanshard and can be reached at 250-940-5151."
+    location: "Where/when paragraph"
+    source:
+      type: file
+      ref: "/Users/darrenzal/projects/salish-sea-dreaming/docs/space-center/5090-procurement-options-for-pravin-call-2026-05-16.md"
+      evidence: "The procurement doc's source and phone-script sections list Memory Express Victoria at 2680 Blanshard St and phone number 250-940-5151."
+  - claim: "The listed Sunday/holiday window is 11 AM-6 PM, but long-weekend hours must be phone-confirmed before driving."
+    location: "Where/when paragraph"
+    source:
+      type: file
+      ref: "/Users/darrenzal/.claude/plans/ssd-tonight-2026-05-16-and-gan-resolution-question.md"
+      evidence: "The plan assumptions say MemEx Victoria Sunday/holiday hours are listed online as 11:00 AM-6:00 PM and must be phone-confirmed because long-weekend listings can be wrong."
+  - claim: "Fallback option: UNIWAY Aurora via Best Buy CA marketplace at $8,999.99 CAD."
+    location: "Fallback paragraph"
+    source:
+      type: file
+      ref: "/Users/darrenzal/projects/salish-sea-dreaming/docs/space-center/5090-procurement-options-for-pravin-call-2026-05-16.md"
+      evidence: "The procurement doc identifies UNIWAY Aurora via Best Buy CA marketplace as a Playwright-verified lead at $8,999.99 CAD, sold and shipped by UNIWAY."
+  - claim: "UNIWAY Aurora is only viable if checkout confirms Salt Spring delivery by Wed May 21 and the likely 9800X3D typo/spec details are confirmed."
+    location: "Fallback paragraph"
+    source:
+      type: file
+      ref: "/Users/darrenzal/projects/salish-sea-dreaming/docs/space-center/5090-procurement-options-for-pravin-call-2026-05-16.md"
+      evidence: "The procurement doc says Best Buy options require a firm delivery date to Salt Spring V8K by Wed May 21, and that the UNIWAY Aurora listing says Ryzen 7 9850X3D, likely a 9800X3D typo, which must be verified."

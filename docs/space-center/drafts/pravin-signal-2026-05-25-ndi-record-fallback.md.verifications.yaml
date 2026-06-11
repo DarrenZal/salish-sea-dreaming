@@ -1,0 +1,13 @@
+verifications:
+  - claim: "3090 has 371 GB free"
+    location: "second paragraph"
+    source:
+      type: conversation_ref
+      ref: "ssh windows-desktop-wg 'fsutil volume diskfree C:' this session 2026-05-25 ~08:33 PDT returned 'Total free bytes : 398,569,721,856 (371.2 GB) / Total bytes : 1,023,167,950,848 (952.9 GB)'"
+      evidence: "fsutil report from the 3090 confirms 371 GB free on C: drive."
+  - claim: "sent by Claude"
+    location: "closing signature"
+    source:
+      type: conversation_ref
+      ref: "Operator direct instruction this session 2026-05-25: 'send it , but sign it with \"sent by claude\"'"
+      evidence: "Operator explicitly asked for this signature on this message to make the AI-agent authorship transparent to Pravin. Pravin's 2026-05-24 17:35 message had asked about human-vs-automated review process; this signature is the transparency response."

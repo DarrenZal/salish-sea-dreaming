@@ -1,0 +1,25 @@
+Hey Arshia — we are trying to sanity-check the Autolume resolution axis before we burn time on the wrong thing for the May 27-28 show at HR MacMillan Space Centre.
+
+Context: the new Resolume canvas is two 2560x1600 projectors side by side, so 5120x1600 full canvas, 7K lumens, light-controlled, not the BenQs. The Autolume aesthetic we want is still the intentionally abstract 120 kimg checkpoint at 512, not the later >1000 kimg look.
+
+I think the actual question is three-way:
+
+1. retrain at 1024, either from scratch or transfer;
+2. keep 120 kimg at 512 and do real-time Real-ESRGAN x4 upscale on the 5090;
+3. just throw the faster box at the existing pipeline and let Resolume/composition handle the canvas.
+
+There is a canvas-role ambiguity I do not want to hide from you:
+
+1. Autolume fills one projector at 2560x1600;
+2. Autolume fills the full 5120x1600 canvas stretched or tiled;
+3. Autolume sits as a layer/window inside Resolume, with Resolume handling the full canvas.
+
+Our working assumption is 3 for the main piece, plus 1 for occasional full-immersion moments. Does that seem like the right target, or should we optimize for a different role?
+
+Rough estimate only: if we targeted roughly 320 kimg at 1024, it might be about a 5-day TELUS run — technically possible, but it would burn most of the runway, leave little iteration time, and we do not know whether the 120/320 kimg aesthetic survives the resolution jump. The 5090 Real-ESRGAN path is also only a prototype hypothesis right now: we have not benchmarked real-time x4 upscaling on a 5090 while Autolume + TouchDesigner + StreamDiffusion + Resolume are all running on the same machine.
+
+Fallback if the real-time path is not clean: pre-render the upscaled Autolume output on TELUS and play it as a Resolume video loop.
+
+Side note: Pravin has been doing parallel research and his read converges with this direction. His agent also flagged NVIDIA Upscaler TOP in TouchDesigner as a possible alternative to Real-ESRGAN for the upscale step — we have not verified that claim. Worth your read?
+
+What are we missing?

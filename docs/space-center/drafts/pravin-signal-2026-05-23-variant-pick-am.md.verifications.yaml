@@ -1,0 +1,79 @@
+verifications:
+  - claim: "baseline psi=0.8"
+    location: "Q1"
+    source:
+      type: file
+      ref: "/Users/darrenzal/projects/salish-sea-dreaming/docs/space-center/RUNBOOK-20min-master-fire-when-pravin-picks.md"
+      evidence: "Runbook variant table line: 'baseline      | 0.8  | 0    | False'"
+  - claim: "wild_psi120 psi=1.2"
+    location: "Q1"
+    source:
+      type: file
+      ref: "/Users/darrenzal/projects/salish-sea-dreaming/docs/space-center/RUNBOOK-20min-master-fire-when-pravin-picks.md"
+      evidence: "Runbook variant table line: 'wild_psi120   | 1.2  | 0    | False'"
+  - claim: "Pravin flagged folders 01 + 03"
+    location: "Q1"
+    source:
+      type: quote
+      ref: "finally got time to go through the second folder: 03_wild_psi120_14s_4k_letterbox and 01_baseline_4k_crop"
+      evidence: "Pravin's Signal yesterday 5:28 PM PDT, quoted verbatim in the morning batch the operator pasted into chat 2026-05-23"
+  - claim: "noise_anim adds frame-by-frame mutation that breaks visible repeat"
+    location: "Q2"
+    source:
+      type: file
+      ref: "/Users/darrenzal/projects/salish-sea-dreaming/docs/space-center/RUNBOOK-20min-master-fire-when-pravin-picks.md"
+      evidence: "Runbook note: 'For non-repeating over 20 min: consider adding noise_anim=True on top of his pick. This adds frame-by-frame mutation that breaks visible repeat if the latent looper has a short cycle.'"
+  - claim: "40 min total render on 3090 for both variants"
+    location: "option C"
+    source:
+      type: file
+      ref: "/Users/darrenzal/projects/salish-sea-dreaming/docs/space-center/RUNBOOK-20min-master-fire-when-pravin-picks.md"
+      evidence: "Runbook step 2 specifies ~20 min wall-clock for a single 20-min render. Two sequential = 40 min."
+  - claim: "~5h H200 upscale wall-clock"
+    location: "option C + pipeline ETA"
+    source:
+      type: file
+      ref: "/Users/darrenzal/projects/salish-sea-dreaming/docs/space-center/RUNBOOK-20min-master-fire-when-pravin-picks.md"
+      evidence: "Runbook documents ~5h upscale, consistent with 0.54s/frame × 36,000 frames computed during prior session and quoted in pravin-signal-2026-05-22-20min-variant-pick.md."
+  - claim: "tomorrow's live video work"
+    location: "closing"
+    source:
+      type: quote
+      ref: "Excellent ! I will begin compositing around 1pm. Need to get the 20 minute video loop done tonight in order to work on the live video tomorrow."
+      evidence: "Pravin's Signal 2026-05-23 morning, quoted verbatim in operator's paste into chat."
+  - claim: "18 YouTube URLs, 8 sections"
+    location: "P.S. intro"
+    source:
+      type: file
+      ref: "/Users/darrenzal/projects/salish-sea-dreaming/docs/space-center/bob-turner-youtube-catalog-2026-05-23.md"
+      evidence: "Catalog file enumerates exactly 18 unique URLs across 8 sections (HERRING SPAWN AND ANCHOVY / SALMON RUNS / SALISH SEA ECOSYSTEM / SEALIONS / WHALES / TIDE POOL / SNOW GEESE — plus duplicate-URL annotation), parsed from Bob Turner Film list1.docx attachment on email id 327."
+  - claim: "3NCuLawvQaE is the orca clip and Bob noted it was low resolution"
+    location: "P.S. orca gap"
+    source:
+      type: file
+      ref: "/Users/darrenzal/projects/salish-sea-dreaming/docs/space-center/bob-turner-youtube-catalog-2026-05-23.md"
+      evidence: "Catalog records 'https://youtu.be/3NCuLawvQaE — Orca up close, trying to dislodge sea lion from beside boat — \"but low resolution\" (Bob's own note)' — direct verbatim parenthetical from the docx."
+  - claim: "XvCuL-coVOM is humpback (rolls, dives, breaches)"
+    location: "P.S. orca gap"
+    source:
+      type: file
+      ref: "/Users/darrenzal/projects/salish-sea-dreaming/docs/space-center/bob-turner-youtube-catalog-2026-05-23.md"
+      evidence: "Catalog records 'https://youtu.be/XvCuL-coVOM — Humpback whales (lots of humpback whale rolls, dives, breaches)' under the WHALES section."
+  - claim: "F2LRC7mMres is the tide-pool video"
+    location: "P.S. intertidal gap"
+    source:
+      type: file
+      ref: "/Users/darrenzal/projects/salish-sea-dreaming/docs/space-center/bob-turner-youtube-catalog-2026-05-23.md"
+      evidence: "Catalog records 'https://youtu.be/F2LRC7mMres — Tide pool life' under the TIDE POOL section."
+  - claim: "snow geese liftoff + dunlin murmuration 6:02-6:16 inside ecosystem video"
+    location: "P.S. birds gap"
+    source:
+      type: file
+      ref: "/Users/darrenzal/projects/salish-sea-dreaming/docs/space-center/bob-turner-youtube-catalog-2026-05-23.md"
+      evidence: "Catalog records 'https://youtu.be/XJ4WyRy0oQg — Snow geese dramatic liftoff' and 'https://youtu.be/oneCVfKdI9I — Salish Sea landscapes (dunlin murmuration 6:02-6:16)' — both directly transcribed from the docx."
+  - claim: "catalog saved at docs/space-center/bob-turner-youtube-catalog-2026-05-23.md"
+    location: "P.S. closing"
+    source:
+      type: file
+      ref: "/Users/darrenzal/projects/salish-sea-dreaming/docs/space-center/bob-turner-youtube-catalog-2026-05-23.md"
+      evidence: "File exists, created this session 2026-05-23 morning."

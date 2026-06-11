@@ -1,0 +1,28 @@
+verifications:
+  - claim: "20-min 4K master"
+    location: "first paragraph"
+    source:
+      type: quote
+      ref: "Pravin Signal message 2026-05-22: 'it would be great if we could get at least a minute at 4K for our theatre projection however if possible and priority so I can record a performance of 20 minutes, a 20 minutes continous evolution of the dreaming so the dreaming layer is non repeating. just be a continuous loop on one layer'"
+      evidence: "Pravin explicitly asked for a 20-minute continuous non-repeating Autolume render at 4K for his Saturday theatre recording. Relayed verbatim by the operator in the current turn."
+
+  - claim: "wild_psi120 (the dreamy one)"
+    location: "first paragraph"
+    source:
+      type: file
+      ref: "/Users/darrenzal/projects/salish-sea-dreaming/scripts/autolume_sweep.py"
+      evidence: "DEFAULT_VARIANTS list in autolume_sweep.py defines '03_wild_psi120' with trunc_psi=1.2 (vs preset default 0.8). 'Wild/dreamy' aesthetic descriptor used in the README.txt at /Users/darrenzal/Library/CloudStorage/ProtonDrive-darrenzal@protonmail.com-folder/Salish Sea Dreaming/SSD Phase 2 - Pravin Internal Update - 2026-05-22/00_README_INTERNAL_ONLY.txt and in the prior Signal draft (1779444173949) describing the 30s flagship clip."
+
+  - claim: "Pick any of the 5 in folder 02"
+    location: "first paragraph"
+    source:
+      type: file
+      ref: "https://drive.google.com/drive/folders/12Tjsl39Xl0jcjFukw1U8BiChXHgHtFtd"
+      evidence: "Drive folder 02_Autolume_4K_Sweep_5_Variants contains five 4K MP4s (01_baseline, 02_tight_psi050, 03_wild_psi120_14s, 04_noise_drift, 05_seed42). Confirmed in verification sidecar of prior Signal send 1779470500105."
+
+  - claim: "About 6 hours end-to-end (20 min to render on the 3090, then ~5 hrs to upscale to 4K on the H200)"
+    location: "second paragraph"
+    source:
+      type: file
+      ref: "/Users/darrenzal/projects/salish-sea-dreaming/scripts/_pod_upscale_worker.py"
+      evidence: "Benchmark math: prior Autolume integration test (logged in STATE-2026-05-22-pipeline-build.md) showed 512²→3840×2160 (x4 Spandrel) in 5.4 min for 600 frames = 0.54s/frame. 20 min @ 30fps = 36,000 frames. Upscale = 36000 × 0.54s = 19440s = 5.4h. Render = 20 min real-time (Autolume runs at native frame rate during recording). Total ~5.7h + ~30 min upload/encode overhead = ~6.2h. Estimate is conservative — H200 batching could speed up upscale, not benchmarked at this scale yet."

@@ -1,0 +1,35 @@
+verifications:
+  - claim: "OBS on the 3090 is recording cleanly (HEVC, 3840×2160 — matched to your NDI)"
+    location: "first sentence"
+    source:
+      type: file
+      ref: "C:/Users/user/Videos/2026-05-25 15-32-05.mkv"
+      evidence: "Test record this session 2026-05-25 ~15:32 PDT via OBS WebSocket. Started cleanly (StartRecord code 100), bytes grew steadily through 6-second test (6 MB → 49 MB), StopRecord succeeded cleanly, file landed at the listed path at 51.77 MB. Canvas + NDI source both confirmed at 3840×2160 via GetVideoSettings + GetSceneItemTransform WS calls. Encoder is obs_nvenc_hevc_tex per basic.ini Encoder= line set earlier this session."
+
+  - claim: "frames coming through are all black"
+    location: "first sentence"
+    source:
+      type: file
+      ref: "/tmp/test_frame.png extracted from C:/Users/user/Videos/2026-05-25 15-32-05.mkv at 4-second mark"
+      evidence: "Used ffmpeg to extract frame at t=4s from the MKV, scp'd to laptop, analyzed with PIL: image dimensions 3840×2160, grayscale mean brightness 0.0/255, max 0, min 0 — fully black across all pixels."
+
+  - claim: "I extracted a frame from a test record — mean brightness 0/255"
+    location: "first sentence (parenthetical detail)"
+    source:
+      type: file
+      ref: "/tmp/test_frame.png"
+      evidence: "Direct PIL measurement this session 2026-05-25 ~15:35 PDT. Mean 0.0/255 confirms all pixels are RGB(0,0,0) black."
+
+  - claim: "NDI Output — still toggled on? (worth checking, you may have flipped it when changing resolution)"
+    location: "checkpoint 4"
+    source:
+      type: conversation_ref
+      ref: "OBS log this session noted NDI source dimensions changed from 5120×1600 (observed 12:30 PDT) to 3840×2160 (observed 15:29 PDT) — a deliberate resolution change on Pravin's side."
+      evidence: "OBS scene config showed source dimensions evolution this session: morning 5120×1600 → afternoon after Pravin's change 3840×2160. When toggling resolution settings in Resolume, the NDI Output enable toggle can sometimes get unset depending on workflow — worth a sanity check."
+
+  - claim: "sent by Claude"
+    location: "closing signature"
+    source:
+      type: conversation_ref
+      ref: "Operator-established signoff pattern this session 2026-05-25"
+      evidence: "Operator established 'sent by Claude' signoff pattern earlier this session for Pravin messages, in response to Pravin's 2026-05-24 17:35 ask about human-vs-automated review process."

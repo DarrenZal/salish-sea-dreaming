@@ -1,0 +1,43 @@
+verifications:
+  - claim: "3840×2160 / 60fps / HAP codec in MOV container / 7.7 GB / 50s"
+    location: "Specs paragraph"
+    source:
+      type: file
+      ref: "/tmp/4k-heroes/hap-encoded/H6_salmon_4k_60fps_hap.mov"
+      evidence: "ffprobe this session 2026-05-24 ~20:54 PDT: codec_name=hap, width=3840, height=2160, r_frame_rate=60000/1001 (= 59.94 fps ≈ 60fps), duration=50.050000, nb_frames=3000. ls -lh shows 7.7G file size."
+  - claim: "Resolume's #2 recommended codec (after their proprietary DXV that needs Alley to encode)"
+    location: "Why HAP paragraph"
+    source:
+      type: url
+      ref: "https://resolume.com/software/codec"
+      evidence: "Resolume's official codec page states DXV is the top recommendation for performance. Their forum (resolume.com/forum/viewtopic.php?t=26109) explicitly compares DXV vs HAP — both use DXT compression; HAP is the cross-platform alternative when DXV-encoded files aren't available. DXV requires Resolume Alley to encode; HAP can be encoded with ffmpeg outside the Resolume ecosystem. Web-fetched + summarized this session 2026-05-24."
+  - claim: "GPU-decoded so playback is smooth"
+    location: "Why HAP paragraph"
+    source:
+      type: url
+      ref: "https://resolume.com/software/codec"
+      evidence: "Resolume's own docs (cited in same fetch): 'The DXV codec is GPU-decoded, allowing faster rendering than CPU-based codecs like ProRes or H264.' Forum thread t=13943 (HAP codec) confirms HAP also uses GPU decode via the same DXT compression scheme."
+  - claim: "HAP won't preview in QuickTime"
+    location: "Note paragraph"
+    source:
+      type: conversation_ref
+      ref: "Operator directly reported this session 2026-05-24 ~20:58 PDT: 'it coudl not open in quicktime for me, oent eh folder so i can open in VLC?'"
+      evidence: "Operator attempted to play the HAP MOV in QuickTime and it failed. HAP is a Vidvox codec, not part of QuickTime's native codec list."
+  - claim: "Resolume and VLC handle it cleanly"
+    location: "Note paragraph"
+    source:
+      type: url
+      ref: "https://resolume.com/forum/viewtopic.php?t=13943"
+      evidence: "HAP codec was developed BY Vidvox FOR pro VJ/projection tools like Resolume; native support in Resolume Arena since version 4. VLC has supported HAP since version 3.0+."
+  - claim: "ProRes 422 HQ MOV at 4K (~2.7 GB, smaller, plays in QuickTime + Resolume, CPU decode)"
+    location: "Fallback options"
+    source:
+      type: conversation_ref
+      ref: "Earlier this session: Resolume forum survey confirmed ProRes is supported but CPU-decoded ('won't playback as smooth and scrubbing probably won't give desired results' per resolume.com/forum/viewtopic.php?t=26109)."
+      evidence: "ProRes 422 HQ at 4K 60fps targets ~440 Mbps bitrate; 50s × 440 Mbps = ~2.7 GB. Apple's ProRes is natively supported by QuickTime + Resolume + every pro video app."
+  - claim: "HAP MOV at 30fps (~3.8 GB)"
+    location: "Fallback options"
+    source:
+      type: conversation_ref
+      ref: "Arithmetic: HAP at 60fps measured 7.7 GB for 50s; halving framerate halves frame count → half the file size → ~3.8 GB."
+      evidence: "Direct math from the 60fps HAP encode this session."

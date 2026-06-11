@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SSD Pearl 3D Viewer</title>
+  <style>
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: #0d1117;
+      color: #f2efe7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    #toolbar {
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      z-index: 2;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      padding: 10px 12px;
+      background: rgba(13, 17, 23, 0.82);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 6px;
+      backdrop-filter: blur(8px);
+    }
+    select, button {
+      font: inherit;
+      color: #f2efe7;
+      background: #1f2933;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 4px;
+      padding: 6px 8px;
+    }
+    button {
+      cursor: pointer;
+    }
+    #status {
+      position: fixed;
+      right: 12px;
+      bottom: 12px;
+      max-width: min(520px, calc(100vw - 24px));
+      padding: 10px 12px;
+      color: #d8d2c4;
+      background: rgba(13, 17, 23, 0.78);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 6px;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+    canvas {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="toolbar">
+    <select id="model">
+      <option value="/track2-deterministic/morph_outputs/exp4_hybrid_pearl_container_model_2026-05-16.ply">
+        Exp 4 - Hybrid Pearl Container
+      </option>
+      <option value="/track2-deterministic/morph_outputs/exp5_carved_pearl_hull_model_2026-05-16.ply">
+        Exp 5 - Carved Pearl Hull
+      </option>
+      <option value="/track2-deterministic/morph_outputs/exp3_visual_hull_model_2026-05-16.ply">
+        Exp 3 - Visual Hull
+      </option>
+    </select>
+    <button id="reset">Reset View</button>
+  </div>
+  <div id="status">Loading 3D pearl form...</div>
+
+  <script type="module">
+    import * as THREE from '/web/node_modules/three/build/three.module.js';
+    import { OrbitControls } from '/web/node_modules/three/examples/jsm/controls/OrbitControls.js';
+    import { PLYLoader } from '/web/node_modules/three/examples/jsm/loaders/PLYLoader.js';
+
+    const statusEl = document.getElementById('status');
+    const modelSelect = document.getElementById('model');
+    const resetButton = document.getElementById('reset');
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0d1117);
+
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.001, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x243044, 2.4));
+    const key = new THREE.DirectionalLight(0xffffff, 2.2);
+    key.position.set(4, 6, 8);
+    scene.add(key);
+    const rim = new THREE.DirectionalLight(0xb8d9ff, 1.1);
+    rim.position.set(-6, 3, -5);
+    scene.add(rim);
+
+    const grid = new THREE.GridHelper(2, 20, 0x384252, 0x1e2633);
+    grid.material.opacity = 0.28;
+    grid.material.transparent = true;
+    scene.add(grid);
+
+    const loader = new PLYLoader();
+    let mesh = null;
+
+    const materials = {
+      pearl: new THREE.MeshPhysicalMaterial({
+        color: 0xf2ead8,
+        roughness: 0.28,
+        metalness: 0.02,
+        clearcoat: 0.8,
+        clearcoatRoughness: 0.18,
+        transmission: 0.05,
+        side: THREE.DoubleSide
+      }),
+      hull: new THREE.MeshStandardMaterial({
+        color: 0xded3bf,
+        roughness: 0.34,
+        metalness: 0.04,
+        side: THREE.DoubleSide
+      })
+    };
+
+    function fitCamera(object) {
+      const box = new THREE.Box3().setFromObject(object);
+      const size = box.getSize(new THREE.Vector3());
+      const center = box.getCenter(new THREE.Vector3());
+      const maxDim = Math.max(size.x, size.y, size.z) || 1;
+      const distance = maxDim / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)));
+
+      object.position.sub(center);
+      controls.target.set(0, 0, 0);
+      camera.position.set(distance * 0.9, distance * 0.7, distance * 1.15);
+      camera.near = Math.max(distance / 100, 0.001);
+      camera.far = distance * 100;
+      camera.updateProjectionMatrix();
+      controls.update();
+    }
+
+    function loadModel(url) {
+      statusEl.textContent = `Loading ${url.split('/').pop()}...`;
+      if (mesh) {
+        scene.remove(mesh);
+        mesh.geometry.dispose();
+        mesh = null;
+      }
+      loader.load(
+        url,
+        geometry => {
+          geometry.computeVertexNormals();
+          const material = url.includes('exp4') ? materials.pearl : materials.hull;
+          mesh = new THREE.Mesh(geometry, material);
+          scene.add(mesh);
+          fitCamera(mesh);
+          const count = geometry.attributes.position ? geometry.attributes.position.count : 0;
+          statusEl.textContent = `${url.split('/').pop()} loaded. Drag to orbit, scroll to zoom. Vertices: ${count.toLocaleString()}.`;
+        },
+        event => {
+          if (event.total) {
+            const pct = Math.round((event.loaded / event.total) * 100);
+            statusEl.textContent = `Loading ${url.split('/').pop()}... ${pct}%`;
+          }
+        },
+        error => {
+          console.error(error);
+          statusEl.textContent = `Could not load ${url}. Make sure the local server is running from the project root.`;
+        }
+      );
+    }
+
+    modelSelect.addEventListener('change', () => loadModel(modelSelect.value));
+    resetButton.addEventListener('click', () => {
+      if (mesh) fitCamera(mesh);
+    });
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    function animate() {
+      requestAnimationFrame(animate);
+      if (mesh) mesh.rotation.y += 0.002;
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+    loadModel(modelSelect.value);
+    animate();
+  </script>
+</body>
+</html>

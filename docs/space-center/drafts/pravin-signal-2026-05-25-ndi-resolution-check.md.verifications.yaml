@@ -1,0 +1,42 @@
+verifications:
+  - claim: "Tobias wants 2:1 aspect 4K"
+    location: "first sentence"
+    source:
+      type: quote
+      ref: "Tobias Chen email to John Desnoyers-Stewart, 2026-05-14 15:54 PT, forwarded by Pravin via Signal 2026-05-25 to operator: 'a standard 2:1 aspect ratio 4k video would work well. The wall is around 4k.'"
+      evidence: "Direct quote from Tobias's email forwarded by Pravin this session. Operator pasted the email body into Signal context for Claude to read."
+
+  - claim: "the projectors are 2560×1600 each side-by-side"
+    location: "first sentence"
+    source:
+      type: quote
+      ref: "Tobias Chen email to John Desnoyers-Stewart, 2026-05-14 15:54 PT, forwarded by Pravin via Signal 2026-05-25: 'Each projector is 2560x1600 and 7000 lumens'"
+      evidence: "Direct quote from Tobias's email. 'Side-by-side' inferred from John's earlier question in same thread: 'the projection is using 2 projectors mapped side by side?' — Tobias did not contradict the side-by-side framing in his reply."
+
+  - claim: "3.2:1 native, ~2:1 after blend/crop"
+    location: "first sentence (parenthetical)"
+    source:
+      type: conversation_ref
+      ref: "Arithmetic this session: 2 × 2560 = 5120 wide, height 1600 → 5120/1600 = 3.2:1"
+      evidence: "Direct math from the projector dimensions. The '~2:1 after blend/crop' is interpretive — Tobias's 2:1 spec doesn't equal 5120×1600's 3.2:1, so some letterboxing/cropping/edge-blending logically must produce the final 2:1 image. The downstream compositor / mapping software handles this — we (NDI receive side) don't need to do anything except match Pravin's NDI Output resolution."
+
+  - claim: "OBS on the 3090 is reading your NDI source at 1920×1080"
+    location: "second paragraph"
+    source:
+      type: file
+      ref: "C:\\Users\\user\\AppData\\Roaming\\obs-studio\\basic\\scenes\\Untitled.json (scene-item scale_ref)"
+      evidence: "Scene config JSON read this session 2026-05-25 ~10:00 PDT shows the NDI Source scene-item with scale_ref of {x: 1920.0, y: 1080.0}. scale_ref in OBS reflects the source's reported obs_source_get_width/height at the time of the last Transform action; for an NDI source this is the incoming frame dimensions."
+
+  - claim: "3840×1920 or 4096×2048"
+    location: "second paragraph"
+    source:
+      type: conversation_ref
+      ref: "Standard 2:1 4K resolutions: 3840×1920 (16:9 4K UHD trimmed to 2:1) and 4096×2048 (DCI 4K cropped to 2:1)"
+      evidence: "These are the two canonical 2:1 4K-class resolutions for digital cinema / projection workflows. Pravin will pick the one that matches his Resolume composition's existing dimensions."
+
+  - claim: "sent by Claude"
+    location: "closing signature"
+    source:
+      type: conversation_ref
+      ref: "Operator-established signoff pattern this session 2026-05-25 (from prior NDI-record-fallback message)"
+      evidence: "Operator established this signoff pattern in response to Pravin's 2026-05-24 17:35 ask about human-vs-automated review process; continuing for transparency."

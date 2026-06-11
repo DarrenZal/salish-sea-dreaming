@@ -1,0 +1,37 @@
+verifications:
+  - claim: "Austin reading the radiating primitive ripples as 'raindrops on pond / Yogic-PNW interweave'"
+    location: "opening"
+    source:
+      type: quote
+      ref: "some feedback for us on the radiating_primitive_ripples... that really worked...raindrops on the surface of a pond....and Yogic-PNW cultural interveave"
+      evidence: "Pravin's Signal 2026-05-24 ~12:30pm reporting Austin's reaction to the primitive ripples layer, quoted verbatim in operator's paste."
+  - claim: "Proportional expansion of the (circle↔crescent) and (crescent↔trigon) spacing"
+    location: "Phase II paragraph"
+    source:
+      type: quote
+      ref: "he would like to see as the trigon and the crescent radiate out from the circle centre that the space between the circle-crescent and the crescent-trigon expands in proportion ie that the crescent-trigon space does not remain fixed"
+      evidence: "Pravin's Signal 2026-05-24 ~12:30pm relaying Austin's specific design refinement, quoted verbatim."
+  - claim: "math is already there"
+    location: "Phase II paragraph"
+    source:
+      type: conversation_ref
+      ref: "Current primitive ripples renderer in the project at scripts/abstract_radiating_primitive_ripples_v001_*.py implements radial propagation with fixed inter-shape distances. Adding a proportional scaling factor to the inter-shape gap as radius increases is a single-line change in the radial-step formula."
+      evidence: "The renderer parameters explicitly control crescent/trigon offset relative to circle; making that offset radius-proportional is small math."
+  - claim: "Fish designs incoming — sinusoidal-school animation"
+    location: "fish paragraph"
+    source:
+      type: quote
+      ref: "Austin is going to send over some of his fish designs. can we animate them in a way that they a school of them appear to follow a sinusuoidal path as in the video."
+      evidence: "Pravin's Signal 2026-05-24 ~12:30pm relaying Austin's request, quoted verbatim."
+  - claim: "3D-from-drawings path in a culturally-ethical pipeline"
+    location: "fish paragraph"
+    source:
+      type: quote
+      ref: "Furtheer to that we discussed how to take these same drawing and if we could use some compute and your research and results on 3D Shape. That is a phase II... ie there is online service that purportedly do this (how well - who knows) however since we are also working through ethical cultural use of ai - we need to figure that out in a secure R&D pipelline/workflow."
+      evidence: "Pravin's Signal 2026-05-24 ~12:30pm, quoted with paraphrase. The 'culturally-ethical pipeline' phrasing directly maps to Pravin's 'ethical cultural use of ai' + 'secure R&D pipeline/workflow'."
+  - claim: "Apollo lands"
+    location: "closing"
+    source:
+      type: quote
+      ref: "this is good - I think if we can get some R&D and project funding around we three for the evolution of Salish Sea Dreaming towards a autonomous immersive dome experience - it will be like the Apollo missions... moon landings were a good goal and there were lots of innovations for civilian society as a result of the the R&D"
+      evidence: "Pravin's Signal 2026-05-24 ~12:30pm framing the SSD evolution as Apollo-mission-scale; the response 'Apollo lands' is an acknowledgement of the framing, not an overcommitment to specific R&D work."

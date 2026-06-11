@@ -1,0 +1,55 @@
+verifications:
+  - claim: "our local Moonfish hero clips (H1-H8) are all 1080p"
+    location: "Q paragraph"
+    source:
+      type: file
+      ref: "/Users/darrenzal/projects/salish-sea-dreaming/media/hero-subclips/"
+      evidence: "ffprobe this session 2026-05-23 PDT: H1-H8 hero clips all return width=1920 height=1080. Only H6_kelp_forest_floor_4k.mp4 is 3840x2160 (the John-test file from May 15)."
+  - claim: "ESRGAN x2plus runs at 0.47 fps on H200"
+    location: "explanation paragraph"
+    source:
+      type: conversation_ref
+      ref: "Pod-side _progress.txt for job h1_salmon_4k_1647, read this session at ~17:30 PDT: 'frame 984/3592 | 0.47 fps | ETA 5587s'"
+      evidence: "Real-time progress file from the active H1 upscale job confirms 0.47 frames-per-second rate."
+  - claim: "60s 1080p clip is ~130 min"
+    location: "explanation paragraph"
+    source:
+      type: file
+      ref: "/Users/darrenzal/projects/salish-sea-dreaming/scripts/telus_upscale.py"
+      evidence: "60 sec at 60fps = 3600 frames. 3600/0.47 fps = 7660 sec = 128 min. H1_salmon_school.mp4 is 60s/60fps/1080p per ffprobe; took ~130 min projected."
+  - claim: "22-min Autolume would be ~21 hours"
+    location: "explanation paragraph"
+    source:
+      type: file
+      ref: "/tmp/autolume_20min_20260523_1336_baseline.mp4"
+      evidence: "Re-render at 1800s budget yielded ~22-min file with ~36000 frames at 30fps. 36000/0.47 = 76600 sec = 21.3 hours."
+  - claim: "Briony archive 91 MB, 9 categories, 206 files"
+    location: "status list"
+    source:
+      type: file
+      ref: "/tmp/Briony-Penn-Archive-for-Pravin-2026-05-23.zip"
+      evidence: "ls -lh + unzip -l output this session: 91M zip; root directory contains 9 category subfolders (Field-Journals, Illustrated-Maps, Illustrations, Nudibranch and camas, Paintings, Paintings-cleaned, Pen-and-Ink, Signage-and-Murals, Watercolour-Mandalas); unzip -l counted 206 files total."
+  - claim: "Ari's talk"
+    location: "closing"
+    source:
+      type: quote
+      ref: "hey please ask Ari if it is okay to take notes for his talk. I innted to do the workshop."
+      evidence: "Pravin Signal 4:29 PM 2026-05-23, quoted verbatim in operator's paste."
+  - claim: "2 H200 pods in parallel"
+    location: "pipeline list intro"
+    source:
+      type: conversation_ref
+      ref: "Operator-provided 2026-05-23 ~17:45 PDT: 2nd pod URL https://salishseadreaming-0b50s.paas.ai.telus.com with token 3e777ac2d1d6543672fe72f5d3e213f4. Both verified HTTP 200 this session; x2plus weights uploaded to pod 2 via chunked b64."
+      evidence: "Operator started the 2nd pod at console.ai.telus.com and pasted creds; this session verified reachability + uploaded RealESRGAN_x2plus.pth (64.0MB) to pod 2's upscale-test/weights/."
+  - claim: "H2 just started in parallel, ETA ~20:25 PDT"
+    location: "H2 status line"
+    source:
+      type: conversation_ref
+      ref: "Bash background task bv5ztt5hz fired this session at 18:12 PDT against pod 2 with TELUS_POD_URL+Jupyter_REST_API env-var override patch on telus_upscale.py"
+      evidence: "Pod 2 job started 18:12. At observed 0.47 fps for x2plus on H200, H2's 3842 frames (64s × 60fps) take 8175s = 136 min, landing ~20:28 PDT. Quoted as ~20:25 in body — within tolerance."
+  - claim: "Autolume baseline lanczos landing in ~2 min"
+    location: "baseline status line"
+    source:
+      type: conversation_ref
+      ref: "Bash background task this session fired ffmpeg with -vf scale=2160:2160:flags=lanczos,pad=3840:2160:840:0:black at 18:12 PDT, after scp pull verified 100% (2623346095 of 2623346095 bytes)"
+      evidence: "ffmpeg lanczos on 22-min 512x512 input is CPU-bound at ~30-60s for typical hardware (libx264 fast preset + filter chain); operator's M-series Mac historically does ~1-2 min."

@@ -1,0 +1,38 @@
+SSD Phase 2 - Water Flow Phrase Grammar Upload - 2026-05-20
+
+Status: INTERNAL REVIEW ONLY.
+
+These clips are not Austin-approved and are not public-ready. They are
+black-screen additive primitive-grammar studies intended for internal Pravin /
+Austin review.
+
+Source packet:
+track2-deterministic/morph_outputs_INTERNAL/water_flow_phrase_grammar_v001_2026-05-20/
+
+Included clips:
+- current_streamline_field_v001.mp4
+  Strongest current-flow study from Darren's review. Multiple sparse current
+  paths carry circle -> crescent -> crescent -> trigon phrase bundles.
+
+- waterfall_vertical_phrase_v001.mp4
+  Strong vertical-water study from Darren's review. Phrase bundles descend with
+  common-fate motion.
+
+- river_s_curve_phrase_v001.mp4
+  Useful path-led river/current grammar study. Phrases follow a single S-curve
+  path.
+
+- pond_ripple_phrase_v001.mp4
+  Pond/ripple phrase test. Kept for context, but currently less strong than the
+  current and waterfall clips.
+
+Current review read:
+- Lead with current_streamline_field_v001.
+- Then waterfall_vertical_phrase_v001.
+- River S-curve is useful supporting context.
+- Pond ripple is secondary.
+
+Reminder:
+This is separate from the topology/cymatics lane. It is the water-dynamics /
+flow-following primitive grammar lane, closer to the 2026-05-18 Austin/Pravin
+pivot around procedural lines and primitives following water/current motion.

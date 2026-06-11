@@ -1,0 +1,1 @@
+Uploading the 22-min Autolume baseline to the same Proton folder now — 7.9 GB at 3840×2160 / 30fps / H.264, the continuous non-repeating dreaming loop. Will share the link when it's done (~30-60 min depending on bandwidth).

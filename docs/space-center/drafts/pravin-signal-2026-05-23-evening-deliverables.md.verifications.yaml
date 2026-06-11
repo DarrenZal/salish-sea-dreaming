@@ -1,0 +1,67 @@
+verifications:
+  - claim: "H1 Salmon school 60s @ 3840×2160 (lanczos, 319 MB)"
+    location: "Ready right now"
+    source:
+      type: file
+      ref: "/tmp/4k-heroes/H1_salmon_school_4k_lanczos.mp4"
+      evidence: "ffprobe this session: width=3840 height=2160 duration=59.926533 r_frame_rate=60000/1001 codec_name=h264. ls -lh shows 319M file size."
+  - claim: "Autolume baseline 22:22 @ 3840×2160 (lanczos, 7.9 GB)"
+    location: "Ready right now"
+    source:
+      type: file
+      ref: "/tmp/4k-heroes/autolume_baseline_22min_4k_lanczos.mp4"
+      evidence: "ffprobe this session: width=3840 height=2160 duration=1342.666667 (=22:22) r_frame_rate=30/1 codec_name=h264. ls -lh shows 7.9G."
+  - claim: "Blu-ray quality"
+    location: "Autolume description"
+    source:
+      type: conversation_ref
+      ref: "ffmpeg encode log shows kb/s:50481.37 = ~50 Mbps; baseline of UHD Blu-ray is 50-100 Mbps."
+      evidence: "50 Mbps at H.264 CRF 18 corresponds to high-quality professional-grade video; UHD Blu-ray spec lower bound is 50 Mbps."
+  - claim: "Briony archive (91 MB zip, 9 categories, 206 files)"
+    location: "Ready right now"
+    source:
+      type: file
+      ref: "/tmp/Briony-Penn-Archive-for-Pravin-2026-05-23.zip"
+      evidence: "ls -lh shows 91M. unzip -l output enumerated 9 root subfolders (Field-Journals, Illustrated-Maps, Illustrations, Nudibranch and camas, Paintings, Paintings-cleaned, Pen-and-Ink, Signage-and-Murals, Watercolour-Mandalas) and 206 files total."
+  - claim: "ESRGAN on both H200 pods wedged after ~17 min / 1000 frames — same crash pattern"
+    location: "What didn't go to plan"
+    source:
+      type: conversation_ref
+      ref: "Pod 1 H1 job stopped at frame 996/3592 at 17:30 PDT after starting 16:47; pod 2 H2 retry job stopped at frame 1057/3838 at 18:56 PDT after starting 18:21."
+      evidence: "Both pods independently exhibited the same failure mode. Pod 1: 996 frames before kernel wedged. Pod 2: 1057 frames before kernel died (0 active kernels visible via /api/kernels). Both producing frames at ~0.5-0.6 fps until the wedge."
+  - claim: "Resolume transcodes to DXV anyway"
+    location: "What didn't go to plan"
+    source:
+      type: file
+      ref: "/Users/darrenzal/.claude/projects/-Users-darrenzal-projects-salish-sea-dreaming/memory/MEMORY.md"
+      evidence: "Resolume Arena's native codec is DXV (Resolume Digital Video) — established knowledge in the project memory and broadly documented behavior for Resolume."
+  - claim: "Pravin's Edge effect on the orca"
+    location: "What didn't go to plan"
+    source:
+      type: quote
+      ref: "just try to get it higher res and cool in terms of the spatial dynamics...I may overlay effect like Edge on it via resolume."
+      evidence: "Pravin's Signal 2026-05-23 ~12:04 PDT, quoted verbatim in operator's paste."
+  - claim: "I'll bring the files on a drive"
+    location: "Walk-through"
+    source:
+      type: quote
+      ref: "until I know we have all the assets that we discussed and I can get them onto my hard drive/SSD to load up for composition"
+      evidence: "Pravin's Signal 2026-05-23 15:13 PDT expressed need for the assets on his hard drive/SSD for local composition. Bringing on a portable drive is the most direct fulfillment of that — sidesteps Proton preview issues (Pravin noted same-day) and Google upload time for the 7.9 GB master."
+  - claim: "asset checklist doc"
+    location: "Walk-through"
+    source:
+      type: file
+      ref: "/Users/darrenzal/projects/salish-sea-dreaming/docs/space-center/ssd-impact-asset-checklist-2026-05-23.md"
+      evidence: "File created this session covering 8 asset layers + 3 Drive locations + show logistics + open items. ~300 lines markdown."
+  - claim: "I'm staying at Patricia's tonight"
+    location: "Heads up on plans"
+    source:
+      type: conversation_ref
+      ref: "Operator direct instruction this session 2026-05-23 evening: 'i shoudl say that i am plannign to spend the night at patricia'sand that i have my workshop at non tomorrow i want to prepare for as i havnt had time to do that yet, but tht i could have a meeting in the mronign if that helps'"
+      evidence: "Operator explicitly updated their plan; sleeping at Patricia's not Pravin's, has own workshop noon Sunday, willing to do morning check-in."
+  - claim: "my own workshop at noon tomorrow"
+    location: "Heads up on plans"
+    source:
+      type: conversation_ref
+      ref: "Operator instruction this session; also Pravin's Signal 2026-05-22 14:15 PDT: 'I am planning to do his workshop though. Are you?' (Ari's workshop) and operator replied 14:19 'if i had known our timeline on our stuff i woudln't have commited to sunday for my workshop but I committed to Patrcia a while back'"
+      evidence: "Operator has a workshop committed for Sunday (likely noon), referenced in chat history; restated this session."

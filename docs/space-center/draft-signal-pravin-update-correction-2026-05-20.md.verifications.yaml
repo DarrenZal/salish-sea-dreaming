@@ -1,0 +1,25 @@
+verifications:
+  - claim: "The same Proton Drive folder now includes 02B_Primitive_Cycle_INTERNAL."
+    location: "body, updated folder list"
+    source:
+      type: file
+      ref: "/Users/darrenzal/Library/CloudStorage/ProtonDrive-darrenzal@protonmail.com-folder/Salish Sea Dreaming/SSD Phase 2 - Pravin Internal Update - 2026-05-20/02B_Primitive_Cycle_INTERNAL/prim_circle_to_crescent.mp4"
+      evidence: "The copied primitive-cycle MP4 exists in the Proton Drive packet's 02B folder."
+  - claim: "The same Proton Drive folder now includes the R&D lane-map addendum."
+    location: "body, updated folder list"
+    source:
+      type: file
+      ref: "/Users/darrenzal/Library/CloudStorage/ProtonDrive-darrenzal@protonmail.com-folder/Salish Sea Dreaming/SSD Phase 2 - Pravin Internal Update - 2026-05-20/03_Context/pravin-internal-update-rd-lane-map-addendum-2026-05-20.md"
+      evidence: "The addendum exists in the packet's 03_Context folder."
+  - claim: "The active lanes include primitive cycle, water dynamics, topology/cymatics, prompt/dream-to-primitive, and functional figures parked unless useful."
+    location: "body, active shape lanes"
+    source:
+      type: file
+      ref: "docs/space-center/pravin-internal-update-rd-lane-map-addendum-2026-05-20.md"
+      evidence: "The addendum lists these five lanes and describes the status of each."
+  - claim: "The primitive-cycle lane maps closely to Austin's explanation of the shapes as a sequence."
+    location: "body, final paragraph"
+    source:
+      type: file
+      ref: "/Users/darrenzal/Documents/Notes/Meetings/The Salish Sea Dreaming/2026-05-18 The Salish Sea Dreaming Meeting 2.md"
+      evidence: "The meeting note records Austin's explanation of circle as impact point, crescents rippling outward, and trigons as final attenuated ripple form."

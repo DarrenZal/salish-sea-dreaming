@@ -1,0 +1,25 @@
+verifications:
+  - claim: "WireGuard (10.100.0.30) and Tailscale (100.91.172.10) both also fail to ping"
+    location: "opening diagnostic"
+    source:
+      type: conversation_ref
+      ref: "Bash output this session 2026-05-23: ping -c 3 10.100.0.30 returned 100% packet loss; ping -c 2 100.91.172.10 returned 100% packet loss"
+      evidence: "Both pings executed this session returned 'Request timeout' for all packets and 100.0% packet loss. ssh attempts via windows-desktop-wg (10.100.0.30) and windows-desktop-tailscale (100.91.172.10) both returned 'Operation timed out' on port 22."
+  - claim: "the 3090 itself looks offline, not just the tunnel service"
+    location: "diagnosis conclusion"
+    source:
+      type: conversation_ref
+      ref: "Three-path failure analysis: reverse tunnel via poly (Connection timed out during banner exchange + kex_exchange_identification Connection closed by remote host), WireGuard 10.100.0.30 (100% packet loss), Tailscale 100.91.172.10 (100% packet loss)"
+      evidence: "Three independent network paths to the 3090 (reverse SSH tunnel, WireGuard mesh, Tailscale mesh) all failed in the same time window. A single-service failure would only knock out one path; simultaneous failure of all three indicates the host is unreachable at the network layer, consistent with power loss, Windows reboot, or kernel crash."
+  - claim: 'SSD-SSH-Tunnel task should auto-start on logon'
+    location: "step 3"
+    source:
+      type: file
+      ref: "/Users/darrenzal/projects/salish-sea-dreaming/CLAUDE.md"
+      evidence: "CLAUDE.md 'Task Scheduler tasks on 3090' section documents: 'SSD-SSH-Tunnel — reverse SSH tunnel to poly (remote access)' with the note 'all trigger on logon, run as admin'."
+  - claim: "Bob Turner scrape"
+    location: "closing"
+    source:
+      type: quote
+      ref: "As a priority, if you could scrape and compile his YouTube works, that would be valuable. We need to break them into clips and then stitch those clips into the following Priority One theme as Per the note below to Bob"
+      evidence: "Direct quote from Pravin's email Fwd: annotated film list, 2026-05-22 14:11 PDT, Proton IMAP id 327."

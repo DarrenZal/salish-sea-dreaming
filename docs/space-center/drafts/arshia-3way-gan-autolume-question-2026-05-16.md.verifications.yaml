@@ -1,0 +1,109 @@
+verifications:
+  - claim: "The draft is staged and awaiting operator proof before send."
+    location: "Header"
+    source:
+      type: file
+      ref: "/Users/darrenzal/.claude/plans/ssd-tonight-2026-05-16-and-gan-resolution-question.md"
+      evidence: "The operator's current handoff changes Step 3 from a send to a staged draft, and the plan's pacing posture requires proof before send."
+  - claim: "The show is May 27-28 at HR MacMillan Space Centre."
+    location: "Opening paragraph"
+    source:
+      type: file
+      ref: "/Users/darrenzal/Documents/Notes/Meetings/The Salish Sea Dreaming/2026-05-16 The Salish Sea Dreaming Meeting.md"
+      evidence: "The meeting note frontmatter lists 'May 27-28: IMPACT show at HR MacMillan Space Centre.'"
+  - claim: "The new Resolume canvas is two 2560x1600 projectors side by side, 5120x1600 full canvas, 7K lumens, light-controlled, and not the BenQs."
+    location: "Context paragraph"
+    source:
+      type: file
+      ref: "/Users/darrenzal/Documents/Notes/Meetings/The Salish Sea Dreaming/2026-05-16 The Salish Sea Dreaming Meeting.md"
+      evidence: "The meeting note decisions and post-call notes state the Resolume show canvas is 2 x 2560x1600 projectors, 7K lumens, not BenQs, and light-controlled. The 5120x1600 figure is arithmetic from two 2560-wide projectors side by side."
+  - claim: "The desired Autolume aesthetic is the intentionally abstract 120 kimg checkpoint at 512, not a later >1000 kimg checkpoint."
+    location: "Context paragraph"
+    source:
+      type: file
+      ref: "/Users/darrenzal/.claude/projects/-Users-darrenzal-projects-salish-sea-dreaming/memory/project_autolume_pkl.md"
+      evidence: "The memory says Autolume intentionally runs network-snapshot-000120.pkl at 120 kimg for an abstract/blob aesthetic and warns not to suggest swapping to higher-kimg checkpoints."
+  - claim: "The existing Autolume training/prep path is 512 resolution."
+    location: "Context paragraph and option 2"
+    source:
+      type: file
+      ref: "/Users/darrenzal/projects/salish-sea-dreaming/CLAUDE.md"
+      evidence: "The repo doc lists the marine-photo-base and Briony training corpora at 512x512, describes prep_training_data.py as resizing to 512x512 training corpora, and the Quick Start invokes `python scripts/prep_training_data.py --resolution 512 --corpus whale-model`."
+  - claim: "The prep script supports 512 and 1024 as target square resolutions, with 512 as the default."
+    location: "Option 1"
+    source:
+      type: file
+      ref: "/Users/darrenzal/projects/salish-sea-dreaming/scripts/prep_training_data.py"
+      evidence: "The argparse definition for `--resolution` sets `default=512` and `choices=[512, 1024]`; the usage docstring also shows `--resolution 1024` as an available processing mode."
+  - claim: "The three scoped options are: retrain at 1024 from scratch/transfer, keep 120 kimg at 512 plus Real-ESRGAN x4 on a 5090, or use the faster box with the existing pipeline."
+    location: "Three-way question list"
+    source:
+      type: file
+      ref: "/Users/darrenzal/.claude/plans/ssd-tonight-2026-05-16-and-gan-resolution-question.md"
+      evidence: "Implementation Step 3 requires exactly this three-way scoping for the Arshia GAN/Autolume question."
+  - claim: "The canvas-role ambiguity is one-projector fill, full 5120x1600 stretched/tiled fill, or Autolume as a Resolume layer/window."
+    location: "Canvas-role ambiguity list"
+    source:
+      type: file
+      ref: "/Users/darrenzal/.claude/plans/ssd-tonight-2026-05-16-and-gan-resolution-question.md"
+      evidence: "Implementation Step 3 says the ask must state these three possible Autolume canvas roles and must not skip the ambiguity."
+  - claim: "The current working assumption is Autolume as a Resolume layer/window for the main piece and one-projector fill for full-immersion moments."
+    location: "Working assumption paragraph"
+    source:
+      type: file
+      ref: "/Users/darrenzal/.claude/plans/ssd-tonight-2026-05-16-and-gan-resolution-question.md"
+      evidence: "Implementation Step 3 states this exact working assumption."
+  - claim: "The 1024 retraining timing statement is a rough estimate, not a measured fact."
+    location: "Rough estimate paragraph"
+    source:
+      type: file
+      ref: "/Users/darrenzal/.claude/plans/ssd-tonight-2026-05-16-and-gan-resolution-question.md"
+      evidence: "The plan's GAN-resolution section labels the 1024 retraining timing as an estimate based on 512 training-rate history and explicitly says it has never been measured at 1024 by us."
+  - claim: "320 kimg at 1024 might be about a 5-day TELUS run."
+    location: "Rough estimate paragraph"
+    source:
+      type: quote
+      ref: "Derived estimate: 320 kimg target * (353 sec/kimg measured at 512 on TELUS H200) * 4 (theoretical quadratic area scaling from 512^2 to 1024^2) ≈ 451,840 sec ≈ 5.2 days."
+      evidence: "The 353 sec/kimg base rate is from the project's March 2026 TELUS H200 fish-model training run (session ba05bf17). Quadratic scaling with image area is the StyleGAN2-ada paper's approximation; real-world variance at 1024 is unmeasured by us. The 320 kimg target reflects the cumulative training kimg behind the existing 120 kimg early-aesthetic checkpoint (Arshia 320 kimg base interpretation, per operator clarification 2026-05-16 eve). This is order-of-magnitude only; flagged as 'rough estimate' in the draft."
+  - claim: "It is unknown whether the 120/320 kimg aesthetic survives the resolution jump from 512 to 1024."
+    location: "Rough estimate paragraph"
+    source:
+      type: quote
+      ref: "StyleGAN2-ada architecture: different image resolutions instantiate different per-resolution synthesis blocks (feature maps differ per layer), so aesthetic characteristics learned at one resolution do not deterministically transfer to another. The 120 kimg checkpoint we use was selected at 512; there is no measurement of 'equivalent aesthetic at 1024.'"
+      evidence: "Architectural fact from the StyleGAN2-ada paper (Karras et al. 2020): the per-resolution synthesis blocks have distinct learnable weights. No empirical test of aesthetic preservation across resolution jumps has been run by us. Stated as an unknown in the draft to surface as a real risk, not as a measurement."
+  - claim: "Real-ESRGAN x4 via the Spandrel path has been verified as working on TELUS H200, but that does not prove 5090 real-time performance."
+    location: "Option 2 and rough estimate paragraph"
+    source:
+      type: file
+      ref: "/Users/darrenzal/.claude/projects/-Users-darrenzal-projects-salish-sea-dreaming/memory/reference_spandrel_upscale_pipeline.md"
+      evidence: "The memory says Spandrel loads Real-ESRGAN-style weights directly and was verified working on TELUS H200 with RealESRGAN_x4plus available; its performance notes are offline/H200 measurements, not 5090 concurrent show-load benchmarks."
+  - claim: "The 5090 Real-ESRGAN path has not been benchmarked while Autolume, TouchDesigner, StreamDiffusion, and Resolume are running concurrently."
+    location: "Rough estimate paragraph"
+    source:
+      type: file
+      ref: "/Users/darrenzal/.claude/plans/ssd-tonight-2026-05-16-and-gan-resolution-question.md"
+      evidence: "The plan marks this as plausible but not measured and requires the Arshia draft to acknowledge the unbenchmarked concurrent 5090 load."
+  - claim: "Pre-rendered upscale on TELUS plus a Resolume video loop is the fallback if real-time upscaling is not clean."
+    location: "Fallback paragraph"
+    source:
+      type: file
+      ref: "/Users/darrenzal/.claude/plans/ssd-tonight-2026-05-16-and-gan-resolution-question.md"
+      evidence: "The plan conclusion and Implementation Step 3 both name pre-rendered TELUS upscale to a Resolume loop as the fallback."
+  - claim: "Pravin has been doing parallel research and his read converges with this direction."
+    location: "Side note paragraph"
+    source:
+      type: quote
+      ref: "Pravin Signal message to operator 2026-05-16 evening (~8:39 PM and 9:06 PM): 'do not chase native 4K generation. Chase a 4K output pipeline. The practical architecture is: AI core at 512 / 768 / 1024 → realtime post-processing → AI upscaling → 4K compositing/output.'"
+      evidence: "Direct quotation from Pravin's Signal message forwarded to operator the same evening this draft is being prepared. The convergence claim is supported by the textual match between Pravin's agent's recommended architecture and the draft's working hypothesis (path 2 + Resolume composition)."
+  - claim: "Pravin's agent flagged NVIDIA Upscaler TOP in TouchDesigner as a possible alternative to Real-ESRGAN for the upscale step."
+    location: "Side note paragraph"
+    source:
+      type: quote
+      ref: "Pravin Signal message to operator 2026-05-16 evening: 'TouchDesigner has an NVIDIA Upscaler TOP that supports Upscale and Super-Resolution modes. It requires Windows and RTX 20/30/40/50-series GPUs. Upscale is faster; Super-Resolution is higher quality but heavier.'"
+      evidence: "Direct quotation from Pravin's Signal message. Operator explicitly noted 'prav's agent might be wrong btw' — this draft surfaces the claim to Arshia for validation, and the draft text says 'we have not verified that claim' to make the unverified status explicit."
+  - claim: "We have not verified the NVIDIA Upscaler TOP claim independently."
+    location: "Side note paragraph"
+    source:
+      type: quote
+      ref: "Internal acknowledgment 2026-05-16 evening: no independent verification (no documentation read, no TD version check, no RTX 50-series support check) was performed before this draft. The claim is being passed to Arshia explicitly labeled as Pravin's agent's research, not as our finding."
+      evidence: "Acknowledged in the draft text itself ('we have not verified that claim'). Operator's note about Pravin's agent potentially being wrong was the trigger for this explicit framing rather than asserting the claim as fact."

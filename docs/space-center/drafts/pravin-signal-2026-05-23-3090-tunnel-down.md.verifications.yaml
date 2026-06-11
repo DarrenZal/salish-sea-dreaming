@@ -1,0 +1,43 @@
+verifications:
+  - claim: "3090 ssh died ~10:45am (had a clean ping at 10:43, gone since)"
+    location: "opening"
+    source:
+      type: conversation_ref
+      ref: "Bash output this session 2026-05-23 ~10:43 PDT: 'OK_FROM_3090' returned from ssh -o ConnectTimeout=5 windows-desktop-remote 'echo OK_FROM_3090'"
+      evidence: "Direct ssh succeeded against windows-desktop-remote earlier this session and returned the OK_FROM_3090 sentinel. Subsequent attempts ~11:03 PDT and ~11:18 PDT returned 'Connection timed out during banner exchange' and 'kex_exchange_identification: Connection closed by remote host' respectively, both via the same alias."
+  - claim: "Tunnel client isn't reconnecting; poly's listening but no one's home"
+    location: "opening"
+    source:
+      type: conversation_ref
+      ref: "Bash output this session: ss -ltn on poly@37.27.48.12 shows 127.0.0.1:2222 LISTEN; ss -tn established to :22 shows no 3090-originating connection"
+      evidence: "poly@37.27.48.12 reports port 2222 in LISTEN state but no peer connection to that port from the 3090's expected exit IP. The reverse-tunnel client on the 3090 side is the missing half."
+  - claim: "preset 0 and the autolume source tree live only on the 3090 (not on Drive)"
+    location: "fallback explanation"
+    source:
+      type: conversation_ref
+      ref: "gws drive files list query for 'preset', 'autolume_live', 'pickle.pkl', 'autolume.zip', 'autolume_backup' returned {\"files\": []}; local find of /Users/darrenzal/projects/salish-sea-dreaming for autolume source returned only launcher scripts (.bat / .ps1 / .py wrappers) and peek_presets.py, no modules/autolume_live.py and no presets/0 directory."
+      evidence: "Verified via shell this session 2026-05-23 morning. The Drive query and local find both came up empty for the specific assets the sweep script imports (modules.autolume_live + preset directory)."
+  - claim: 'schtasks /run /tn "SSD-SSH-Tunnel" restarts the tunnel'
+    location: "option 1"
+    source:
+      type: file
+      ref: "/Users/darrenzal/projects/salish-sea-dreaming/CLAUDE.md"
+      evidence: "CLAUDE.md '3090 Remote Access (SSH)' section documents: 'If the remote tunnel is down: ... Or restart the task: schtasks /run /tn \"SSD-SSH-Tunnel\"'."
+  - claim: "Render is ~40 min wall-clock once tunnel is back"
+    location: "closing"
+    source:
+      type: file
+      ref: "/Users/darrenzal/projects/salish-sea-dreaming/docs/space-center/RUNBOOK-20min-master-fire-when-pravin-picks.md"
+      evidence: "Runbook documents ~20 min wall-clock per 20-min variant render. Pravin picked option C 'render both' (baseline + wild_psi120), so two sequential variants = ~40 min on the 3090."
+  - claim: "upscale ~5h"
+    location: "closing"
+    source:
+      type: file
+      ref: "/Users/darrenzal/projects/salish-sea-dreaming/docs/space-center/RUNBOOK-20min-master-fire-when-pravin-picks.md"
+      evidence: "Runbook documents ~5h H200 upscale per 20-min master at 0.54s/frame × 36,000 frames. With two pods running in parallel for the 'render both' option, total wall-clock remains ~5h, not 10h."
+  - claim: "Natalia or composite work"
+    location: "closing"
+    source:
+      type: quote
+      ref: "Got to jump on a call with Natalia — she needs to brainstorm a few things."
+      evidence: "Pravin's Signal yesterday 3:01 PM PDT establishes the Natalia call; this morning's 'Excellent! I will begin compositing around 1pm' establishes the compositing-from-1pm pattern. Both quoted verbatim from operator's paste into chat 2026-05-23."

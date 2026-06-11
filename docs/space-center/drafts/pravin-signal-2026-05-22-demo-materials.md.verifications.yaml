@@ -1,0 +1,42 @@
+verifications:
+  - claim: "Demo materials from our May 18 meeting are on Drive"
+    location: "first paragraph"
+    source:
+      type: file
+      ref: "https://drive.google.com/drive/folders/1O7TtFMWQxjVk94HkvKG2XtdfvdxslDHv"
+      evidence: "Drive folder 'Demo Materials - 2026-05-18 Meeting - INTERNAL ONLY' (ID 1O7TtFMWQxjVk94HkvKG2XtdfvdxslDHv) created via mcp__google-workspace__create_drive_file inside the parent SalishSeaDreaming shared folder (1UvJ6G65FbSRngtCy0hMFpUwqhadfywFr). Source: /Users/darrenzal/projects/salish-sea-dreaming/track2-deterministic/morph_outputs_INTERNAL/morning-demo-folder-2026-05-18/ which was the explicit demo package per the README ('Single entry point for morning review')."
+
+  - claim: "https://drive.google.com/drive/folders/1O7TtFMWQxjVk94HkvKG2XtdfvdxslDHv"
+    location: "first paragraph (the link itself)"
+    source:
+      type: file
+      ref: "drive folder ID 1O7TtFMWQxjVk94HkvKG2XtdfvdxslDHv"
+      evidence: "URL returned directly by mcp__google-workspace__create_drive_file response. Folder inherits 'Anyone with link (writer)' permissions from parent 1UvJ6G65FbSRngtCy0hMFpUwqhadfywFr."
+
+  - claim: "Same 3 subfolders as the meeting folder: 1_watch_first, 2_supporting, 3_internal_ask_first"
+    location: "second paragraph"
+    source:
+      type: file
+      ref: "/Users/darrenzal/projects/salish-sea-dreaming/track2-deterministic/morph_outputs_INTERNAL/morning-demo-folder-2026-05-18/"
+      evidence: "Source morning-demo-folder has 4 subdirs: 1_watch_first/, 2_supporting/, 3_internal_ask_first/, 4_failed_controls/. Uploaded 3 of 4 as subfolders 1V0sF7dbgXbxab9H-dOtuyJ61Z65qtm6_ (1_watch_first, 7 files), 1tzsb7iZPJgOgs4A9jh5VS-c_4jHSZ4T7 (2_supporting, 10 files), 1H_JyOEJl8kwhT_324EHLjlr3q4pxpWVP (3_internal_ask_first, 7 files) — 24 files total + 2 root files."
+
+  - claim: "Left out 4_failed_controls per the README (says 'DO NOT show anyone')"
+    location: "second paragraph"
+    source:
+      type: file
+      ref: "/Users/darrenzal/projects/salish-sea-dreaming/track2-deterministic/morph_outputs_INTERNAL/morning-demo-folder-2026-05-18/README.md"
+      evidence: "README line 18: '4_failed_controls/) — 4. Failed controls (DO NOT promote)'; usage line: 'DO NOT show anyone: 4_failed_controls/ — preserved for internal reference only.' Exact quote in source."
+
+  - claim: "Each subfolder has a README with the cultural framing"
+    location: "second paragraph"
+    source:
+      type: file
+      ref: "drive subfolder READMEs"
+      evidence: "README.md uploaded into each of the 3 subfolders (IDs 1ozBy1ZZvlZHHydU4tdP8tgCSSNpw5xUL in 1_watch_first, 13oQTlJ6SbDwXGqPBFP3tzGXltukpEvGx in 2_supporting, 17tiNseCkYQzYWoc1RWbhG_fVhIyceue4 in 3_internal_ask_first). Source READMEs contain cultural guardrails sections."
+
+  - claim: "Still INTERNAL ONLY per Austin's per-output consent floor"
+    location: "third paragraph"
+    source:
+      type: file
+      ref: "/Users/darrenzal/projects/salish-sea-dreaming/docs/space-center/pravin-austin-compact-review-index-2026-05-18.md"
+      evidence: "Compact review index header line 3: 'INTERNAL ONLY. Per Austin consent floor: per-output OK required before any audience-facing use.' Also reinforced by memory entry feedback_austin_consent_trust_floor.md: 'Per-output approval is the FLOOR, not a milestone. Default-pause, not default-ship.'"

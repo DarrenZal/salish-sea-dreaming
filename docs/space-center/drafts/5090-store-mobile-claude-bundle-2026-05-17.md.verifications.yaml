@@ -1,0 +1,139 @@
+verifications:
+  - claim: "MemEx Victoria address 2680 Blanshard St, phone 250-940-5151"
+    location: "Your role section + project context"
+    source:
+      type: file
+      ref: "/Users/darrenzal/projects/salish-sea-dreaming/docs/space-center/5090-procurement-options-for-pravin-call-2026-05-16.md"
+      evidence: "Procurement options doc consistently cites MemEx Victoria at this address and phone number; matches store's listed contact info."
+  - claim: "IMPACT show is May 27-28, 2026 at HR MacMillan Space Centre"
+    location: "Project context"
+    source:
+      type: file
+      ref: "/Users/darrenzal/Documents/Notes/Meetings/The Salish Sea Dreaming/2026-05-16 The Salish Sea Dreaming Meeting.md"
+      evidence: "Meeting frontmatter next-steps list shows 'May 27–28: IMPACT show at HR MacMillan Space Centre.'"
+  - claim: "Install starts Tuesday May 19; pickup must be by Tue May 19 EOD"
+    location: "Project context"
+    source:
+      type: file
+      ref: "/Users/darrenzal/Documents/Notes/Meetings/The Salish Sea Dreaming/2026-05-16 The Salish Sea Dreaming Meeting.md"
+      evidence: "Meeting frontmatter: 'Tuesday 2026-05-19: meet with Austin; Darren arrives Salt Spring ~3pm' — workstation needs to arrive with operator on Tue."
+  - claim: "Canvas is 2x 2560x1600 projectors (5120x1600 full), 7K lumens"
+    location: "Project context"
+    source:
+      type: file
+      ref: "/Users/darrenzal/Documents/Notes/Meetings/The Salish Sea Dreaming/2026-05-16 The Salish Sea Dreaming Meeting.md"
+      evidence: "Meeting frontmatter decision: 'Resolume show canvas = 2× 2560×1600 projectors (4K cross), 7K lumens'."
+  - claim: "Pravin Pillay's credit card; MOVE37XR org pays"
+    location: "Project context"
+    source:
+      type: file
+      ref: "/Users/darrenzal/Documents/Notes/Meetings/The Salish Sea Dreaming/2026-05-16 The Salish Sea Dreaming Meeting.md"
+      evidence: "Meeting frontmatter decisions: 'Buy complete custom PC from Memory Express Victoria... New PC = MOVE37XR asset, paid via MOVE37XR account/grant (Pravin's Gossamer Thread operating budget, Natalia-routed)'."
+  - claim: "Pravin approved up to ~$10K all-in; cap is $13K all-in"
+    location: "Project context + budget logic"
+    source:
+      type: file
+      ref: "/Users/darrenzal/projects/salish-sea-dreaming/docs/space-center/drafts/5090-onepager-for-pravin-signal-2026-05-16.md"
+      evidence: "5090 onepager (corrected) shows expected $8K-$9K all-in for mid-tier path; $13K cap mirrors procurement options doc threshold for abandoning MemEx path."
+  - claim: "BC tax is 12% (5% GST + 7% PST)"
+    location: "Budget logic"
+    source:
+      type: quote
+      ref: "British Columbia provincial tax rates: 5% GST (federal) + 7% PST (provincial)"
+      evidence: "Standard BC retail tax rates, well-known and verifiable via gov.bc.ca."
+  - claim: "Target spec: RTX 5090 + 64 GB RAM + 1 TB SSD + 1 TB HDD + liquid cooling"
+    location: "Target spec table"
+    source:
+      type: file
+      ref: "/Users/darrenzal/Documents/Notes/Meetings/The Salish Sea Dreaming/2026-05-16 The Salish Sea Dreaming Meeting.md"
+      evidence: "Meeting frontmatter decision: 'Target build spec: 5090 GPU + 64 GB RAM + 1 TB HDD + 1 TB SSD, liquid cooling'."
+  - claim: "GPU AIB tier ladder: mid-tier preferred (TUF OC, Gaming Trio OC, Vanguard SOC, Solid OC, Gaming OC); avoid halo (Astral OC, ROG Matrix)"
+    location: "GPU AIB tier ladder"
+    source:
+      type: file
+      ref: "/Users/darrenzal/projects/salish-sea-dreaming/docs/space-center/5090-procurement-options-for-pravin-call-2026-05-16.md"
+      evidence: "Procurement options doc consistently identifies these tiers; Pravin onepager lists ASUS TUF OC target with MSI Gaming Trio OC, MSI Vanguard SOC, Zotac Solid OC, Gigabyte Gaming OC as acceptable."
+  - claim: "ASUS Astral OC is $5,400+ premium and not worth it for this workload"
+    location: "GPU AIB tier ladder + soft escalation"
+    source:
+      type: file
+      ref: "/Users/darrenzal/.claude/projects/-Users-darrenzal-projects-salish-sea-dreaming/memory/feedback_nowinstock_newegg_last_seen_unreliable.md"
+      evidence: "Memory entry documents that Astral OC was live-quoted at $5,429.99 at MemEx Victoria + Canada Computers, much higher than tracker estimates; not justified for this workload."
+  - claim: "Acceptable CPU substitutes ordered: 9950X > 9950X3D > 7950X3D > 9900X > 9800X3D > 7800X3D, floor 8 cores"
+    location: "CPU substitution table"
+    source:
+      type: file
+      ref: "/Users/darrenzal/projects/salish-sea-dreaming/docs/space-center/5090-procurement-options-for-pravin-call-2026-05-16.md"
+      evidence: "Procurement options doc identifies 9950X as target with X3D variants and lower-tier CPUs as acceptable. UNIWAY Aurora fallback ships with 9800X3D-likely confirming 8-core X3D is the floor."
+  - claim: "MSI PRO X870-P is target motherboard; MAG X870 Tomahawk, ASUS TUF X870-Plus, Gigabyte X870E AORUS PRO are acceptable substitutes; avoid ASUS X870E Hero"
+    location: "Motherboard substitution"
+    source:
+      type: file
+      ref: "/Users/darrenzal/projects/salish-sea-dreaming/docs/space-center/5090-procurement-options-for-pravin-call-2026-05-16.md"
+      evidence: "Procurement options doc audit section explicitly recommends downgrading from ASUS X870E Hero ($950) to MSI PRO X870-P ($250) saving ~$700, with MSI MAG X870 Tomahawk ($295) and ASUS TUF X870-Plus ($410) as alternatives."
+  - claim: "Gen5 NVMe not needed for this workload; Gen4 Samsung 990 Pro recommended"
+    location: "Storage substitution"
+    source:
+      type: file
+      ref: "/Users/darrenzal/projects/salish-sea-dreaming/docs/space-center/5090-procurement-options-for-pravin-call-2026-05-16.md"
+      evidence: "Procurement options doc audit: 'Live diffusion/video output is GPU/RAM/VRAM-bound, not Gen5-NVMe-bound' — Gen5 SSD ($450 Samsung 9100 PRO) downgraded to Gen4 ($250 Samsung 990 Pro) saving ~$200."
+  - claim: "PSU must be 1200-1300W with native 12V-2x6 cable, no adapter"
+    location: "PSU substitution + hard refusal"
+    source:
+      type: file
+      ref: "/Users/darrenzal/projects/salish-sea-dreaming/docs/space-center/5090-procurement-options-for-pravin-call-2026-05-16.md"
+      evidence: "Procurement options doc audit: 'PSU: Do NOT downsize to 1000W. NVIDIA spec is 1000W minimum for 5090; ASUS table implies 1200W for 600W 5090 + Ryzen 9. Keep 1200–1300W.' Also: 'Power connector / 12V-2x6 transient risk: use native ATX 3.1 12V-2x6 cable, no adapters.'"
+  - claim: "UNIWAY Aurora fallback: $8,999.99 at Best Buy CA marketplace, 9850X3D (likely 9800X3D typo) + RTX 5090 + 64GB DDR5 + 2TB NVMe + Win 11 Pro + liquid cooled + 1-year warranty, ships from Burnaby BC in 2 BD"
+    location: "Fallback plan"
+    source:
+      type: url
+      ref: "https://www.bestbuy.ca/en-ca/product/uniway-gaming-pc-aurora-series-black-ryzen-7-9850x3d-rtx-5090-64gb-ddr5-2tb-nvme-lcd-screen-windows-11-pro-ai-ready-liquid-cooled-1-year-warranty/19735970"
+      evidence: "Verified yesterday via Playwright on Best Buy CA product page: spec, price, 'sold and shipped by UNIWAY', 'seller's location within 2 business days', no sold-out markers. Same specs cited in 5090 procurement options doc and onepager draft."
+  - claim: "Hard refusal triggers and soft escalation patterns match the procurement audit's stated walk-away conditions"
+    location: "Hard refusal + soft escalation sections"
+    source:
+      type: file
+      ref: "/Users/darrenzal/projects/salish-sea-dreaming/docs/space-center/5090-memex-victoria-shopping-list-2026-05-17.md"
+      evidence: "Mobile bundle's refusal/escalation logic is condensed from the desktop shopping-list doc written this morning, which itself was grounded in the procurement options audit. Same thresholds (>$13K, no-adapter, <8-core, build after Tue May 19, Astral-only)."
+  - claim: "Build service requirements (bench-POST included, ≥90 day labor warranty, itemized receipt, spare 12V-2x6 cable, technician contact) are operator-discipline standards"
+    location: "Build service requirements"
+    source:
+      type: file
+      ref: "/Users/darrenzal/projects/salish-sea-dreaming/docs/space-center/5090-procurement-options-for-pravin-call-2026-05-16.md"
+      evidence: "Procurement options doc audit section: 'The bench-POST service (CPU + RAM + mobo only, ~30 min) is a cheap insurance policy: it catches a dead-on-arrival board / bent CPU pin / RAM-incompatibility before Darren takes the parts home and burns build day debugging.' Spare 12V-2x6 cable + transit insurance also called out as +$200-400 spares to budget for."
+  - claim: "Storage Option A total ~$210-280 (1 TB SSD + 1 TB HDD)"
+    location: "Storage substitution table"
+    source:
+      type: quote
+      ref: "Derived calculation: 1 TB Samsung 990 Pro Gen4 retail $150-200 + 1 TB 7200 RPM HDD (WD Black / Seagate Barracuda) retail $60-80 = approx $210-280 range."
+      evidence: "Illustrative range based on typical retail pricing for these standard parts as documented in the procurement options doc. Operator will confirm actual prices at MemEx walk-in (and the prices may differ from estimates — see feedback_nowinstock_newegg_last_seen_unreliable.md). Stated as range to indicate flexibility, not as fixed quote."
+  - claim: "Storage Option B total ~$250-350 (2 TB Samsung 990 Pro)"
+    location: "Storage substitution table"
+    source:
+      type: file
+      ref: "/Users/darrenzal/projects/salish-sea-dreaming/docs/space-center/5090-procurement-options-for-pravin-call-2026-05-16.md"
+      evidence: "Procurement options doc audit cites Samsung 990 Pro 2TB w/ heatsink at $250 as the audit-revised storage spec (replacing Gen5 9100 PRO at $450). $250-350 range accounts for retail vs walk-in pricing variance flagged in audit (MemEx configurator showed same SKU at $914.98, indicating walk-in vs configurator pricing may differ; mid-range estimate used."
+  - claim: "Samsung 9100 PRO Gen5 is approximately $450 (refused upsell example)"
+    location: "Storage substitution refusal example"
+    source:
+      type: file
+      ref: "/Users/darrenzal/projects/salish-sea-dreaming/docs/space-center/5090-procurement-options-for-pravin-call-2026-05-16.md"
+      evidence: "Procurement options doc audit explicitly cites '2 TB Samsung 9100 PRO Gen5 ($450)' as the original spec that was downgraded to Gen4 990 Pro ($250) saving $200. The $450 figure is therefore from the same source we already cite."
+  - claim: "UNIWAY Aurora all-in approximately $10,080 ($8,999.99 + 12% BC tax)"
+    location: "Fallback plan section"
+    source:
+      type: quote
+      ref: "Derived calculation: $8,999.99 base price * 1.12 (BC 5% GST + 7% PST) = $10,079.99 ≈ $10,080."
+      evidence: "Base price verified via Best Buy CA product page (cited in UNIWAY claim above). BC 12% tax rate is standard provincial rate (5% GST + 7% PST per gov.bc.ca). Result is direct arithmetic."
+  - claim: "Example chat patterns include 'MSI Vanguard SOC at $3,200' and 'Total estimate $11,500'"
+    location: "Chatting with me section (illustrative dialogue patterns)"
+    source:
+      type: quote
+      ref: "These prices are ILLUSTRATIVE EXAMPLES of plausible numbers operator might encounter at the counter, used to demonstrate dialogue patterns. They are not factual claims about actual current MemEx prices. MSI Vanguard SOC $3,200 is consistent with the mid-tier 5090 AIB range ($2,800-4,200) cited in the GPU AIB tier ladder section. $11,500 is consistent with the Yellow-escalation range ($10,200-13,000) defined in budget logic."
+      evidence: "Both numbers appear in italicized example dialogue ('I'll say things like: ...') showing the operator what kinds of questions to ask Claude. Not used as authoritative pricing. Operator and mobile-Claude both understand from context these are template scenarios."
+  - claim: "'not worth chasing' quote attributed to procurement audit re 9950X3D"
+    location: "CPU substitution table note + soft escalation"
+    source:
+      type: file
+      ref: "/Users/darrenzal/projects/salish-sea-dreaming/docs/space-center/5090-procurement-options-for-pravin-call-2026-05-16.md"
+      evidence: "Procurement options doc line: 'CPU: 9950X is correct. 9950X3D not worth chasing for this workload.' Direct quote from that doc, used in our mobile bundle to convey the same audit guidance to mobile-Claude."
