@@ -18,18 +18,17 @@ on social media on 2026-05-29. Planned cleanup deferred ~1 day.
   - `oceans as canoe highways`, `two headed sea serpent`, `barnacles turning into eyes of the sea`.
 - No auto-archival job exists; nothing changes unless we act.
 
-**To do (after the ~1-day hold):**
-- [ ] Add an `ongoing` event window to `~/ssd-v5/scripts/event_membership.py` (start 2026-05-30 00:00 PDT → open-ended).
-- [ ] Make `ongoing` the default scope in `~/ssd-v5/static/dreamworld.html` + `web/visitor.html`
-      (currently hardcoded `|| 'impact-2026'`).
-- [ ] Seed the `ongoing` view with a curated set of good dreams (decide content WITH operator),
-      POSTed through the normal `/prompt` pipeline so they embed + cluster emergently. Set their
-      consent flags fully on (these are ours): visible + cluster + post_show.
-- [ ] Publish the **public 3-dream** IMPACT snapshot (the `available_post_show=1` set) —
-      e.g. `static/dreams_snapshot_impact-2026.json` (committable; consented content).
-- [ ] **Archive the 63 non-consented-but-served IMPACT dreams** (set `archived_at`) so they stay in the
-      DB but are no longer served — honoring the "Kept after the show closes" = unchecked choice.
-      Do this *together with* the default flip so the public view never looks sparse.
+**✅ DONE — executed 2026-06-10** (live on `salishseadreaming.art`, ssd-v5 / poly:9004):
+- [x] Added `ongoing` event window (2026-05-30 00:00 PDT → open-ended) to `~/ssd-v5/scripts/event_membership.py`.
+- [x] Flipped default scope `impact-2026` → `ongoing` in `~/ssd-v5/static/dreamworld.html` (1×) + `web/visitor.html` (3×).
+- [x] Seeded the `ongoing` view with **12 authored example dreams** (ours; full consent: visible + cluster + quotable + post_show), POSTed through `/prompt` so they embedded + positioned + clustered emergently (ids 23322–23333). Verified 12 nodes live.
+- [x] Published the public **3-dream** IMPACT snapshot → `static/dreams_snapshot_impact-2026.json` (committed to repo; served at `/graph-assets/dreams_snapshot_impact-2026.json`). The `available_post_show=1 AND event=impact-2026` set: oceans as canoe highways / two headed sea serpent / barnacles turning into eyes of the sea.
+- [x] **Archived the 63 non-consented-but-served IMPACT dreams** (`archived_at` set; 63-count guardrail passed). They remain in the DB, no longer served — honoring "Kept after the show closes" = unchecked.
 
-**Sequencing note:** flip default → seed ongoing → THEN archive non-consented, so visitors always land
-on a populated view. The impact-2026 view becomes a historical archive (3 served + reachable).
+**End state (verified end-to-end through Caddy):** default `/cloud` → `ongoing` (12 dreams); `impact-2026` view → 3 consented; DB row count unchanged at 349 (337 + 12 seeds); nothing deleted.
+
+**Deployment notes for next time:**
+- Production is **ssd-v5 on poly:9004** (Caddy: `salishseadreaming.art → localhost:9004`). NOT the `salish-sea-dreaming/` systemd service on 9000 (that's `v1.salishseadreaming.art`, old schema). The 9004 process is a **manually-started, nohup'd uvicorn** (no systemd) — restart by killing the pid on :9004 and relaunching `venv/bin/python3 -B venv/bin/uvicorn scripts.gallery_server:app --host 0.0.0.0 --port 9004 --workers 1` from `~/ssd-v5` (it self-loads `.env`).
+- `event_membership.py` is imported and **cached in-process** → an edit needs a 9004 restart to take effect (static files are read per-request, no restart). Pre-mutation backups left on poly as `*.bak-2026-06-10`.
+- The API's bare default (no `?event=`) is still `impact-2026` per `ssd-events.json meta.default_event`; the client always sends `?event=ongoing` so visitors see ongoing. Left as-is (chatbot context).
+- Fresh pre-mutation checkpoint: `private-archive/impact-2026-checkpoint-2026-06-10.{db,json}` (gitignored).

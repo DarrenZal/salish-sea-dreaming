@@ -1,0 +1,40 @@
+{
+  "_meta": {
+    "event": "impact-2026",
+    "generated": "2026-06-10",
+    "consent": "available_post_show=1 AND event=impact-2026 (explicit post-show retention by visitor)",
+    "count": 3
+  },
+  "dreams": [
+    {
+      "id": 23282,
+      "text": "oceans as canoe highways",
+      "submitted_at": "2026-05-27 19:52:26",
+      "x": -90.97108459472656,
+      "y": -172.67843627929688,
+      "z": 184.23306274414062,
+      "cluster": 5,
+      "cluster_label": "Interconnected Networks"
+    },
+    {
+      "id": 23284,
+      "text": "two headed sea serpent",
+      "submitted_at": "2026-05-27 19:53:35",
+      "x": -246.403076171875,
+      "y": -271.2844543457031,
+      "z": 60.95269775390625,
+      "cluster": 0,
+      "cluster_label": "Marine Life"
+    },
+    {
+      "id": 23295,
+      "text": "barnacles turning into eyes of the sea",
+      "submitted_at": "2026-05-27 20:02:18",
+      "x": -199.484130859375,
+      "y": -259.4582824707031,
+      "z": 27.779632568359375,
+      "cluster": 4,
+      "cluster_label": "Coastal Marine Ecosystems"
+    }
+  ]
+}

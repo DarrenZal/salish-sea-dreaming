@@ -67,7 +67,7 @@ scp scripts/gallery_audio.py windows-desktop:C:/Users/user/gallery_audio.py
 
 ## Current Status
 
-> ⏳ **Open thread (consent — still pending):** post-show visitor-dream archival is **sequenced but not executed** — flip default to `ongoing` view → seed curated dreams → archive the 63 non-consented-but-served IMPACT dreams (retain, stop serving). Touches the live poly `ssd-v5` service + needs operator seed-curation. Steps + consent facts in **`TODO.md`** and Phase 7 of `~/.claude/plans/ok-so-the-shw-snuggly-tide.md`. Baseline checkpoint: `private-archive/impact-2026-checkpoint-2026-05-29.json`.
+> ✅ **Consent thread CLOSED (2026-06-10):** post-show visitor-dream archival executed live on `salishseadreaming.art` (ssd-v5/poly:9004). Added `ongoing` window, flipped default to it, seeded 12 authored dreams, archived the 63 non-consented IMPACT dreams (retained in DB, no longer served), published the 3-dream consented snapshot. End state: default `/cloud` → `ongoing` (12); `impact-2026` → 3 consented; 349 rows, nothing deleted. Details + deployment notes in **`TODO.md`**.
 
 **Date:** 2026-06-10
 **Status:** **Between installations — IMPACT 2026 over (May 27–28, HR MacMillan Space Centre; GREEN show-morning call, 188/196 probe sweep, no P0 visitor-blockers).** 3090 quiesced to R&D idle. Next target: **MOVE37XR Dome Theatre, Oct 2026** (then DEVCON ETH Mumbai, Nov 2026).
