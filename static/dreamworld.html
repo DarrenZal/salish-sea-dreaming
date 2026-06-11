@@ -40,6 +40,9 @@
         .info-panel-close { background: none; border: none; color: #3a5a6a; font-size: 18px; cursor: pointer; padding: 0 0 0 12px; }
         .info-panel-close:hover { color: #8ba4c4; }
         .info-panel .cluster-badge { display: inline-block; padding: 2px 10px; border-radius: 10px; font-size: 10px; letter-spacing: 0.08em; color: #050a12; font-weight: 400; }
+        .info-panel .dream-snapshot { display: none; margin: 10px 0 12px; border: 1px solid rgba(122,168,200,0.18); border-radius: 6px; overflow: hidden; background: rgba(122,168,200,0.04); }
+        .info-panel .dream-snapshot.active { display: block; }
+        .info-panel .dream-snapshot img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; }
         .info-panel .dream-text { font-size: 14px; font-weight: 300; color: #a0c0e0; line-height: 1.5; margin-top: 12px; }
         .info-panel .dream-meta { font-size: 10px; color: #2a4a5a; margin-top: 10px; }
         .info-panel .dream-orient { font-size: 11px; color: #4a7a8a; margin-top: 8px; font-style: italic; line-height: 1.4; }
@@ -49,6 +52,10 @@
         .legend-item:hover { background: rgba(122,168,200,0.1); color: #a0c8e0; }
         .legend-item.selected { background: rgba(122,168,200,0.15); color: #c0dce8; }
         .legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        .dream-annotation { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); z-index: 12; max-width: min(560px, 86vw); padding: 10px 16px; border: 1px solid rgba(122,168,200,0.22); border-radius: 6px; background: rgba(5,10,18,0.78); color: #a0c8e0; font-size: 12px; line-height: 1.45; text-align: center; opacity: 0; pointer-events: none; transition: opacity .45s; backdrop-filter: blur(6px); }
+        .dream-annotation.active { opacity: 1; }
+        .dw-toast { position: fixed; left: 50%; top: 74px; transform: translateX(-50%); z-index: 60; max-width: min(440px, 84vw); padding: 8px 13px; border: 1px solid rgba(122,168,200,0.25); border-radius: 16px; background: rgba(5,10,18,0.86); color: #9fc7d8; font-size: 11px; text-align: center; opacity: 0; transition: opacity .25s; pointer-events: none; backdrop-filter: blur(6px); }
+        .dw-toast.active { opacity: 1; }
         @media (max-width: 600px) {
             .info-panel { top: auto; bottom: 0; left: 0; right: 0; width: 100%; max-height: 50vh; padding: 16px 20px; background: rgba(5,10,18,0.95); border-top: 1px solid #1a2a3a; transform: translateY(20px); }
             .info-panel.active { transform: translateY(0); }
@@ -73,11 +80,14 @@
 </div>
 <div class="loading" id="loading"><h2>Dreaming...</h2><p>the Salish Sea is waking up</p><div class="pulse"></div></div>
 <div id="graph-container"></div>
+<div class="dream-annotation" id="dream-annotation"></div>
+<div class="dw-toast" id="dw-toast"></div>
 <div class="info-panel" id="info-panel">
     <div class="info-panel-header">
         <div><span class="cluster-badge" id="info-cluster"></span></div>
         <button class="info-panel-close" onclick="window._dw.closePanel()">&times;</button>
     </div>
+    <div class="dream-snapshot" id="info-snapshot-wrap"><img id="info-snapshot" alt="Generated dream frame"></div>
     <div class="dream-text" id="info-text"></div>
     <div class="dream-meta" id="info-meta"></div>
     <div class="dream-orient" id="info-orient"></div>
@@ -93,68 +103,98 @@
     const playBtn = document.getElementById('play-btn');
     const playProgressEl = document.getElementById('play-progress');
     const legendItems = document.getElementById('legend-items');
+    const annotationEl = document.getElementById('dream-annotation');
+    const toastEl = document.getElementById('dw-toast');
+
+    const params = new URLSearchParams(location.search);
+    const scopeEvent = params.get('event') || 'impact-2026';
+    const pastEvent = 'digital-ecologies-2026';
+    const isImpactScope = scopeEvent === 'impact-2026';
+    window._scopeEvent = scopeEvent;
+    window._themeOverlay = params.get('theme') === 'on';
 
     let graph = null;
+    let currentData = { nodes: [], links: [], timelineLinks: [], clusters: [] };
+    let pastData = null;
     let graphData = { nodes: [], links: [], clusters: [] };
+    let nodeMap = new Map();
     let angle = 0;
-    let lastInteraction = 0;
     let userInteracted = false;
-
-    // Playback
     let playing = false;
     let playIndex = 0;
     let playTimer = null;
     let sortedNodes = [];
     let posMap = {};
+    let selectedCluster = null;
+    let rememberTarget = 0;
+    let rememberPhase = 0;
+    let pastFetchPending = false;
+    let layoutMode = 'semantic';
+    let layoutTargets = {};
+    let starfield = null;
+    let ripplePool = [];
+    let rippleCursor = 0;
+    let lastFrameT = null;
+
     const DWELL_MS = 3500;
     const TRAIL_NEAR = 3;
     const TRAIL_FAR = 6;
+    const RIPPLE_POOL_SIZE = 3;
+    const RIPPLE_EDGE_LIMIT = 3;
+    const RIPPLE_GLYPH_COUNT = 9;
+    const RIPPLE_DURATION_MS = 9000;
 
-    // ---- Timeline spectrum: blue (220°) → pink/red (350°) ----
-    function spectrumColor(t, alpha) {
-        // t in [0,1], alpha in [0,1]
-        const h = ((220 - t * 230) + 360) % 360;
-        return 'hsla(' + h + ',65%,55%,' + alpha + ')';
+    const fishMap = {};
+    const dummy = new THREE.Object3D();
+    const rippleRoot = new THREE.Group();
+
+    function clamp01(x) { return x < 0 ? 0 : (x > 1 ? 1 : x); }
+    function lerp(a, b, t) { return a + (b - a) * t; }
+    function easeOut(t) { t = clamp01(t); return 1 - Math.pow(1 - t, 3); }
+    function easeOutSine(t) { return Math.sin((Math.PI * 0.5) * clamp01(t)); }
+    function easeInOut(t) { t = clamp01(t); return t * t * (3 - 2 * t); }
+    function smoothstep(e0, e1, x) {
+        if (e0 === e1) return x >= e1 ? 1 : 0;
+        const t = clamp01((x - e0) / (e1 - e0));
+        return t * t * (3 - 2 * t);
     }
-
-    function hexToRgba(hex, a) {
-        const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
-        return 'rgba('+r+','+g+','+b+','+a+')';
+    function lifeWindow(q, edge = 0.075) {
+        return smoothstep(0, edge, q) * smoothstep(1, 1 - edge, q);
     }
-
+    function rgba(hex, alpha) {
+        const h = (hex || '#7aa8c8').replace('#', '');
+        const r = parseInt(h.slice(0,2),16), g = parseInt(h.slice(2,4),16), b = parseInt(h.slice(4,6),16);
+        return 'rgba('+r+','+g+','+b+','+alpha+')';
+    }
     function linkEndIds(l) {
         return [typeof l.source === 'object' ? l.source.id : l.source,
                 typeof l.target === 'object' ? l.target.id : l.target];
     }
 
-    // ---- Build a lookup: nodeId -> timeline position [0,1] ----
-    let tiMap = {};  // nodeId -> normalized timeline position
+    let tiMap = {};
     function buildTimelineMap() {
-        const total = graphData.nodes.length;
+        const activeNodes = graphData.nodes.filter(n => n.event_id === scopeEvent);
         tiMap = {};
-        graphData.nodes.forEach(n => { tiMap[n.id] = total > 1 ? n.ti / (total - 1) : 0; });
+        activeNodes.forEach((n, i) => { tiMap[n.id] = activeNodes.length > 1 ? i / (activeNodes.length - 1) : 0; });
     }
 
-    // ---- Default link color: timeline spectrum ----
-    function defaultLinkColor(l) {
-        const [src, tgt] = linkEndIds(l);
-        const t = ((tiMap[src] || 0) + (tiMap[tgt] || 0)) / 2;
-        return spectrumColor(t, 0.55);
-    }
-    function defaultLinkWidth() { return 1.2; }
-
-    // ---- Auto-rotation ----
-    function rotate() {
-        if (!graph) { requestAnimationFrame(rotate); return; }
-        if (!playing && !userInteracted) {
-            angle += 0.15;
-            const d = 800;
-            graph.cameraPosition({ x: d*Math.sin(angle*Math.PI/180), z: d*Math.cos(angle*Math.PI/180), y: 100 });
-        }
-        requestAnimationFrame(rotate);
+    function toast(text, ms = 1500) {
+        if (!toastEl) return;
+        toastEl.textContent = text;
+        toastEl.classList.add('active');
+        clearTimeout(toastEl._timer);
+        toastEl._timer = setTimeout(() => toastEl.classList.remove('active'), ms);
     }
 
-    function onInteraction() { userInteracted = true; lastInteraction = Date.now(); }
+    function annotation(text, ms = 5200) {
+        if (!annotationEl) return;
+        annotationEl.textContent = text || '';
+        annotationEl.classList.toggle('active', !!text);
+        clearTimeout(annotationEl._timer);
+        if (text && ms) annotationEl._timer = setTimeout(() => annotationEl.classList.remove('active'), ms);
+    }
+
+    function onInteraction() { userInteracted = true; }
 
     function nodeLabel(n) {
         const txt = n.text || '';
@@ -163,26 +203,51 @@
                (txt.length > 100 ? txt.slice(0,100) + '...' : txt) + '</div>';
     }
 
-    // ---- Info panel ----
     function showPanel(node) {
         onInteraction();
         const badge = document.getElementById('info-cluster');
         badge.textContent = node.clusterLabel || '';
         badge.style.background = node.color || '#7fffb2';
-        document.getElementById('info-text').textContent = node.text || '';
-        let meta = node.isSeed ? 'Seed prompt' : 'Visitor dream';
-        if (!node.isSeed && node.submitted_at) {
-            meta += ' \u2014 ' + new Date(node.submitted_at + 'Z').toLocaleString();
+        const snapshotWrap = document.getElementById('info-snapshot-wrap');
+        const snapshotImg = document.getElementById('info-snapshot');
+        snapshotWrap.classList.remove('active');
+        snapshotImg.onload = null;
+        snapshotImg.onerror = null;
+        snapshotImg.removeAttribute('src');
+        snapshotImg.dataset.nodeId = '';
+        if (node.event_id !== pastEvent && node.id) {
+            const nodeKey = String(node.id);
+            snapshotImg.dataset.nodeId = nodeKey;
+            snapshotImg.onload = () => {
+                if (snapshotImg.dataset.nodeId === nodeKey) snapshotWrap.classList.add('active');
+            };
+            snapshotImg.onerror = () => {
+                if (snapshotImg.dataset.nodeId !== nodeKey) return;
+                snapshotWrap.classList.remove('active');
+                snapshotImg.removeAttribute('src');
+            };
+            (async () => {
+                try {
+                    const r = await fetch('/dreams/' + encodeURIComponent(node.id) + '/snapshot-media?t=' + Date.now(), { cache: 'no-store' });
+                    if (snapshotImg.dataset.nodeId !== nodeKey || !r.ok) return;
+                    const media = await r.json();
+                    if (snapshotImg.dataset.nodeId !== nodeKey || !media.src) return;
+                    snapshotImg.src = media.src + '?t=' + Date.now();
+                } catch (_) {
+                    if (snapshotImg.dataset.nodeId === nodeKey) snapshotWrap.classList.remove('active');
+                }
+            })();
         }
-        // Orientation explanation
-        const cluster = node.clusterLabel || 'its cluster';
+        document.getElementById('info-text').textContent = node.text || '';
+        let meta = node.event_id === pastEvent ? 'Remembered Digital Ecologies dream' : 'Visitor dream';
+        if (node.submitted_at) meta += ' - ' + new Date(node.submitted_at + 'Z').toLocaleString();
         let orient = '';
-        if (node.mode === 'reinforce') {
-            orient = 'This fish swims toward the ' + cluster + ' school \u2014 its dream reinforces what others are already dreaming about.';
-        } else if (node.mode === 'bridge') {
-            orient = 'This fish swims between two schools \u2014 its dream connects different currents in the collective imagination.';
-        } else if (node.mode === 'frontier') {
-            orient = 'This fish swims away from its nearest neighbors \u2014 its dream explores territory no one else has touched yet.';
+        if (node.event_id === pastEvent) {
+            orient = 'A past-show fish visiting this field while remembrance is held.';
+        } else if (node.clusterLabel === 'New Arrival') {
+            orient = 'This dream is standing on its own until more related dreams arrive.';
+        } else if (node.clusterLabel) {
+            orient = 'This dream gathered with ' + node.clusterLabel + '.';
         }
         document.getElementById('info-meta').textContent = meta;
         document.getElementById('info-orient').textContent = orient;
@@ -190,307 +255,1244 @@
     }
     function closePanel() { infoPanel.classList.remove('active'); }
 
-    // ---- Legend + cluster selection ----
-    let selectedCluster = null;
+    function visualNodeRadius(n) {
+        if (n.shape === 'fish') return n.isSeed ? 14 : 19;
+        return 20;
+    }
 
+    function stablePairVector(a, b, pass) {
+        const seed = (Number(a.id) || 0) * 12.9898 + (Number(b.id) || 0) * 78.233 + pass * 37.719;
+        const angle = (Math.sin(seed) * 43758.5453 % 1) * Math.PI * 2;
+        return {
+            x: Math.cos(angle),
+            y: Math.sin(angle),
+            z: Math.sin(angle * 1.7) * 0.35
+        };
+    }
+
+    function separateNodePositions(nodes) {
+        if (!nodes || nodes.length < 2) {
+            (nodes || []).forEach(n => {
+                n.x = n._semanticX || 0; n.y = n._semanticY || 0; n.z = n._semanticZ || 0;
+                n.fx = n.x; n.fy = n.y; n.fz = n.z;
+                n._origX = n.x; n._origY = n.y; n._origZ = n.z;
+                n._targetX = n.x; n._targetY = n.y; n._targetZ = n.z;
+            });
+            return;
+        }
+        const work = nodes.map(n => ({
+            node: n,
+            x: Number.isFinite(n._semanticX) ? n._semanticX : 0,
+            y: Number.isFinite(n._semanticY) ? n._semanticY : 0,
+            z: Number.isFinite(n._semanticZ) ? n._semanticZ : 0,
+            r: visualNodeRadius(n)
+        }));
+        const maxPasses = nodes.length > 180 ? 18 : 34;
+        for (let pass = 0; pass < maxPasses; pass++) {
+            let moved = false;
+            for (let i = 0; i < work.length; i++) {
+                for (let j = i + 1; j < work.length; j++) {
+                    const a = work[i], b = work[j];
+                    let dx = b.x - a.x, dy = b.y - a.y, dz = b.z - a.z;
+                    const minD = a.r + b.r + 3;
+                    let d2 = dx * dx + dy * dy + dz * dz;
+                    if (d2 >= minD * minD) continue;
+                    let d = Math.sqrt(Math.max(0.0001, d2));
+                    if (d2 < 0.0001) {
+                        const v = stablePairVector(a.node, b.node, pass);
+                        dx = v.x; dy = v.y; dz = v.z;
+                        d = Math.hypot(dx, dy, dz) || 1;
+                    }
+                    const push = (minD - d) * 0.5;
+                    const nx = dx / d, ny = dy / d, nz = dz / d;
+                    a.x -= nx * push; a.y -= ny * push; a.z -= nz * push;
+                    b.x += nx * push; b.y += ny * push; b.z += nz * push;
+                    moved = true;
+                }
+            }
+            if (!moved) break;
+        }
+        work.forEach(p => {
+            const n = p.node;
+            n.x = p.x; n.y = p.y; n.z = p.z;
+            n.fx = p.x; n.fy = p.y; n.fz = p.z;
+            n._origX = p.x; n._origY = p.y; n._origZ = p.z;
+            n._targetX = p.x; n._targetY = p.y; n._targetZ = p.z;
+        });
+    }
+
+    function isGenericClusterLabel(label) {
+        return !label || /^cluster\s+\d+$/i.test(String(label).trim());
+    }
+
+    function titleWords(words) {
+        return words.map(w => w ? w[0].toUpperCase() + w.slice(1) : '').filter(Boolean).join(' ');
+    }
+
+    function deriveClusterLabel(nodes) {
+        const texts = (nodes || []).map(n => (n.text || '').toLowerCase()).join(' ');
+        if (!texts.trim()) return '';
+        if ((nodes || []).length === 1 && !(/\bserpent\b/.test(texts) && /\b(squamish|coast salish|trigon|crescent|circle)\b/.test(texts))) return 'New Arrival';
+        if (/\bserpent/.test(texts) && /\b(coast salish|squamish|trigon|crescent|circle)\b/.test(texts)) return 'Sea Serpent Forms';
+        if (/\b(flourish|flourishing|marine life)\b/.test(texts)) return 'Flourishing Marine Life';
+        if (/\b(orca|orcas|salmon|eel|moray|serpent)\b/.test(texts)) return 'Marine Beings';
+        if (/\bclam/.test(texts)) return 'Happy Clams';
+        if (/\bdawn|breath\b/.test(texts) && /\borca\b/.test(texts)) return 'Orca Breath';
+
+        const stop = new Set(['the','and','with','from','into','onto','their','there','this','that','dream','dreams','life','all','my','our','your','a','an','of','in','on','to','for']);
+        const counts = new Map();
+        texts.replace(/[^a-z0-9\s-]/g, ' ').split(/\s+/).forEach(word => {
+            if (word.length < 4 || stop.has(word)) return;
+            counts.set(word, (counts.get(word) || 0) + 1);
+        });
+        const top = Array.from(counts.entries()).sort((a,b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, 3).map(([w]) => w);
+        return top.length ? titleWords(top) : 'New Arrivals';
+    }
+
+    function improveClusterLabels(data) {
+        const nodes = data.nodes || [];
+        const byCluster = new Map();
+        nodes.forEach(n => {
+            if (n.cluster === null || n.cluster === undefined) return;
+            if (!byCluster.has(n.cluster)) byCluster.set(n.cluster, []);
+            byCluster.get(n.cluster).push(n);
+        });
+        const labelByCluster = new Map();
+        byCluster.forEach((clusterNodes, cid) => {
+            const existing = clusterNodes.map(n => n.clusterLabel).find(label => !isGenericClusterLabel(label));
+            labelByCluster.set(cid, existing || deriveClusterLabel(clusterNodes));
+        });
+        nodes.forEach(n => {
+            if (n.cluster === null || n.cluster === undefined) return;
+            if (isGenericClusterLabel(n.clusterLabel)) n.clusterLabel = labelByCluster.get(n.cluster) || n.clusterLabel;
+        });
+        data.clusters = (data.clusters || []).map(c => ({
+            ...c,
+            label: isGenericClusterLabel(c.label) ? (labelByCluster.get(c.id) || c.label) : c.label
+        }));
+    }
+
+    function normalizeData(data, fallbackEvent) {
+        data.nodes = (data.nodes || []).map(n => {
+            n.event_id = n.event_id || fallbackEvent;
+            n.shape = n.shape || (n.event_id === pastEvent ? 'fish' : 'sphere');
+            n._semanticX = Number.isFinite(Number(n.x)) ? Number(n.x) : 0;
+            n._semanticY = Number.isFinite(Number(n.y)) ? Number(n.y) : 0;
+            n._semanticZ = Number.isFinite(Number(n.z)) ? Number(n.z) : 0;
+            return n;
+        });
+        separateNodePositions(data.nodes);
+        data.links = data.links || [];
+        data.timelineLinks = data.timelineLinks || [];
+        data.clusters = data.clusters || [];
+        improveClusterLabels(data);
+        return data;
+    }
+
+    async function fetchEventData(eventSlug) {
+        try {
+            const r = await fetch('/dreams/3d?event=' + encodeURIComponent(eventSlug));
+            return r.ok ? normalizeData(await r.json(), eventSlug) : null;
+        } catch (_) {
+            return null;
+        }
+    }
+
+    function buildGraphData() {
+        const nodes = [...(currentData.nodes || [])];
+        if (pastData && isImpactScope) nodes.push(...pastData.nodes);
+        nodeMap = new Map(nodes.map(n => [n.id, n]));
+        const links = [];
+        const seen = new Set();
+        function addLink(source, target, kind, color) {
+            if (!nodeMap.has(source) || !nodeMap.has(target) || source === target) return;
+            const key = kind + ':' + [source, target].sort((a,b) => a - b).join(':');
+            if (seen.has(key)) return;
+            seen.add(key);
+            links.push({ source, target, kind, color });
+        }
+        (currentData.links || []).forEach(l => addLink(l.source, l.target, 'semantic', '#7aa8c8'));
+        (currentData.timelineLinks || []).forEach(l => addLink(l.source, l.target, 'timeline', '#4a6a7a'));
+        if (pastData && isImpactScope) {
+            (pastData.links || []).forEach(l => addLink(l.source, l.target, 'past', '#5a8aa8'));
+            for (const n of nodes) {
+                (n.neighbors || []).forEach(id => addLink(n.id, Number(id), 'resonance', n.color || '#7aa8c8'));
+            }
+        }
+        graphData = { nodes, links, clusters: currentData.clusters || [] };
+        buildTimelineMap();
+        return graphData;
+    }
+
+    function linkColor(l) {
+        const [src, tgt] = linkEndIds(l);
+        const s = nodeMap.get(src), t = nodeMap.get(tgt);
+        if (!s || !t) return 'rgba(122,168,200,0)';
+        if (!linkVisibility(l)) return 'rgba(122,168,200,0)';
+        if (l.kind === 'timeline') return 'rgba(90,122,153,0.12)';
+        if (l.kind === 'past') return rgba(l.color || '#5a8aa8', rememberPhase * 0.22);
+        if (l.kind === 'resonance') {
+            const cross = s.event_id !== t.event_id;
+            return rgba(l.color || '#7aa8c8', rememberPhase * (cross ? 0.72 : 0.36));
+        }
+        return rgba(l.color || '#7aa8c8', 0.72 * (1 - rememberPhase * 0.28));
+    }
+    function linkVisibility(l) {
+        const [src, tgt] = linkEndIds(l);
+        const s = nodeMap.get(src), t = nodeMap.get(tgt);
+        if (!s || !t) return false;
+        const involvesPast = s.event_id === pastEvent || t.event_id === pastEvent;
+        if (involvesPast && rememberPhase < 0.08) return false;
+        if (l.kind === 'past' || l.kind === 'resonance') return rememberPhase >= 0.08;
+        if (l.kind === 'timeline') return s.event_id === scopeEvent && t.event_id === scopeEvent;
+        return true;
+    }
+    function linkWidth(l) {
+        if (!linkVisibility(l)) return 0;
+        if (l.kind === 'timeline') return 0.35;
+        if (l.kind === 'past') return rememberPhase * 0.75;
+        if (l.kind === 'resonance') return rememberPhase * 1.45;
+        return 1.45 * (1 - rememberPhase * 0.28);
+    }
+
+    function nodeOpacity(n) {
+        if (n.event_id === pastEvent) return rememberPhase * 0.4;
+        return selectedCluster === null || n.cluster === selectedCluster ? 0.95 : 0.18;
+    }
+
+    function setGroupOpacity(group, opacity) {
+        if (!group) return;
+        group.traverse(obj => {
+            if (obj.material) {
+                obj.material.transparent = true;
+                obj.material.opacity = opacity * (obj.userData.opacityScale || 1);
+                obj.visible = obj.material.opacity > 0.01;
+            }
+        });
+        group.visible = opacity > 0.01 || group.userData.event_id !== pastEvent;
+    }
+
+    function createSphere(node) {
+        const color = new THREE.Color(node.color || '#7fffb2');
+        const group = new THREE.Group();
+        const core = new THREE.Mesh(
+            new THREE.SphereGeometry(12, 24, 16),
+            new THREE.MeshLambertMaterial({
+                color,
+                emissive: color.clone().multiplyScalar(0.22),
+                transparent: true,
+                opacity: 0.95
+            })
+        );
+        const glow = new THREE.Mesh(
+            new THREE.SphereGeometry(17, 24, 16),
+            new THREE.MeshBasicMaterial({
+                color,
+                transparent: true,
+                opacity: 0.18,
+                depthWrite: false,
+                side: THREE.BackSide
+            })
+        );
+        glow.userData.opacityScale = 0.35;
+        group.add(glow);
+        group.add(core);
+        return group;
+    }
+
+    function createFishMesh(node) {
+        const color = new THREE.Color(node.color || '#7fffb2');
+        const s = node.isSeed ? 10 : 15;
+        const shape = new THREE.Shape();
+        shape.moveTo(s * 1.0, 0);
+        shape.quadraticCurveTo(s * 0.6, s * 0.35, 0, s * 0.28);
+        shape.quadraticCurveTo(-s * 0.3, s * 0.22, -s * 0.5, s * 0.4);
+        shape.lineTo(-s * 0.35, 0);
+        shape.lineTo(-s * 0.5, -s * 0.4);
+        shape.quadraticCurveTo(-s * 0.3, -s * 0.22, 0, -s * 0.28);
+        shape.quadraticCurveTo(s * 0.6, -s * 0.35, s * 1.0, 0);
+        const geo = new THREE.ExtrudeGeometry(shape, { depth: s * 0.25, bevelEnabled: true, bevelThickness: s * 0.08, bevelSize: s * 0.06, bevelSegments: 2 });
+        geo.center();
+        geo.rotateY(Math.PI / 2);
+        const mat = new THREE.MeshLambertMaterial({ color, emissive: color.clone().multiplyScalar(0.12), transparent: true, opacity: 0 });
+        const mesh = new THREE.Mesh(geo, mat);
+        const group = new THREE.Group();
+        group.add(mesh);
+        const dir = node.dir || [0, 0, 1];
+        const target = new THREE.Vector3(dir[0], dir[1], dir[2]);
+        if (target.lengthSq() > 0.001) {
+            const m = new THREE.Matrix4();
+            m.lookAt(new THREE.Vector3(0,0,0), target, new THREE.Vector3(0,1,0));
+            group.quaternion.setFromRotationMatrix(m);
+        }
+        return group;
+    }
+
+    function createDreamObject(node) {
+        const group = node.shape === 'fish' ? createFishMesh(node) : createSphere(node);
+        group.userData.nodeId = node.id;
+        group.userData.event_id = node.event_id;
+        fishMap[node.id] = group;
+        setGroupOpacity(group, nodeOpacity(node));
+        return group;
+    }
+
+    function styleFish(nodeId, color, opacity, scale) {
+        const group = fishMap[nodeId];
+        if (!group) return;
+        group.traverse(obj => {
+            if (obj.material && obj.material.color) obj.material.color.set(color);
+        });
+        setGroupOpacity(group, opacity);
+        group.scale.setScalar(scale);
+    }
+    function resetAllFish() {
+        graphData.nodes.forEach(n => styleFish(n.id, n.color, nodeOpacity(n), 1.0));
+    }
+
+    function renderShowAllButton() {
+        let btn = document.getElementById('legend-show-all');
+        if (selectedCluster !== null) {
+            if (!btn) {
+                btn = document.createElement('div');
+                btn.id = 'legend-show-all';
+                btn.className = 'legend-item legend-show-all';
+                btn.style.borderTop = '1px solid rgba(122,168,200,0.2)';
+                btn.style.marginTop = '4px';
+                btn.style.paddingTop = '6px';
+                btn.style.color = '#a0c8e0';
+                btn.innerHTML = '← Show all dreams';
+                btn.addEventListener('click', clearClusterSelection);
+                legendItems.appendChild(btn);
+            }
+        } else if (btn) btn.remove();
+    }
     function updateLegend(clusters) {
         legendItems.innerHTML = '';
         clusters.forEach(c => {
             const item = document.createElement('div');
             item.className = 'legend-item';
-            item.style.cursor = 'pointer';
             item.innerHTML = '<div class="legend-dot" style="background:' + c.color + '"></div>' + c.label;
-            item.dataset.clusterId = c.id;
             item.addEventListener('click', () => {
                 if (playing) stopPlay();
                 if (selectedCluster === c.id) { clearClusterSelection(); return; }
-                // Mark selected in legend
                 legendItems.querySelectorAll('.legend-item').forEach(el => el.classList.remove('selected'));
                 item.classList.add('selected');
-                highlightCluster(c.id);
+                selectedCluster = c.id;
+                resetAllFish();
+                renderShowAllButton();
             });
             legendItems.appendChild(item);
         });
     }
-
-    function highlightCluster(clusterId) {
-        selectedCluster = clusterId;
-        onInteraction();
-
-        graphData.nodes.forEach(n => {
-            if (n.cluster === clusterId) styleFish(n.id, n.color, 0.95, 1.5);
-            else styleFish(n.id, n.color, 0.15, 0.5);
-        });
-
-        // Brighten links between nodes in the selected cluster
-        graph.linkColor(l => {
-            const [src, tgt] = linkEndIds(l);
-            const srcNode = graphData.nodes.find(n => n.id === src);
-            const tgtNode = graphData.nodes.find(n => n.id === tgt);
-            const srcIn = srcNode && srcNode.cluster === clusterId;
-            const tgtIn = tgtNode && tgtNode.cluster === clusterId;
-            if (srcIn && tgtIn) {
-                const t = ((tiMap[src]||0) + (tiMap[tgt]||0)) / 2;
-                return spectrumColor(t, 0.5);
-            }
-            if (srcIn || tgtIn) {
-                const t = ((tiMap[src]||0) + (tiMap[tgt]||0)) / 2;
-                return spectrumColor(t, 0.15);
-            }
-            return spectrumColor(0.5, 0.03);
-        });
-        graph.linkWidth(l => {
-            const [src, tgt] = linkEndIds(l);
-            const srcNode = graphData.nodes.find(n => n.id === src);
-            const tgtNode = graphData.nodes.find(n => n.id === tgt);
-            if (srcNode?.cluster === clusterId && tgtNode?.cluster === clusterId) return 1.5;
-            return 0.3;
-        });
-    }
-
     function clearClusterSelection() {
         selectedCluster = null;
         legendItems.querySelectorAll('.legend-item').forEach(el => el.classList.remove('selected'));
-        if (!graph) return;
+        renderShowAllButton();
         resetAllFish();
-        graph.linkColor(defaultLinkColor);
-        graph.linkWidth(defaultLinkWidth);
     }
 
-    // ---- Playback ----
     function togglePlay() { if (playing) stopPlay(); else startPlay(); }
-
     function startPlay() {
         playing = true;
         playBtn.textContent = 'Pause';
         playBtn.classList.add('active');
-        userInteracted = true;
-        sortedNodes = [...graphData.nodes].sort((a,b) => (a.submitted_at||'').localeCompare(b.submitted_at||''));
+        sortedNodes = graphData.nodes.filter(n => n.event_id === scopeEvent).sort((a,b) => (a.submitted_at||'').localeCompare(b.submitted_at||''));
         posMap = {};
         sortedNodes.forEach((n,i) => posMap[n.id] = i);
         playIndex = 0;
         advancePlay();
     }
-
     function advancePlay() {
         if (!playing || playIndex >= sortedNodes.length) { stopPlay(); return; }
         const node = sortedNodes[playIndex];
-        highlightTrail(node, playIndex);
         showPanel(node);
+        focusNode(node, false, true);
         playProgressEl.textContent = (playIndex+1) + ' / ' + sortedNodes.length;
-
-        const camAngle = (playIndex * 15) * Math.PI / 180;
-        const camDist = 500;
-        graph.cameraPosition(
-            { x: node.fx + camDist*Math.sin(camAngle), y: node.fy + 150, z: node.fz + camDist*Math.cos(camAngle) },
-            { x: node.fx, y: node.fy, z: node.fz }, 1500
-        );
         playIndex++;
         playTimer = setTimeout(advancePlay, DWELL_MS);
     }
-
-    function highlightTrail(activeNode, currentPos) {
-        graphData.nodes.forEach(n => {
-            if (n.id === activeNode.id) {
-                styleFish(n.id, '#ffffff', 1.0, 2.5);
-            } else {
-                const d = Math.abs((posMap[n.id] ?? 999) - currentPos);
-                if (d <= TRAIL_NEAR) styleFish(n.id, n.color, 0.9, 1.2);
-                else if (d <= TRAIL_FAR) styleFish(n.id, n.color, 0.5, 0.8);
-                else styleFish(n.id, n.color, 0.25, 0.6);
-            }
-        });
-
-        // Edges: trail uses timeline spectrum, brightness by proximity
-        const total = sortedNodes.length;
-        graph.linkColor(l => {
-            const [src, tgt] = linkEndIds(l);
-            const srcD = Math.abs((posMap[src] ?? 999) - currentPos);
-            const tgtD = Math.abs((posMap[tgt] ?? 999) - currentPos);
-            const d = Math.max(srcD, tgtD);
-            const t = ((posMap[src]||0) + (posMap[tgt]||0)) / 2 / Math.max(1, total-1);
-
-            if (d <= 1)          return spectrumColor(t, 0.80);
-            if (d <= TRAIL_NEAR) return spectrumColor(t, 0.45);
-            if (d <= TRAIL_FAR)  return spectrumColor(t, 0.20);
-            return spectrumColor(t, 0.06);
-        });
-        graph.linkWidth(l => {
-            const [src, tgt] = linkEndIds(l);
-            const srcD = Math.abs((posMap[src] ?? 999) - currentPos);
-            const tgtD = Math.abs((posMap[tgt] ?? 999) - currentPos);
-            const d = Math.max(srcD, tgtD);
-            if (d <= 1) return 2.5;
-            if (d <= TRAIL_NEAR) return 1.5;
-            if (d <= TRAIL_FAR) return 1.0;
-            return 0.4;
-        });
-    }
-
     function stopPlay() {
         playing = false;
         playBtn.textContent = 'Play';
         playBtn.classList.remove('active');
         playProgressEl.textContent = '';
         clearTimeout(playTimer);
-        if (graph) {
-            resetAllFish();
-            graph.linkColor(defaultLinkColor);
-            graph.linkWidth(defaultLinkWidth);
-        }
+        resetAllFish();
     }
 
-    // ---- Fish mesh ----
-    const fishMap = {};  // nodeId -> THREE.Group
+    function addStarfield(scene) {
+        if (starfield) return;
+        const count = 900;
+        const positions = new Float32Array(count * 3);
+        for (let i = 0; i < count; i++) {
+            const r = 900 + Math.random() * 900;
+            const theta = Math.random() * Math.PI * 2;
+            const phi = Math.acos(2 * Math.random() - 1);
+            positions[i*3] = r * Math.sin(phi) * Math.cos(theta);
+            positions[i*3+1] = r * Math.cos(phi);
+            positions[i*3+2] = r * Math.sin(phi) * Math.sin(theta);
+        }
+        const geo = new THREE.BufferGeometry();
+        geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        starfield = new THREE.Points(geo, new THREE.PointsMaterial({ color: 0x88b8d8, size: 1.3, transparent: true, opacity: 0.42, depthWrite: false }));
+        scene.add(starfield);
+    }
 
-    function createFish(node) {
-        const color = new THREE.Color(node.color);
-        const s = node.isSeed ? 10 : 15;
+    const RIPPLE_LAYERS = [
+        { delay: 0.00, alpha: 1.00, radiusScale: 1.00, jitter: 0.00 },
+        { delay: 0.19, alpha: 0.62, radiusScale: 1.10, jitter: 0.17 },
+        { delay: 0.38, alpha: 0.38, radiusScale: 1.22, jitter: -0.11 }
+    ];
+    const RIPPLE_PALETTES = [
+        { circle: '#f8e6b3', crescent: '#5cebe0', trigon: '#f57556' },
+        { circle: '#eaaa47', crescent: '#f8e6b3', trigon: '#5cebe0' },
+        { circle: '#f8e6b3', crescent: '#389eca', trigon: '#d86d33' },
+        { circle: '#5cebe0', crescent: '#f8e6b3', trigon: '#b84236' }
+    ];
 
-        // Fish silhouette using THREE.Shape
+    function makeCrescentGeometry() {
         const shape = new THREE.Shape();
-        shape.moveTo(s * 1.0, 0);                              // nose
-        shape.quadraticCurveTo(s * 0.6, s * 0.35, 0, s * 0.28);  // upper body
-        shape.quadraticCurveTo(-s * 0.3, s * 0.22, -s * 0.5, s * 0.4); // upper tail
-        shape.lineTo(-s * 0.35, 0);                             // tail notch
-        shape.lineTo(-s * 0.5, -s * 0.4);                       // lower tail
-        shape.quadraticCurveTo(-s * 0.3, -s * 0.22, 0, -s * 0.28); // lower body
-        shape.quadraticCurveTo(s * 0.6, -s * 0.35, s * 1.0, 0);    // back to nose
-
-        const geo = new THREE.ExtrudeGeometry(shape, {
-            depth: s * 0.25, bevelEnabled: true,
-            bevelThickness: s * 0.08, bevelSize: s * 0.06, bevelSegments: 2
-        });
+        shape.moveTo(-1.02, -0.23);
+        shape.bezierCurveTo(-0.88, 0.28, -0.46, 0.92, 0.00, 1.08);
+        shape.bezierCurveTo(0.46, 0.92, 0.88, 0.28, 1.02, -0.23);
+        shape.quadraticCurveTo(0.54, -0.02, 0.00, -0.11);
+        shape.quadraticCurveTo(-0.54, -0.02, -1.02, -0.23);
+        shape.closePath();
+        const geo = new THREE.ShapeGeometry(shape, 28);
         geo.center();
-        // Rotate so fish faces +Z (forward)
-        geo.rotateY(Math.PI / 2);
-
-        // Subtle visual cue per orientation mode
-        const opacity = node.mode === 'frontier' ? 0.7 : 0.9;
-        const emissive = node.mode === 'bridge' ? color.clone().multiplyScalar(0.3) : new THREE.Color(0);
-        const mat = new THREE.MeshLambertMaterial({
-            color: color, emissive: emissive,
-            transparent: true, opacity: opacity
-        });
-        const mesh = new THREE.Mesh(geo, mat);
-
-        const group = new THREE.Group();
-        group.add(mesh);
-
-        // Orient fish along direction vector
-        const dir = node.dir || [0, 0, 1];
-        const target = new THREE.Vector3(dir[0], dir[1], dir[2]);
-        if (target.lengthSq() > 0.001) {
-            // lookAt from origin toward the direction
-            const m = new THREE.Matrix4();
-            m.lookAt(new THREE.Vector3(0,0,0), target, new THREE.Vector3(0,1,0));
-            group.quaternion.setFromRotationMatrix(m);
+        return geo;
+    }
+    function makeTrigonGeometry() {
+        const shape = new THREE.Shape();
+        shape.moveTo(0, 1.18);
+        shape.quadraticCurveTo(0.24, 0.22, 0.72, -0.52);
+        shape.quadraticCurveTo(0.20, -0.78, 0.00, -0.64);
+        shape.quadraticCurveTo(-0.20, -0.78, -0.72, -0.52);
+        shape.quadraticCurveTo(-0.24, 0.22, 0, 1.18);
+        shape.closePath();
+        const geo = new THREE.ShapeGeometry(shape, 28);
+        geo.center();
+        return geo;
+    }
+    function ripplePalette(index) {
+        return RIPPLE_PALETTES[index % RIPPLE_PALETTES.length];
+    }
+    function glyphFrame(forward, origin) {
+        const camera = graph && graph.camera ? graph.camera() : null;
+        const camDir = camera ? new THREE.Vector3().subVectors(camera.position, origin).normalize() : new THREE.Vector3(0, 0, 1);
+        let right = new THREE.Vector3().crossVectors(forward, camDir);
+        if (right.lengthSq() < 0.0001) {
+            const fallback = Math.abs(forward.y) < 0.8 ? new THREE.Vector3(0, 1, 0) : new THREE.Vector3(1, 0, 0);
+            right = new THREE.Vector3().crossVectors(forward, fallback);
         }
-
-        fishMap[node.id] = group;
-        return group;
+        right.normalize();
+        const normal = new THREE.Vector3().crossVectors(right, forward).normalize();
+        if (normal.dot(camDir) < 0) {
+            right.negate();
+            normal.negate();
+        }
+        return { right, normal };
     }
-
-    function styleFish(nodeId, color, opacity, scale) {
-        const fish = fishMap[nodeId];
-        if (!fish) return;
-        fish.children.forEach(mesh => {
-            mesh.material.color.set(color);
-            mesh.material.opacity = opacity;
+    function placeGlyph(mesh, origin, forward, distance, sideOffset, scaleX, scaleY) {
+        const basis = glyphFrame(forward, origin);
+        const pos = forward.clone().multiplyScalar(distance).add(basis.right.clone().multiplyScalar(sideOffset));
+        const matrix = new THREE.Matrix4();
+        matrix.makeBasis(
+            basis.right.clone().multiplyScalar(scaleX),
+            forward.clone().multiplyScalar(scaleY),
+            basis.normal
+        );
+        matrix.setPosition(pos);
+        mesh.matrixAutoUpdate = false;
+        mesh.matrix.copy(matrix);
+        mesh.visible = true;
+    }
+    function initRipples(scene) {
+        const ringGeo = new THREE.TorusGeometry(1, 0.018, 8, 96);
+        const crescentGeo = makeCrescentGeometry();
+        const trigonGeo = makeTrigonGeometry();
+        for (let i = 0; i < RIPPLE_POOL_SIZE; i++) {
+            const group = new THREE.Group();
+            const rings = [];
+            const crescents = [];
+            const trigons = [];
+            for (let j = 0; j < RIPPLE_LAYERS.length; j++) {
+                const ring = new THREE.Mesh(
+                    ringGeo,
+                    new THREE.MeshBasicMaterial({ color: 0x7ad8e8, transparent: true, opacity: 0, depthWrite: false })
+                );
+                ring.visible = false;
+                rings.push(ring);
+                group.add(ring);
+            }
+            for (let j = 0; j < RIPPLE_GLYPH_COUNT; j++) {
+                const c = new THREE.Mesh(
+                    crescentGeo,
+                    new THREE.MeshBasicMaterial({ color: 0xf8e6b3, transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide })
+                );
+                const t = new THREE.Mesh(
+                    trigonGeo,
+                    new THREE.MeshBasicMaterial({ color: 0xf57556, transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide })
+                );
+                c.visible = false;
+                t.visible = false;
+                crescents.push(c);
+                trigons.push(t);
+                group.add(c);
+                group.add(t);
+            }
+            group.visible = false;
+            ripplePool.push({ group, rings, crescents, trigons, active: false, start: 0, origin: new THREE.Vector3(), edges: [], color: '#7aa8c8', muted: 1, paletteIndex: i });
+            rippleRoot.add(group);
+        }
+        scene.add(rippleRoot);
+    }
+    function triggerRipple(node, muted = 1) {
+        if (!node || !graph) return;
+        const ripple = ripplePool[rippleCursor++ % ripplePool.length];
+        const origin = new THREE.Vector3(node.x || node.fx || 0, node.y || node.fy || 0, node.z || node.fz || 0);
+        const edges = [];
+        const seenTargets = new Set();
+        const neighborSource = rememberPhase > 0.2 && node.neighbors && node.neighbors.length ? node.neighbors : (node.eventNeighbors || node.neighbors || []);
+        const ids = neighborSource.slice(0, 12);
+        ids.forEach(id => {
+            if (edges.length >= RIPPLE_EDGE_LIMIT) return;
+            const targetId = Number(id);
+            if (seenTargets.has(targetId)) return;
+            seenTargets.add(targetId);
+            const nb = nodeMap.get(Number(id));
+            if (!nb) return;
+            if (nb.event_id === pastEvent && rememberPhase < 0.15) return;
+            const v = new THREE.Vector3((nb.x || nb.fx || 0) - origin.x, (nb.y || nb.fy || 0) - origin.y, (nb.z || nb.fz || 0) - origin.z);
+            const len = v.length();
+            if (len <= 1) return;
+            const targetStop = Math.max(24, len - visualNodeRadius(nb) * 0.55);
+            edges.push({ dir: v.normalize(), distance: targetStop, targetId });
         });
-        fish.scale.setScalar(scale);
+        if (!edges.length) {
+            edges.push(
+                { dir: new THREE.Vector3(1,0,0), distance: 90, targetId: null },
+                { dir: new THREE.Vector3(0,1,0), distance: 90, targetId: null },
+                { dir: new THREE.Vector3(0,0,1), distance: 90, targetId: null }
+            );
+        }
+        ripple.active = true;
+        ripple.start = performance.now();
+        ripple.origin.copy(origin);
+        ripple.edges = edges;
+        ripple.color = node.color || '#7aa8c8';
+        ripple.muted = muted;
+        ripple.paletteIndex = rippleCursor + (Number(node.cluster) || 0);
+        ripple.rings.forEach(ring => { ring.visible = false; ring.material.opacity = 0; });
+        ripple.crescents.forEach(c => { c.visible = false; c.material.opacity = 0; });
+        ripple.trigons.forEach(t => { t.visible = false; t.material.opacity = 0; });
+        ripple.group.visible = true;
+        ripple.group.position.copy(origin);
+    }
+    function triggerFieldRipple() {
+        const visible = graphData.nodes.filter(n => n.event_id !== pastEvent || rememberPhase > 0.2);
+        const sorted = visible.slice().sort((a,b) => {
+            const ar = Math.hypot(a.x || 0, a.y || 0, a.z || 0);
+            const br = Math.hypot(b.x || 0, b.y || 0, b.z || 0);
+            return ar - br;
+        });
+        const anchors = sorted.length <= RIPPLE_POOL_SIZE ? sorted : [
+            sorted[0],
+            sorted[Math.floor(sorted.length * 0.38)],
+            sorted[Math.floor(sorted.length * 0.72)]
+        ].filter(Boolean);
+        anchors.forEach((n, i) => setTimeout(() => triggerRipple(n, n.event_id === pastEvent ? 0.45 : 1), i * 900));
+        toast('A slow ripple moves through the dream field', 2200);
+    }
+    function updateRipples(now) {
+        for (const r of ripplePool) {
+            if (!r.active) continue;
+            const q = (now - r.start) / RIPPLE_DURATION_MS;
+            if (q >= 1) {
+                r.active = false;
+                r.group.visible = false;
+                continue;
+            }
+            const camera = graph && graph.camera ? graph.camera() : null;
+            const palette = ripplePalette(r.paletteIndex || 0);
+            const edges = (r.edges || []).slice(0, RIPPLE_EDGE_LIMIT);
+            const minEdgeDist = Math.max(24, Math.min(...edges.map(edge => edge.distance)));
+            for (let layerIndex = 0; layerIndex < RIPPLE_LAYERS.length; layerIndex++) {
+                const layer = RIPPLE_LAYERS[layerIndex];
+                const lq = (q - layer.delay) / (1 - layer.delay);
+                const ring = r.rings[layerIndex];
+                if (lq < 0 || lq > 0.92) {
+                    ring.visible = false;
+                    ring.material.opacity = 0;
+                    continue;
+                }
+                const circleT = easeInOut(clamp01(lq / 0.88));
+                const circleFade = lifeWindow(clamp01(lq / 0.92), 0.12) * layer.alpha * r.muted;
+                const triLead = 18 + circleT * Math.max(8, minEdgeDist - 18);
+                const gap = Math.max(9, minEdgeDist * (0.14 + 0.12 * circleT));
+                const crescentLead = Math.max(13, triLead - gap);
+                const radius = Math.max(8, crescentLead - Math.max(9, minEdgeDist * 0.10));
+                ring.visible = circleFade > 0.002;
+                ring.scale.set(radius, radius, radius);
+                if (camera) ring.quaternion.copy(camera.quaternion);
+                ring.material.color.set(layerIndex === 0 ? r.color : palette.circle);
+                ring.material.opacity = 0.16 * circleFade;
+            }
+            r.crescents.forEach(c => { c.visible = false; c.material.opacity = 0; });
+            r.trigons.forEach(t => { t.visible = false; t.material.opacity = 0; });
+            for (let layerIndex = 0; layerIndex < RIPPLE_LAYERS.length; layerIndex++) {
+                const layer = RIPPLE_LAYERS[layerIndex];
+                const lq = (q - layer.delay) / (1 - layer.delay);
+                const cellT = (lq - 0.04) / 0.88;
+                if (cellT < 0 || cellT > 1) continue;
+                const travel = easeInOut(cellT);
+                const cellWin = smoothstep(0.0, 0.14, cellT) * smoothstep(1.0, 0.78, cellT) * layer.alpha * r.muted;
+                const distanceFade = 1 - 0.34 * travel;
+                const waveSoft = 1 + 0.055 * layerIndex;
+                for (let edgeIndex = 0; edgeIndex < edges.length; edgeIndex++) {
+                    const edge = edges[edgeIndex];
+                    const slot = layerIndex * RIPPLE_EDGE_LIMIT + edgeIndex;
+                    const crescent = r.crescents[slot];
+                    const trigon = r.trigons[slot];
+                    const dir = edge.dir;
+                    const edgeStop = Math.max(24, edge.distance);
+                    const shapeBase = Math.max(3.8, Math.min(8.2, edgeStop * 0.052)) * waveSoft;
+                    const triGap = Math.max(shapeBase * 2.0, edgeStop * (0.12 + 0.18 * travel));
+                    const triDistance = Math.min(edgeStop, 18 + travel * Math.max(1, edgeStop - 18));
+                    const distance = Math.max(12, triDistance - triGap);
+                    const side = 0;
+                    const crescentScale = shapeBase * (1 + 0.035 * Math.sin(Math.PI * 2 * (q * 1.2 + edgeIndex * 0.17 + layerIndex * 0.19)));
+                    crescent.visible = true;
+                    placeGlyph(crescent, r.origin, dir, distance, side, crescentScale * 1.12, crescentScale * 1.00);
+                    crescent.material.color.set((edgeIndex + layerIndex) % 3 === 0 ? palette.crescent : '#f8e6b3');
+                    crescent.material.opacity = 0.34 * cellWin * distanceFade;
+
+                    const trigonScale = shapeBase * 0.86;
+                    trigon.visible = true;
+                    placeGlyph(trigon, r.origin, dir, triDistance, side, trigonScale * 0.98, trigonScale * 1.08);
+                    trigon.material.color.set((edgeIndex + layerIndex) % 4 === 0 ? palette.trigon : '#d86d33');
+                    trigon.material.opacity = 0.30 * cellWin * Math.pow(distanceFade, 1.08);
+                }
+            }
+        }
     }
 
-    function resetAllFish() {
-        graphData.nodes.forEach(n => styleFish(n.id, n.color, 0.9, 1.0));
+    function computeLayoutTargets(mode) {
+        const nodes = graphData.nodes;
+        if (mode === 'semantic') {
+            nodes.forEach(n => { layoutTargets[n.id] = { x: n._origX, y: n._origY, z: n._origZ }; });
+            return;
+        }
+        if (mode === 'cluster') {
+            const clusters = {};
+            nodes.forEach(n => {
+                if (n.event_id === pastEvent && rememberPhase < 0.1) return;
+                const key = n.cluster ?? 'none';
+                if (!clusters[key]) clusters[key] = { x: 0, y: 0, z: 0, count: 0 };
+                clusters[key].x += n._origX; clusters[key].y += n._origY; clusters[key].z += n._origZ; clusters[key].count++;
+            });
+            Object.values(clusters).forEach(c => { c.x /= c.count || 1; c.y /= c.count || 1; c.z /= c.count || 1; });
+            nodes.forEach(n => {
+                const c = clusters[n.cluster ?? 'none'] || { x: 0, y: 0, z: 0 };
+                layoutTargets[n.id] = { x: c.x, y: c.y, z: c.z };
+            });
+            return;
+        }
+        if (mode === 'field') {
+            const visible = nodes.filter(n => !(n.event_id === pastEvent && rememberPhase < 0.1));
+            const pts = visible.length ? visible : nodes;
+            const center = pts.reduce((acc, n) => {
+                acc.x += n._origX; acc.y += n._origY; acc.z += n._origZ; acc.count++;
+                return acc;
+            }, { x: 0, y: 0, z: 0, count: 0 });
+            const cx = center.count ? center.x / center.count : 0;
+            const cy = center.count ? center.y / center.count : 0;
+            const cz = center.count ? center.z / center.count : 0;
+            nodes.forEach(n => { layoutTargets[n.id] = { x: cx, y: cy, z: cz }; });
+            return;
+        }
+        if (mode === 'spiral') {
+            const ordered = nodes.slice().sort((a,b) => (a.submitted_at || '').localeCompare(b.submitted_at || ''));
+            ordered.forEach((n, i) => {
+                const t = ordered.length > 1 ? i / (ordered.length - 1) : 0;
+                const a = t * Math.PI * 10;
+                const r = 35 + t * 330;
+                layoutTargets[n.id] = { x: Math.cos(a) * r, y: (0.5 - t) * 260, z: Math.sin(a) * r };
+            });
+        }
+    }
+    function setLayout(mode) {
+        layoutMode = mode;
+        computeLayoutTargets(mode);
+        annotation(mode === 'semantic' ? '' : mode === 'cluster' ? 'Dreams gathered by cluster' : mode === 'field' ? 'The dream field gathered into one sphere' : 'Dreams arranged through time');
+    }
+    function toggleClusterCollapse() {
+        setLayout(layoutMode === 'cluster' ? 'semantic' : 'cluster');
+    }
+    function toggleFieldSphere() {
+        setLayout(layoutMode === 'field' ? 'cluster' : 'field');
+    }
+    function toggleTemporalSpiral() {
+        setLayout(layoutMode === 'spiral' ? 'semantic' : 'spiral');
     }
 
-    // ---- Data ----
-    async function fetchData() {
-        try { const r = await fetch('/dreams/3d'); return r.ok ? await r.json() : null; }
-        catch(e) { return null; }
+    function updateNodePositions(dt) {
+        const k = 1 - Math.exp(-4.5 * dt);
+        for (const n of graphData.nodes) {
+            const target = layoutTargets[n.id] || { x: n._origX, y: n._origY, z: n._origZ };
+            n.x = lerp(n.x || n.fx || 0, target.x, k);
+            n.y = lerp(n.y || n.fy || 0, target.y, k);
+            n.z = lerp(n.z || n.fz || 0, target.z, k);
+            n.fx = n.x; n.fy = n.y; n.fz = n.z;
+            const group = fishMap[n.id];
+            if (group) {
+                group.position.set(n.x, n.y, n.z);
+                const visibleOpacity = nodeOpacity(n);
+                setGroupOpacity(group, visibleOpacity);
+                const scale = layoutMode === 'field' ? 0.65 : (layoutMode === 'cluster' ? 0.72 : 1);
+                group.scale.setScalar(scale);
+            }
+        }
+        if (graph) {
+            graph.linkVisibility(linkVisibility);
+            graph.linkColor(linkColor);
+            graph.linkWidth(linkWidth);
+            graph.linkOpacity(0.85);
+        }
     }
-    function fixPositions(data) { data.nodes.forEach(n => { n.fx=n.x; n.fy=n.y; n.fz=n.z; }); }
 
-    // ---- Init ----
+    function animate(now) {
+        requestAnimationFrame(animate);
+        const dt = lastFrameT === null ? 1/60 : Math.min(0.1, Math.max(0, (now - lastFrameT) / 1000));
+        lastFrameT = now;
+        rememberPhase += (rememberTarget - rememberPhase) * (1 - Math.exp(-dt / 0.75));
+        if (layoutMode !== 'semantic') computeLayoutTargets(layoutMode);
+        updateNodePositions(dt);
+        updateRipples(now);
+        if (graph && !playing && !userInteracted && layoutMode === 'semantic') {
+            angle += 0.12;
+            const d = 760;
+            graph.cameraPosition({ x: d*Math.sin(angle*Math.PI/180), z: d*Math.cos(angle*Math.PI/180), y: 90 });
+        }
+    }
+
+    function setRememberTarget(active) {
+        if (active && isImpactScope && !pastData && !pastFetchPending) {
+            toast('The past is loading...', 1800);
+            loadPastDreams();
+        }
+        rememberTarget = active && isImpactScope ? 1 : 0;
+    }
+
+    function focusNode(node, emitRipple = true, moveCamera = false) {
+        if (!graph || !node) return;
+        onInteraction();
+        if (moveCamera) {
+            const ids = (node.eventNeighbors || node.neighbors || []).slice(0, 16);
+            const neighbors = ids.map(id => nodeMap.get(Number(id))).filter(Boolean);
+            const pts = [node, ...neighbors];
+            const cx = pts.reduce((s, n) => s + (n.x || 0), 0) / pts.length;
+            const cy = pts.reduce((s, n) => s + (n.y || 0), 0) / pts.length;
+            const cz = pts.reduce((s, n) => s + (n.z || 0), 0) / pts.length;
+            const maxR = Math.max(120, ...pts.map(n => Math.hypot((n.x||0)-cx, (n.y||0)-cy, (n.z||0)-cz)));
+            graph.cameraPosition({ x: cx + maxR * 1.8, y: cy + maxR * 0.9, z: cz + maxR * 1.8 }, { x: cx, y: cy, z: cz }, 1600);
+        }
+        styleFish(node.id, '#ffffff', node.event_id === pastEvent ? 0.45 : 1, 1.9);
+        if (node.clusterLabel && node.event_id !== pastEvent) annotation('Your dream gathered with ' + node.clusterLabel);
+        if (emitRipple) triggerRipple(node, node.event_id === pastEvent ? 0.45 : 1);
+    }
+
+    async function loadPastDreams() {
+        if (!isImpactScope || pastData || pastFetchPending) return;
+        pastFetchPending = true;
+        const data = await fetchEventData(pastEvent);
+        pastFetchPending = false;
+        if (!data) { toast('The past is still loading...', 1600); return; }
+        pastData = data;
+        const rebuilt = buildGraphData();
+        graph.graphData(rebuilt);
+        computeLayoutTargets(layoutMode);
+    }
+
+    async function refreshCurrentData() {
+        const fresh = await fetchEventData(scopeEvent);
+        if (!fresh) return;
+        currentData = fresh;
+        const rebuilt = buildGraphData();
+        graph.graphData(rebuilt);
+        computeLayoutTargets(layoutMode);
+        dreamCountEl.textContent = currentData.total || currentData.nodes.length;
+        updateLegend(currentData.clusters || []);
+    }
+
     async function init() {
-        const data = await fetchData();
-        if (!data || data.total === 0) { setTimeout(init, 3000); return; }
-
-        graphData = data;
-        fixPositions(graphData);
-        buildTimelineMap();
-        dreamCountEl.textContent = graphData.total;
-        updateLegend(graphData.clusters || []);
+        const data = await fetchEventData(scopeEvent);
+        if (!data) { setTimeout(init, 2500); return; }
+        currentData = data;
+        graphData = buildGraphData();
+        computeLayoutTargets('semantic');
+        dreamCountEl.textContent = currentData.total || currentData.nodes.length;
+        updateLegend(currentData.clusters || []);
 
         graph = ForceGraph3D()(container)
             .graphData(graphData)
-            .nodeThreeObject(createFish)
+            .nodeThreeObject(createDreamObject)
             .nodeLabel(nodeLabel)
-            .linkColor(defaultLinkColor)
-            .linkWidth(defaultLinkWidth)
+            .linkVisibility(linkVisibility)
+            .linkColor(linkColor)
+            .linkWidth(linkWidth)
+            .linkOpacity(0.85)
             .linkDirectionalParticles(0)
             .backgroundColor('#050a12')
             .showNavInfo(false)
             .warmupTicks(0).cooldownTicks(0)
-            .onNodeClick(node => { if (playing) stopPlay(); if (selectedCluster !== null) clearClusterSelection(); showPanel(node); })
+            .onNodeClick(node => {
+                if (node.event_id === pastEvent && rememberPhase < 0.15) return;
+                if (playing) stopPlay();
+                if (selectedCluster !== null) clearClusterSelection();
+                showPanel(node);
+                focusNode(node, true, false);
+            })
             .enableNodeDrag(false);
 
+        addStarfield(graph.scene());
+        initRipples(graph.scene());
         container.addEventListener('mousedown', onInteraction);
-        container.addEventListener('touchstart', onInteraction);
+        container.addEventListener('touchstart', onInteraction, { passive: true });
         container.addEventListener('wheel', onInteraction);
         loadingEl.classList.add('hidden');
-        rotate();
+        requestAnimationFrame(animate);
+        if (isImpactScope) loadPastDreams();
 
-        // Deep-link: ?dream=<id> focuses camera on that dream + opens its panel
-        const params = new URLSearchParams(location.search);
+        window.dispatchEvent(new CustomEvent('dreamworld:ready', { detail: { graphData, graph } }));
+
         const deepDream = params.get('dream');
         if (deepDream) {
-            const target = graphData.nodes.find(n => String(n.id) === deepDream);
-            if (target) {
-                onInteraction();  // stop auto-rotation
-                setTimeout(() => {
-                    showPanel(target);
-                    // Keep cluster color; distinguish via size + pulsing
-                    styleFish(target.id, target.color, 1.0, 2.4);
-                    graph.cameraPosition(
-                        { x: target.fx + 180, y: target.fy + 120, z: target.fz + 180 },
-                        { x: target.fx, y: target.fy, z: target.fz },
-                        1800
-                    );
-                    // Gentle pulse so the highlighted fish remains findable
-                    const fish = fishMap[target.id];
-                    if (fish) {
-                        const t0 = performance.now();
-                        (function pulse() {
-                            const f = fishMap[target.id];
-                            if (!f) return;  // fish removed
-                            const dt = (performance.now() - t0) / 1000;
-                            const s = 2.4 + Math.sin(dt * 2.2) * 0.35;
-                            f.scale.setScalar(s);
-                            requestAnimationFrame(pulse);
-                        })();
-                    }
-                }, 500);
-            }
+            const tryFocus = () => {
+                const target = nodeMap.get(Number(deepDream));
+                if (target) { showPanel(target); focusNode(target, true, true); return true; }
+                return false;
+            };
+            setTimeout(() => { if (!tryFocus()) setTimeout(tryFocus, 1200); }, 600);
         }
-
-        setInterval(async () => {
-            if (playing) return;
-            const fresh = await fetchData();
-            if (!fresh || fresh.total === graphData.total) return;
-            graphData = fresh;
-            fixPositions(graphData);
-            buildTimelineMap();
-            graph.graphData(graphData);
-            dreamCountEl.textContent = graphData.total;
-            updateLegend(graphData.clusters || []);
-        }, 15000);
+        setInterval(() => { if (!playing) refreshCurrentData(); }, 15000);
     }
 
-    window._dw = { togglePlay, closePanel };
+    window._dw = {
+        togglePlay,
+        closePanel,
+        fishMap,
+        graphData: () => graphData,
+        setRememberTarget,
+        triggerFieldRipple,
+        toggleClusterCollapse,
+        toggleFieldSphere,
+        toggleTemporalSpiral,
+        hasCustomLayout: () => layoutMode !== 'semantic',
+        cameraPosition: () => graph && graph.cameraPosition ? graph.cameraPosition() : null,
+        selectDream: (id, opts = {}) => {
+            const node = nodeMap.get(Number(id));
+            if (!node) return false;
+            showPanel(node);
+            focusNode(node, opts.emitRipple !== false, !!opts.moveCamera);
+            return true;
+        },
+        rippleState: () => ripplePool.map(r => ({
+            active: r.active,
+            edges: (r.edges || []).map(e => ({ distance: e.distance, targetId: e.targetId })),
+            visibleCrescents: r.crescents.filter(c => c.visible).length,
+            visibleTrigons: r.trigons.filter(t => t.visible).length,
+            visibleRings: r.rings.filter(ring => ring.visible).length
+        })),
+    };
     init();
 })();
 </script>
+
+<!-- v5 — webcam-driven gesture detection for the dream cloud.
+     Loads only when not disabled via ?gestures=off. 100% client-side: no
+     video, no images, no biometric data leaves the browser. -->
+<style>
+  /* Camera consent modal */
+  .gx-overlay { position: fixed; inset: 0; background: rgba(5,10,18,0.85); z-index: 200; display: none; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(6px); }
+  .gx-overlay.shown { display: flex; }
+  .gx-modal { max-width: 460px; background: #0a1322; border: 1px solid #1a2a3a; border-radius: 12px; padding: 28px 28px 24px; color: #c8dff0; font-family: 'Inter', sans-serif; font-weight: 300; line-height: 1.55; box-shadow: 0 12px 36px rgba(0,0,0,0.5); }
+  .gx-modal h2 { font-size: 16px; color: #7aa8c8; letter-spacing: 0.08em; text-transform: uppercase; margin: 0 0 14px; font-weight: 300; }
+  .gx-modal p { font-size: 13px; margin: 0 0 12px; }
+  .gx-modal p.muted { color: #5a7a99; font-size: 11px; font-style: italic; }
+  .gx-modal ul { font-size: 12px; color: #8ba4c4; padding-left: 18px; margin: 8px 0 14px; line-height: 1.7; }
+  .gx-actions { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+  .gx-btn { background: none; border: 1px solid #7aa8c8; color: #7aa8c8; font-family: inherit; font-size: 12px; letter-spacing: 0.06em; padding: 9px 18px; border-radius: 6px; cursor: pointer; transition: background .2s; }
+  .gx-btn:hover { background: rgba(122,168,200,0.12); }
+  .gx-btn.muted { border-color: #2a4a5a; color: #5a7a99; }
+  .gx-btn.muted:hover { background: rgba(90,122,153,0.08); color: #8ba4c4; }
+  /* Camera-active indicator dot */
+  .gx-indicator { position: fixed; top: 56px; right: 16px; z-index: 25; display: none; align-items: center; gap: 6px; padding: 5px 10px; background: rgba(5,10,18,0.85); border: 1px solid #2a4a5a; border-radius: 12px; font-size: 10px; color: #5a7a99; letter-spacing: 0.06em; cursor: pointer; }
+  .gx-indicator.shown { display: flex; }
+  .gx-indicator-dot { width: 6px; height: 6px; border-radius: 50%; background: #6ee79a; box-shadow: 0 0 6px rgba(110,231,154,0.7); animation: gxpulse 1.6s ease-in-out infinite; }
+  .gx-indicator:hover { color: #c8dff0; border-color: #7aa8c8; }
+  @keyframes gxpulse { 0%,100% { opacity: 0.55; } 50% { opacity: 1; } }
+  /* Hidden camera feed used by MediaPipe — never displayed but must remain
+     in the DOM so video frames are available to the detector. */
+  #gx-video { position: fixed; left: -9999px; top: -9999px; width: 320px; height: 240px; }
+  /* Tiny "gestures off" toggle for testing */
+  .gx-status { position: fixed; bottom: 16px; right: 16px; z-index: 10; padding: 6px 10px; background: rgba(5,10,18,0.85); border: 1px solid #1a2a3a; border-radius: 12px; font-size: 9px; color: #3a5a6a; letter-spacing: 0.06em; pointer-events: auto; cursor: pointer; }
+  .gx-debug-panel { position: fixed; left: 14px; bottom: 14px; z-index: 30; width: min(340px, calc(100vw - 28px)); padding: 12px; background: rgba(5,10,18,0.9); border: 1px solid rgba(122,168,200,0.38); border-radius: 8px; color: #c8dff0; font-family: 'Inter', sans-serif; box-shadow: 0 12px 32px rgba(0,0,0,0.4); backdrop-filter: blur(8px); }
+  .gx-debug-panel[hidden] { display: none; }
+  .gx-debug-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 9px; color: #7aa8c8; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; }
+  .gx-debug-state { color: #5a7a99; text-align: right; }
+  .gx-debug-grid { display: grid; gap: 7px; }
+  .gx-debug-row { display: grid; grid-template-columns: 94px 1fr 42px; align-items: center; gap: 8px; font-size: 10px; color: #8ba4c4; }
+  .gx-debug-meter { position: relative; height: 7px; overflow: hidden; border-radius: 999px; background: rgba(122,168,200,0.13); }
+  .gx-debug-fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0%; border-radius: inherit; background: linear-gradient(90deg, #4fc3f7, #6ee79a); transition: width 90ms linear; }
+  .gx-debug-row.active { color: #f4fbff; }
+  .gx-debug-row.active .gx-debug-fill { background: linear-gradient(90deg, #f7c35b, #6ee79a); box-shadow: 0 0 12px rgba(110,231,154,0.52); }
+  .gx-debug-value { font-variant-numeric: tabular-nums; text-align: right; color: #c8dff0; }
+  .gx-debug-log { margin-top: 9px; padding-top: 8px; border-top: 1px solid rgba(122,168,200,0.16); display: grid; gap: 4px; color: #5a7a99; font-size: 9px; line-height: 1.35; }
+  .gx-debug-log div:first-child { color: #c8dff0; }
+  @media (max-width: 560px) {
+    .gx-debug-panel { left: 10px; right: 10px; bottom: 10px; width: auto; padding: 10px; }
+    .gx-debug-row { grid-template-columns: 82px 1fr 38px; gap: 6px; }
+    .gx-status { right: 10px; bottom: 154px; }
+  }
+</style>
+
+<div class="gx-overlay" id="gx-overlay" role="dialog" aria-label="Webcam permission">
+  <div class="gx-modal">
+    <h2>The dreamworld can listen to your hands</h2>
+    <p>This page can react to your gestures. Palms together at your heart remembers the past dreams while you hold it. A thumb-to-index pinch gathers dreams by cluster; thumb-to-middle gathers the whole field. A gentle open-palm sweep shifts the field through time, and two hands meeting fingertip-to-fingertip sends a ripple through the dreams.</p>
+    <p>The detection runs entirely in your browser:</p>
+    <ul>
+      <li>No video, no images, no biometric data leaves your computer.</li>
+      <li>Nothing is recorded — every frame is forgotten as the next arrives.</li>
+      <li>You can turn the camera off at any time. The dreamworld still works without it.</li>
+    </ul>
+    <p class="muted">A green dot near the top-right shows when the camera is on.</p>
+    <div class="gx-actions">
+      <button class="gx-btn" id="gx-allow">Allow camera</button>
+      <button class="gx-btn muted" id="gx-skip">Skip — view without gestures</button>
+    </div>
+  </div>
+</div>
+
+<div class="gx-indicator" id="gx-indicator" title="Camera is on (click to stop)" aria-label="Camera is on (click to stop)">
+  <span class="gx-indicator-dot"></span>
+  <span>camera on</span>
+</div>
+
+<video id="gx-video" autoplay muted playsinline></video>
+<div class="gx-status" id="gx-status" hidden>idle</div>
+<div class="gx-debug-panel" id="gx-debug-panel" hidden>
+  <div class="gx-debug-head">
+    <span>V2 Mudra Test</span>
+    <span class="gx-debug-state" id="gx-debug-camera">camera off</span>
+  </div>
+  <div class="gx-debug-grid">
+    <div class="gx-debug-row">
+      <span>hands</span>
+      <div class="gx-debug-meter"><span class="gx-debug-fill" id="gx-debug-hands-fill"></span></div>
+      <span class="gx-debug-value" id="gx-debug-hands">0</span>
+    </div>
+    <div class="gx-debug-row" data-debug-row="anjali">
+      <span>anjali</span>
+      <div class="gx-debug-meter"><span class="gx-debug-fill" id="gx-debug-anjali-fill"></span></div>
+      <span class="gx-debug-value" id="gx-debug-anjali">0%</span>
+    </div>
+    <div class="gx-debug-row" data-debug-row="mudra">
+      <span>index pinch</span>
+      <div class="gx-debug-meter"><span class="gx-debug-fill" id="gx-debug-mudra-fill"></span></div>
+      <span class="gx-debug-value" id="gx-debug-mudra">0%</span>
+    </div>
+    <div class="gx-debug-row" data-debug-row="middleMudra">
+      <span>middle pinch</span>
+      <div class="gx-debug-meter"><span class="gx-debug-fill" id="gx-debug-middleMudra-fill"></span></div>
+      <span class="gx-debug-value" id="gx-debug-middleMudra">0%</span>
+    </div>
+    <div class="gx-debug-row" data-debug-row="hakini">
+      <span>hakini</span>
+      <div class="gx-debug-meter"><span class="gx-debug-fill" id="gx-debug-hakini-fill"></span></div>
+      <span class="gx-debug-value" id="gx-debug-hakini">0%</span>
+    </div>
+    <div class="gx-debug-row" data-debug-row="sweep">
+      <span>sweep</span>
+      <div class="gx-debug-meter"><span class="gx-debug-fill" id="gx-debug-sweep-fill"></span></div>
+      <span class="gx-debug-value" id="gx-debug-sweep">0%</span>
+    </div>
+  </div>
+  <div class="gx-debug-log" id="gx-debug-log">
+    <div>Waiting for camera permission.</div>
+  </div>
+</div>
+
+<script type="module">
+  // v5 gesture pipeline — wires the camera and detector into the dreamworld
+  // layout/ripple controls. Detection stays entirely client-side.
+
+  import * as Camera from '/graph-assets/js/camera-bridge.js?v=camstage-20260528-1227';
+  import { createDetectorState, readGestures } from '/graph-assets/js/mudra-detector.js?v=camstage-20260528-1227';
+
+  const params = new URLSearchParams(location.search);
+  const GESTURES_OFF = params.get('gestures') === 'off';
+  const FORCE_GESTURES_ON = params.get('gestures') === 'on' || params.get('camera') === 'on';
+  const DEBUG_MUDRAS = location.hostname.startsWith('v2.') || params.has('mudraDebug') || params.has('debugMudras');
+
+  const overlayEl   = document.getElementById('gx-overlay');
+  const allowBtn    = document.getElementById('gx-allow');
+  const skipBtn     = document.getElementById('gx-skip');
+  const indicatorEl = document.getElementById('gx-indicator');
+  const videoEl     = document.getElementById('gx-video');
+  const statusEl    = document.getElementById('gx-status');
+  const debugPanelEl = document.getElementById('gx-debug-panel');
+  const debugCameraEl = document.getElementById('gx-debug-camera');
+  const debugLogEl = document.getElementById('gx-debug-log');
+
+  const STORAGE_KEY = 'ssd_gestures_pref'; // 'on' | 'off' | unset
+  const DEBUG_THRESHOLDS = { mudra: 0.68, middleMudra: 0.68, hakini: 0.58, anjali: 0.5, sweep: 0.48 };
+  const debugRows = {};
+  const debugValues = {};
+  const debugFills = {};
+  let debugEvents = [];
+
+  ['mudra', 'middleMudra', 'hakini', 'anjali', 'sweep'].forEach((name) => {
+    debugRows[name] = document.querySelector(`[data-debug-row="${name}"]`);
+    debugValues[name] = document.getElementById(`gx-debug-${name}`);
+    debugFills[name] = document.getElementById(`gx-debug-${name}-fill`);
+  });
+  const debugHandsEl = document.getElementById('gx-debug-hands');
+  const debugHandsFillEl = document.getElementById('gx-debug-hands-fill');
+
+  const setStatus = (txt) => {
+    if (!statusEl) return;
+    statusEl.hidden = !txt;
+    statusEl.textContent = txt || '';
+  };
+  const showGestureEnableChip = () => {
+    if (!statusEl) return;
+    statusEl.title = 'Tap to enable gesture camera';
+    setStatus('gestures off - tap to enable');
+  };
+
+  let detectorState = null;
+  let lastLandmarks = [];
+  let lastIndexPinch = 0;
+  let lastMiddlePinch = 0;
+  let lastHakini = 0;
+  let lastSweep = 0;
+  let lastRemembrance = false;
+
+  // Listen for the dreamworld IIFE's "ready" signal — fires once after
+  // /dreams/3d data has loaded and the force-graph is constructed.
+  let ready = null; // { graphData, graph }
+  window.addEventListener('dreamworld:ready', (e) => { ready = e.detail; }, { once: true });
+
+  function getDreamworldData() {
+    if (ready && ready.graphData) return ready.graphData;
+    const dw = window._dw;
+    if (dw?.graphData) {
+      const graphData = dw.graphData();
+      if (graphData?.nodes?.length) {
+        ready = { graphData };
+        return graphData;
+      }
+    }
+    return null;
+  }
+
+  function rising(value, previous, threshold) {
+    return value >= threshold && previous < threshold;
+  }
+
+  function percent(value) {
+    return Math.max(0, Math.min(100, Math.round((value || 0) * 100)));
+  }
+
+  function logDebugEvent(label) {
+    if (!DEBUG_MUDRAS || !debugLogEl) return;
+    const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    debugEvents = [`${time}  ${label}`, ...debugEvents].slice(0, 5);
+    debugLogEl.innerHTML = debugEvents.map(item => `<div>${item}</div>`).join('');
+  }
+
+  function updateDebugPanel(gestures, hands) {
+    if (!DEBUG_MUDRAS || !debugPanelEl) return;
+    debugPanelEl.hidden = false;
+    const cameraDebug = Camera.debugState?.() || {};
+    if (debugCameraEl) {
+      if (GESTURES_OFF) {
+        debugCameraEl.textContent = 'gestures off';
+      } else if (cameraDebug.stage && cameraDebug.stage !== 'idle') {
+        const track = cameraDebug.tracks?.[0];
+        const video = cameraDebug.video;
+        const trackState = track ? ` ${track.readyState}${track.muted ? ' muted' : ''}` : '';
+        const videoState = video?.width ? ` ${video.width}x${video.height}` : '';
+        const errorState = cameraDebug.error ? ` ${cameraDebug.error}` : '';
+        debugCameraEl.textContent = `${cameraDebug.stage}${trackState}${videoState}${errorState}`;
+      } else {
+        debugCameraEl.textContent = Camera.isActive()
+          ? (hands ? `camera on - ${hands} hand${hands === 1 ? '' : 's'}` : 'camera on - no hands')
+          : 'camera off';
+      }
+    }
+    if (debugHandsEl) debugHandsEl.textContent = String(hands);
+    if (debugHandsFillEl) debugHandsFillEl.style.width = `${Math.min(100, hands * 50)}%`;
+    Object.entries(DEBUG_THRESHOLDS).forEach(([name, threshold]) => {
+      const value = gestures[name] || 0;
+      const pct = percent(value);
+      if (debugValues[name]) debugValues[name].textContent = `${pct}%`;
+      if (debugFills[name]) debugFills[name].style.width = `${pct}%`;
+      debugRows[name]?.classList.toggle('active', value >= threshold);
+    });
+    window._mudraDebug = {
+      gestures: { ...gestures },
+      hands,
+      cameraActive: Camera.isActive(),
+      camera: cameraDebug,
+      thresholds: { ...DEBUG_THRESHOLDS }
+    };
+  }
+
+  // ── Per-frame loop. Always running, even before camera is approved.
+  function frame(now) {
+    requestAnimationFrame(frame);
+    let gestures = { mudra: 0, middleMudra: 0, hakini: 0, anjali: 0, sweep: 0 };
+    if (Camera.isActive() && detectorState) {
+      gestures = readGestures(lastLandmarks, detectorState);
+    }
+    const graphData = getDreamworldData();
+    const hands = lastLandmarks.length;
+    if (!graphData?.nodes?.length) {
+      updateDebugPanel(gestures, hands);
+      return;
+    }
+    const dw = window._dw || {};
+    if (rising(gestures.mudra || 0, lastIndexPinch, DEBUG_THRESHOLDS.mudra)) {
+      dw.toggleClusterCollapse?.();
+      logDebugEvent('index pinch: cluster collapse');
+    }
+    if (rising(gestures.middleMudra || 0, lastMiddlePinch, DEBUG_THRESHOLDS.middleMudra)) {
+      dw.toggleFieldSphere?.();
+      logDebugEvent('middle pinch: field sphere');
+    }
+    if (rising(gestures.sweep || 0, lastSweep, DEBUG_THRESHOLDS.sweep)) {
+      dw.toggleTemporalSpiral?.();
+      logDebugEvent('open-palm sweep: temporal spiral');
+    }
+    if (rising(gestures.hakini || 0, lastHakini, DEBUG_THRESHOLDS.hakini)) {
+      dw.triggerFieldRipple?.();
+      logDebugEvent('hakini: field ripple');
+    }
+
+    const remembering = (gestures.anjali || 0) > DEBUG_THRESHOLDS.anjali;
+    if (remembering !== lastRemembrance) {
+      dw.setRememberTarget?.(remembering);
+      logDebugEvent(remembering ? 'anjali: past dreams visible' : 'anjali released: past dreams fading');
+      lastRemembrance = remembering;
+    }
+
+    lastIndexPinch = gestures.mudra || 0;
+    lastMiddlePinch = gestures.middleMudra || 0;
+    lastHakini = gestures.hakini || 0;
+    lastSweep = gestures.sweep || 0;
+
+    if (Camera.isActive()) {
+      setStatus(`hands ${hands}  ·  index ${(gestures.mudra*100|0)}%  ·  middle ${(gestures.middleMudra*100|0)}%  ·  anjali ${(gestures.anjali*100|0)}%  ·  hakini ${(gestures.hakini*100|0)}%  ·  sweep ${(gestures.sweep*100|0)}%`);
+    }
+    updateDebugPanel(gestures, hands);
+  }
+  requestAnimationFrame(frame);
+
+  // Make the status overlay readable while testing — drop the [hidden]
+  // gate and surface diagnostic state always, in a small chip.
+  if (statusEl) statusEl.style.color = '#5a7a99';
+  if (DEBUG_MUDRAS && debugPanelEl) debugPanelEl.hidden = false;
+
+  // ── Show consent modal on first visit (or honor remembered preference).
+  function showConsent() { overlayEl.classList.add('shown'); }
+  function hideConsent() { overlayEl.classList.remove('shown'); }
+  function requestGestureConsent() {
+    if (GESTURES_OFF) return;
+    localStorage.removeItem(STORAGE_KEY);
+    setStatus('');
+    showConsent();
+  }
+
+  async function startCamera() {
+    if (!Camera.isAvailable()) {
+      console.warn('[v5] camera/MediaPipe not available in this browser — gesture detection disabled');
+      setStatus('camera unavailable');
+      updateDebugPanel({ mudra: 0, middleMudra: 0, hakini: 0, anjali: 0, sweep: 0 }, lastLandmarks.length);
+      return;
+    }
+    detectorState = createDetectorState();
+    try {
+      setStatus('requesting camera');
+      updateDebugPanel({ mudra: 0, middleMudra: 0, hakini: 0, anjali: 0, sweep: 0 }, lastLandmarks.length);
+      await Camera.requestStart({
+        video: videoEl,
+        onLandmarks: (landmarks) => { lastLandmarks = landmarks; },
+        numHands: window.innerWidth < 600 ? 2 : 4,
+      });
+      indicatorEl.classList.add('shown');
+      localStorage.setItem(STORAGE_KEY, 'on');
+      setStatus('camera ready');
+    } catch (err) {
+      console.warn('[v5] camera start failed:', err);
+      setStatus(`camera unavailable - ${err.name || 'error'}`);
+      updateDebugPanel({ mudra: 0, middleMudra: 0, hakini: 0, anjali: 0, sweep: 0 }, lastLandmarks.length);
+      // Don't pester — record off so we don't ask again this session.
+      localStorage.setItem(STORAGE_KEY, 'off');
+    }
+  }
+
+  function stopCamera() {
+    Camera.stop();
+    indicatorEl.classList.remove('shown');
+    showGestureEnableChip();
+  }
+
+  if (GESTURES_OFF) {
+    // Explicit opt-out via URL param. Hide the consent modal entirely.
+  } else {
+    if (FORCE_GESTURES_ON) localStorage.removeItem(STORAGE_KEY);
+    const pref = localStorage.getItem(STORAGE_KEY);
+    if (FORCE_GESTURES_ON) {
+      showConsent();
+    } else if (pref === 'on') {
+      // User previously consented — start straight away (browsers will
+      // re-prompt for camera permission per their own UX, which is correct).
+      startCamera();
+    } else if (pref === 'off') {
+      // User previously declined; keep the page quiet, but expose a small
+      // explicit re-enable path for show-day operators.
+      showGestureEnableChip();
+    } else {
+      showConsent();
+    }
+  }
+
+  allowBtn?.addEventListener('click', async () => {
+    hideConsent();
+    await startCamera();
+  });
+  skipBtn?.addEventListener('click', () => {
+    hideConsent();
+    localStorage.setItem(STORAGE_KEY, 'off');
+    showGestureEnableChip();
+  });
+  statusEl?.addEventListener('click', () => {
+    if (!Camera.isActive()) requestGestureConsent();
+  });
+  indicatorEl?.addEventListener('click', () => {
+    if (Camera.isActive()) {
+      stopCamera();
+      localStorage.setItem(STORAGE_KEY, 'off');
+    }
+  });
+
+  // Stop on tab close — frees the camera for other apps.
+  window.addEventListener('pagehide', () => Camera.stop());
+</script>
+
 </body>
 </html>

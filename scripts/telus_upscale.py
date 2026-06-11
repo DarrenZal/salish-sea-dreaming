@@ -283,6 +283,10 @@ def main() -> int:
     ap.add_argument("--job-name", help="job dir name on pod (default: timestamp+uuid)")
     ap.add_argument("--keep-job-dir", action="store_true",
                     help="don't delete the pod job dir after success")
+    ap.add_argument("--exec-timeout", type=float, default=1800.0,
+                    help="kernel exec timeout in seconds (default 1800 = 30min; "
+                         "bump higher for longer/heavier upscales — e.g. 5400 for "
+                         "20-min 512² source @ x4plus which takes ~45min)")
     args = ap.parse_args()
 
     if not re.match(r"^\d+x\d+$", args.canvas):
@@ -352,7 +356,9 @@ os.environ['TELUS_UPSCALE_FRAMING'] = {args.framing!r}
 exec(open({abs_worker!r}).read())
 """
     # Long timeout: 1 frame at 0.2s × big sweeps could be many minutes.
-    run_on_pod(base_url, token, exec_code, timeout=1800.0, stream_to_stdout=True)
+    # 2026-05-25: 512² Autolume source needs ~45 min for 20-min content at x4plus;
+    # default 1800s (30min) was insufficient. Made configurable via --exec-timeout.
+    run_on_pod(base_url, token, exec_code, timeout=args.exec_timeout, stream_to_stdout=True)
 
     # Check status marker.
     status = pod_get_text(base_url, token, f"{pod_job_dir}/_status.txt") or ""

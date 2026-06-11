@@ -68,6 +68,9 @@ for theme, videos in CATALOG.items():
         print(f"  [pull] {theme}/{label} ({vid})")
         cmd = [
             "yt-dlp",
+            "--extractor-args", "youtube:player_client=android",
+            "--sleep-interval", "3",
+            "--max-sleep-interval", "8",
             "-f", YDL_FMT,
             "--merge-output-format", "mp4",
             "--no-warnings",

@@ -675,10 +675,16 @@ def _read_hakini_bilateral():
 # Main onCook
 # ──────────────────────────────────────────────────────────────────────────────
 def _read_quad_hand_school():
-    """4-hand school trigger: requires 4+ hands present AND at least one
-    pair among them in Hakini-seal proximity. Returns 0..1 strength.
-    Cannot be faked solo — needs two visitors."""
+    """4-hand school trigger. ALSO stores num_hands_seen for HUD."""
     hands = op("/project1/MediaPipe/hands")
+    n_seen = 0
+    if hands is not None and hands.text:
+        try:
+            _data = json.loads(hands.text)
+            n_seen = len(_data.get("gestureResults", {}).get("landmarks", []))
+        except Exception:
+            pass
+    op("/project1/salish_dreamworld").store("num_hands_seen", n_seen)
     if hands is None: return 0.0
     txt = hands.text
     if not txt: return 0.0

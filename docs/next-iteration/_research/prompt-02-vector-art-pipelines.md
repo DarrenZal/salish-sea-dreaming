@@ -2,9 +2,22 @@
 
 **Best tools:** ChatGPT Deep Research, Claude.ai web-research, Gemini Deep Research.
 
-**Decision unblocked:** Training recipe for Austin's first asset batch (October), and the no-train fallback we run for May.
+**Decision unblocked:** Training recipe for Austin's first asset batch (October), AND the **fast style-transfer pipeline for May social-media teasers** (NEW urgency, see Update 2026-05-13 below).
 
 **Deadline:** 2026-05-15 (T+4 days).
+
+---
+
+## Update 2026-05-13 — elevated urgency
+
+Per Prav's email this morning ("we really need to get the Style Transfer into the TD stream diffusion. Ie that cannot look like generic. ... this is the make or break for this version"), style transfer in Austin's register is now production-critical for May, not just an October training exercise. Austin signed the protocols framework May 11 and is compiling a curated Drive folder; until that lands, `austin-reference/` (127 scraped images) is the working source for INTERNAL experiments.
+
+**Specific additions to weight in research:**
+- **Fast no-train style transfer** that lands by EOD Day 5 (Fri May 15) for social-media teasers — img2img with prompt + Austin-portfolio IP-Adapter reference; ControlNet over Austin's existing vectors with low denoise (0.25–0.35); SDXL-Turbo vs Flux Schnell tradeoffs for 5–10s/frame interactive vs 30s/frame quality
+- **Live TD StreamDiffusion register integration** — how to push Austin's color palette / line texture into the live SDTD top layer without OOM on 3090 (24GB total VRAM, ~6–8GB headroom per plan Section 4); IP-Adapter vs textual inversion vs negative prompting
+- **LoRA training on contemporary Indigenous artist portfolios** — any precedents (consented, ethical) for vector-line-art LoRA training in 2025–2026; recommended dataset size + augmentation when training set is 100–200 images; cultural-protocol considerations beyond technical recipe
+
+Add these specifics on top of the original questions below; don't replace them.
 
 ---
 

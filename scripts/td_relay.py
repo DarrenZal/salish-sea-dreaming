@@ -1,23 +1,26 @@
 """
-td_relay.py — runs on TD machine (Windows 3090).
+td_relay_v2.py — runs on TD machine (Windows 3090).
 Polls gallery server for new visitor prompts and photos, sends each via OSC to TouchDesigner.
+NEW: Also controls Resolume layer opacity (auto-fade on prompt arrival).
+     Dual mode: auto (relay controls Resolume) / live (Prav controls via MIDI).
+     Mode toggle: GET http://localhost:7002/mode/auto|live|
 
-Uses HTTP polling (/td/next?after=N) instead of SSE streaming — SSE via
-requests.iter_content() dies silently on Windows after 1-2 events due to
-socket buffering differences.
-
-Singleton via PID file — exits if another instance is already running.
-Run: python td_relay.py
+Based on td_relay.py — original is preserved as rollback.
+Run: python td_relay_v2.py
 """
 import atexit
+from io import BytesIO
 import logging
 import os
 import sys
 import time
+import threading
+from http.server import HTTPServer, BaseHTTPRequestHandler
 from pathlib import Path
 
 import requests
 from pythonosc import udp_client
+from resolume_fade import ResolumeFader
 
 # ---------------------------------------------------------------------------
 # Logging — timestamps in every line
@@ -50,7 +53,7 @@ except Exception:
 # Config
 # ---------------------------------------------------------------------------
 
-GALLERY_URL = os.getenv("GALLERY_URL", "http://37.27.48.12:9000")
+GALLERY_URL = os.getenv("GALLERY_URL", "http://37.27.48.12:9004")
 TD_HOST = os.getenv("TD_HOST", "127.0.0.1")
 TD_PORT = int(os.getenv("TD_PORT", "7000"))
 POLL_INTERVAL = float(os.getenv("POLL_INTERVAL", "2.0"))  # seconds between polls
@@ -63,6 +66,18 @@ SNAP_UPLOAD_EVERY = int(os.getenv("SNAP_UPLOAD_EVERY", "15"))  # polls (~30s)
 # Snap watchdog: if td_snap.jpg hasn't changed in this many seconds, kick snap_runner via MCP
 SNAP_STALE_SECS = int(os.getenv("SNAP_STALE_SECS", "120"))
 TD_MCP_URL = os.getenv("TD_MCP_URL", "http://127.0.0.1:9981/api/td/server/exec")
+
+# Visitor snap: after dispatching a visitor prompt via OSC, wait this long for TD
+# to render it, then push td_snap.jpg to /td/snapshot/visitor/{prompt_id}.
+VISITOR_SNAP_DELAY_SECS = float(os.getenv("VISITOR_SNAP_DELAY_SECS", "15.0"))  # SSD-2026-05-27 visitor-snap-double: bumped 8->15 so StreamDiffusion has time to lock onto the prompt past cross-fade
+VISITOR_SNAP_DELAY_SECS_2 = float(os.getenv("VISITOR_SNAP_DELAY_SECS_2", "25.0"))  # second pass — overrides first if a later/cleaner frame emerges
+VISITOR_GIF_ENABLED = os.getenv("VISITOR_GIF_ENABLED", "1").strip().lower() not in {"0", "false", "no", "off"}
+VISITOR_GIF_DELAY_SECS = float(os.getenv("VISITOR_GIF_DELAY_SECS", str(VISITOR_SNAP_DELAY_SECS)))
+VISITOR_GIF_CAPTURE_SECS = float(os.getenv("VISITOR_GIF_CAPTURE_SECS", "8.0"))
+VISITOR_GIF_SAMPLE_SECS = float(os.getenv("VISITOR_GIF_SAMPLE_SECS", "0.5"))
+VISITOR_GIF_MAX_FRAMES = int(os.getenv("VISITOR_GIF_MAX_FRAMES", "8"))
+VISITOR_GIF_MAX_WIDTH = int(os.getenv("VISITOR_GIF_MAX_WIDTH", "480"))
+VISITOR_GIF_COLORS = int(os.getenv("VISITOR_GIF_COLORS", "96"))
 
 # Style servers — TELUS H200 tried first, local 3090 as fallback
 # TELUS accessed via Jupyter server proxy on port 8765
@@ -117,6 +132,74 @@ log.info(f"OSC target: {TD_HOST}:{TD_PORT}")
 log.info(f"Gallery poll: {GALLERY_URL}/td/next  interval={POLL_INTERVAL}s")
 
 # ---------------------------------------------------------------------------
+# Resolume fade control (v2 addition)
+# ---------------------------------------------------------------------------
+
+RESOLUME_OSC_PORT = int(os.getenv("RESOLUME_OSC_PORT", "7001"))
+RESOLUME_TD_LAYER = int(os.getenv("RESOLUME_TD_LAYER", "5"))   # Prav wired TD to layer 5 (dedicated visitor slot) on 2026-04-21
+RESOLUME_TD_CLIP  = int(os.getenv("RESOLUME_TD_CLIP", "1"))    # Column index of the TD clip on that layer (connect on fade_in)
+FADE_IN_SECS = float(os.getenv("FADE_IN_SECS", "3.0"))          # Prav: gentle fade-in
+FADE_OUT_SECS = float(os.getenv("FADE_OUT_SECS", "3.0"))
+FADE_IN_TARGET = float(os.getenv("FADE_IN_TARGET", "0.7"))      # 2026-04-21 AM: tuned 0.8 -> 0.6 -> 0.7 for blend with ambient
+FADE_OUT_TARGET = float(os.getenv("FADE_OUT_TARGET", "0.0"))    # Layer 5 is dedicated; baseline = 0 = invisible
+PROMPT_DWELL_SECS = float(os.getenv("PROMPT_DWELL_SECS", "30")) # Prav: 30s hold
+MODE_PORT = int(os.getenv("MODE_PORT", "7002"))
+
+fader = ResolumeFader(
+    host="127.0.0.1",
+    port=RESOLUME_OSC_PORT,
+    layer=RESOLUME_TD_LAYER,
+    fade_duration=FADE_IN_SECS,
+    fade_in_target=FADE_IN_TARGET,
+    fade_out_target=FADE_OUT_TARGET,
+    clip_index=RESOLUME_TD_CLIP,
+)
+_mode = "auto"  # "auto" or "live"
+_prompt_arrived_at = 0.0  # wall-clock time of last visitor prompt
+
+log.info(f"Resolume fade: layer={RESOLUME_TD_LAYER} port={RESOLUME_OSC_PORT} mode={_mode}")
+
+# ---------------------------------------------------------------------------
+# Mode toggle HTTP server (v2 addition)
+# ---------------------------------------------------------------------------
+
+class _ModeHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        global _mode, _prompt_arrived_at
+        if self.path == "/mode/auto":
+            _mode = "auto"
+            _prompt_arrived_at = 0.0
+            msg = "auto"
+            log.info("Mode switched to AUTO")
+        elif self.path == "/mode/live":
+            if _mode == "auto":
+                fader.fade_out()  # graceful handoff
+            _mode = "live"
+            _prompt_arrived_at = 0.0
+            msg = "live"
+            log.info("Mode switched to LIVE")
+        elif self.path == "/mode":
+            msg = _mode
+        else:
+            self.send_response(404)
+            self.end_headers()
+            return
+        self.send_response(200)
+        self.send_header("Content-Type", "text/plain")
+        self.end_headers()
+        self.wfile.write(msg.encode())
+
+    def log_message(self, *args):
+        pass  # suppress HTTP request logs
+
+try:
+    _mode_server = HTTPServer(("127.0.0.1", MODE_PORT), _ModeHandler)
+    threading.Thread(target=_mode_server.serve_forever, daemon=True).start()
+    log.info(f"Mode server: http://127.0.0.1:{MODE_PORT}/mode/auto|live")
+except OSError as e:
+    log.warning(f"Mode server failed to start on port {MODE_PORT}: {e} — mode toggle unavailable")
+
+# ---------------------------------------------------------------------------
 # Main polling loop
 # ---------------------------------------------------------------------------
 
@@ -128,6 +211,126 @@ _telus_ok = False  # TELUS proxy not accessible (no jupyter-server-proxy); use l
 _snap_poll_count = 0
 _snap_last_mtime = 0.0
 _snap_watchdog_last_kick = 0.0  # wall-clock time of last watchdog kick
+
+
+def _push_visitor_snapshot(prompt_id: int) -> None:
+    """Upload the current td_snap.jpg tagged with a visitor's prompt_id.
+
+    Called via threading.Timer ~VISITOR_SNAP_DELAY_SECS after we OSC-dispatch
+    that prompt, when TD has had time to render it. The visitor's chat view
+    polls /td/snapshot/visitor/{prompt_id}.jpg to display their frame.
+    """
+    if not SNAP_LOCAL_PATH.exists():
+        log.warning(f"Visitor snap skip — td_snap.jpg missing (prompt_id={prompt_id})")
+        return
+    try:
+        data = SNAP_LOCAL_PATH.read_bytes()
+        r = session.post(
+            f"{GALLERY_URL}/td/snapshot/visitor/{prompt_id}",
+            data=data,
+            headers={"Content-Type": "image/jpeg"},
+            timeout=8,
+        )
+        if r.status_code == 200:
+            log.info(f"Visitor snap pushed: prompt_id={prompt_id} ({len(data)}B)")
+        else:
+            log.warning(f"Visitor snap push returned {r.status_code} for prompt_id={prompt_id}")
+    except Exception as e:
+        log.warning(f"Visitor snap push error (prompt_id={prompt_id}): {e}")
+
+
+def _push_visitor_gif(prompt_id: int) -> None:
+    """Capture a short td_snap.jpg loop and upload it for the dreamworld panel."""
+    if not VISITOR_GIF_ENABLED:
+        return
+    if not SNAP_LOCAL_PATH.exists():
+        log.warning(f"Visitor GIF skip — td_snap.jpg missing (prompt_id={prompt_id})")
+        return
+
+    try:
+        from PIL import Image, ImageOps
+    except Exception as e:
+        log.warning(f"Visitor GIF skip — Pillow unavailable ({e})")
+        return
+
+    frames = []
+    frame_times = []
+    last_mtime = None
+    deadline = time.time() + max(0.5, VISITOR_GIF_CAPTURE_SECS)
+    colors = max(8, min(256, VISITOR_GIF_COLORS))
+
+    while len(frames) < VISITOR_GIF_MAX_FRAMES and time.time() < deadline:
+        try:
+            stat = SNAP_LOCAL_PATH.stat()
+            if stat.st_mtime != last_mtime:
+                raw = SNAP_LOCAL_PATH.read_bytes()
+                img = Image.open(BytesIO(raw))
+                img.load()
+                img = ImageOps.exif_transpose(img).convert("RGB")
+                if VISITOR_GIF_MAX_WIDTH > 0 and img.width > VISITOR_GIF_MAX_WIDTH:
+                    ratio = VISITOR_GIF_MAX_WIDTH / float(img.width)
+                    height = max(1, int(img.height * ratio))
+                    resample = getattr(getattr(Image, "Resampling", Image), "LANCZOS")
+                    img = img.resize((VISITOR_GIF_MAX_WIDTH, height), resample)
+                frames.append(img)
+                frame_times.append(time.time())
+                last_mtime = stat.st_mtime
+        except Exception as e:
+            log.debug(f"Visitor GIF frame skipped (prompt_id={prompt_id}): {e}")
+        time.sleep(max(0.1, VISITOR_GIF_SAMPLE_SECS))
+
+    if not frames:
+        log.warning(f"Visitor GIF skip — no frames captured (prompt_id={prompt_id})")
+        return
+    if len(frames) == 1:
+        frames.append(frames[0].copy())
+        frame_times.append(frame_times[0] + 0.8)
+
+    durations = []
+    for idx, captured_at in enumerate(frame_times):
+        next_at = frame_times[idx + 1] if idx + 1 < len(frame_times) else captured_at + 0.8
+        durations.append(int(max(250, min(1200, (next_at - captured_at) * 1000))))
+
+    try:
+        palette_mode = getattr(
+            getattr(Image, "Palette", Image),
+            "ADAPTIVE",
+            getattr(Image, "ADAPTIVE", 1),
+        )
+        paletted = [
+            frame.convert("P", palette=palette_mode, colors=colors)
+            for frame in frames
+        ]
+        out = BytesIO()
+        paletted[0].save(
+            out,
+            format="GIF",
+            save_all=True,
+            append_images=paletted[1:],
+            duration=durations,
+            loop=0,
+            optimize=True,
+            disposal=2,
+        )
+        data = out.getvalue()
+        r = session.post(
+            f"{GALLERY_URL}/td/animation/visitor/{prompt_id}",
+            data=data,
+            headers={"Content-Type": "image/gif"},
+            timeout=15,
+        )
+        if r.status_code == 200:
+            log.info(f"Visitor GIF pushed: prompt_id={prompt_id} frames={len(frames)} ({len(data)}B)")
+        else:
+            log.warning(f"Visitor GIF push returned {r.status_code} for prompt_id={prompt_id}")
+    except Exception as e:
+        log.warning(f"Visitor GIF push error (prompt_id={prompt_id}): {e}")
+
+
+def _start_timer(delay_secs: float, fn, *args) -> None:
+    timer = threading.Timer(delay_secs, fn, args=args)
+    timer.daemon = True
+    timer.start()
 
 
 def _upload_snapshot() -> None:
@@ -258,8 +461,24 @@ while True:
 
         if prompt is not None and server_seq > last_seq:
             last_seq = server_seq
+            prompt_id = data.get("prompt_id")
             osc.send_message("/salish/prompt/visitor", prompt)
-            log.info(f"-> OSC seq={last_seq}: {prompt[:80]}")
+            log.info(f"-> OSC seq={last_seq} prompt_id={prompt_id}: {prompt[:80]}")
+            # SSD-2026-05-27 visitor-snap-double: schedule TWO uploads.
+            # First at T+15s captures the initial settled render past cross-fade.
+            # Second at T+25s overwrites it if a later, more prompt-aligned frame
+            # has emerged (StreamDiffusion can keep refining for ~20s). The
+            # second upload uses the same prompt_id, so server's _visitor_snapshots
+            # dict naturally overwrites the first entry.
+            if prompt_id is not None:
+                _start_timer(VISITOR_SNAP_DELAY_SECS, _push_visitor_snapshot, prompt_id)
+                _start_timer(VISITOR_SNAP_DELAY_SECS_2, _push_visitor_snapshot, prompt_id)
+                _start_timer(VISITOR_GIF_DELAY_SECS, _push_visitor_gif, prompt_id)
+            # v2: fade in Resolume TD layer on visitor prompt (auto mode only)
+            if _mode == "auto":
+                fader.fade_in()
+                _prompt_arrived_at = time.time()
+                log.info(f"Resolume: fade IN (auto mode, dwell={PROMPT_DWELL_SECS}s)")
         else:
             log.debug(f"poll seq={server_seq} (no change)")
 
@@ -290,6 +509,13 @@ while True:
                 log.info(f"-> OSC photo seq={last_photo_seq} -> {PHOTO_LOCAL_PATH}")
         except Exception as e:
             log.debug(f"Photo poll error (non-fatal): {e}")
+
+        # --- v2: Dwell timeout — fade out after prompt dwell period ---
+        if _mode == "auto" and _prompt_arrived_at > 0:
+            if (time.time() - _prompt_arrived_at) > PROMPT_DWELL_SECS:
+                fader.fade_out()
+                _prompt_arrived_at = 0.0
+                log.info("Resolume: fade OUT (dwell expired)")
 
         # --- Upload TD snapshot every SNAP_UPLOAD_EVERY polls ---
         _snap_poll_count += 1
