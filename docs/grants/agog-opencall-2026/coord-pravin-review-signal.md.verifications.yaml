@@ -1,0 +1,13 @@
+verifications:
+  - claim: "The AGOG application is in final shape; Darren submits tonight; the full final version is at the top of the shared Google doc (link)."
+    location: "Para 1"
+    source:
+      type: file
+      ref: "docs/grants/agog-opencall-2026/application-form-fields.md (final, $200K, gate-clean); Google doc 1Rz0HvflIFA6GpdhthGOzJ6HOud4bwWJJB5ZvXt1_7wc (FINAL version prepended 2026-06-12)."
+      evidence: "The application is finalized this session and the FINAL version was inserted at the top of the shared doc via gws batchUpdate (confirmed). Deadline 2026-06-12 11:59 PM PT per the live Submittable form; Darren submits (operator decision)."
+  - claim: "Open question: name Austin as the Coast Salish co-author or keep general; kept general per Pravin's guidance. Proposal centers the per-place model (local artists + local data at each stop), as in April and May."
+    location: "Para 2"
+    source:
+      type: quote
+      ref: "Pravin's email/message 2026-06-12 ('credit Matt and Austin ... I would not name the Nations ... keep that language general for now'); per-place model in application + agog-strategic-review workflow."
+      evidence: "Pravin authorized crediting Austin but did not designate him THE Coast Salish co-author; the draft keeps that role unnamed and asks Pravin. The per-place co-creation model is the as-built pattern of the two 2026 shows."

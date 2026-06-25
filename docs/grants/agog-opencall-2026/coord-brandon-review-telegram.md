@@ -1,0 +1,3 @@
+Hey Brandon — the AGOG application is in final shape and I'll submit tonight: $200K, with Department of Bioregion as the applicant. The full final version is pinned at the top of our shared Google doc (the FINAL APPLICATION banner): https://docs.google.com/document/d/1Rz0HvflIFA6GpdhthGOzJ6HOud4bwWJJB5ZvXt1_7wc/edit
+
+If you have a few minutes before tonight, would love your eyes on the org facts, the budget, and the bioregional-mapping framing. We went to the full ceiling because the model is custom per place (local artists + local data at each stop), and that's where most of the budget goes. Huge thanks for getting us here. 🙏

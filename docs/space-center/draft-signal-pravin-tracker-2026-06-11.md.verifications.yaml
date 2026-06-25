@@ -1,0 +1,56 @@
+# Verification sidecar for draft-signal-pravin-tracker-2026-06-11.md
+verifications:
+  - claim: "Justin Yang is in TELUS's Data & Trust Office; we met at Indigenomics IMPACT; he was struck by SSD + our use of the TELUS sovereign AI factory; he invited Darren to present in TELUS's bi-weekly AI education series."
+    location: "Item 1 (TELUS)"
+    source:
+      type: quote
+      ref: "Gmail thread quoted by the operator in-session 2026-06-11 — Justin Yang (Technology Architect, Data & Trust Office, TELUS), Jun 1 2026: 'It was a pleasure meeting you and your team at the Indigenomics event ... the use of the TELUS sovereign AI factory ... invite you to join the TELUS AI education series ... We run this bi-weekly.'"
+      evidence: "Direct quotes of Justin's emails provided by the operator; thread is in zaldarren@gmail.com (sender domain telus.com)."
+  - claim: "Darren accepted in principle on Jun 5; Marisa (Justin's colleague) offered June 18 or 25, 2pm ET."
+    location: "Item 1 (TELUS)"
+    source:
+      type: quote
+      ref: "Same Gmail thread (operator-pasted 2026-06-11): Darren's Jun 5 reply ('I'd love to participate in the series and present'); Marisa Generoso (today): 'Are you available June 18th or 25th 2pm eastern time?'"
+      evidence: "Direct quotes from the thread provided by the operator this session."
+  - claim: "AGOG 'Climate Futures + Immersive Media' open call grants $25K–$200K."
+    location: "Item 2 (AGOG)"
+    source:
+      type: url
+      ref: "https://agog.org/opencall2026/"
+      evidence: "AGOG open-call page (fetched 2026-06-11): theme + $25K–$200K range."
+  - claim: "Regenerate Cascadia / Cascadia Department of Bioregion is a US 501(c)(3) fiscal sponsor; Brandon Letsinger is co-founder; he proposed an exhibit tour with the Cascadia landscape groups."
+    location: "Item 2 (AGOG)"
+    source:
+      type: url
+      ref: "https://regeneratecascadia.org/about/project/sponsorship/ ; plus Brandon's email quoted by the operator 2026-06-11 ('work together on ... an exhibit tour with our landscape groups')."
+      evidence: "Web search confirmed the 501(c)3 fiscal-sponsorship status; the landscape-group-tour proposal is Brandon's own words from his email. The TIBC11 capstone + open toolkit are framed as OUR extension (per Pravin's note), not attributed to Brandon."
+  - claim: "Turtle Island Bioregional Congress is in September 2026 (capstone venue)."
+    location: "Item 2 (AGOG)"
+    source:
+      type: url
+      ref: "https://www.tibc11.earth/"
+      evidence: "tibc11.earth: 'September 15-19, 2026', Vernonia, Oregon."
+  - claim: "Darren replied to Brandon tonight, cc'ing Pravin and Natalia; the application is due tomorrow."
+    location: "Item 2 + Natalia paragraph"
+    source:
+      type: message_id
+      ref: "Sent Gmail message 19eba52d30c11e9d (2026-06-11, to brandon@regeneratecascadia.org, cc Ppillay@indigenomics.com + le.natalia@gmail.com)"
+      evidence: "The reply was sent this session and confirmed by the Gmail send tool. AGOG deadline 2026-06-12 11:59 PM PT confirmed from the live Submittable form."
+  - claim: "In the AGOG draft, Coast Salish co-authorship is kept general and consent-governed; nothing about artists/cultural material is locked without sign-off."
+    location: "Item 2 (AGOG)"
+    source:
+      type: file
+      ref: "docs/grants/agog-opencall-2026/application-form-fields.md; ~/.claude/plans/can-you-help-me-groovy-origami.md (Assumption 2)"
+      evidence: "The application keeps the Coast Salish co-author unnamed/unbudgeted pending per-output sign-off, per the operator-approved plan and the per-output consent posture (feedback_austin_consent_trust_floor)."
+  - claim: "Natalia Lebedinskaia has curatorial and institutional experience suited to holding artistic integrity, cultural protocol, and compensation."
+    location: "Natalia paragraph"
+    source:
+      type: file
+      ref: "Pravin's Signal message (operator-pasted 2026-06-11) + docs/space-center/credits-and-licenses-2026-05.md + project CLAUDE.md"
+      evidence: "Pravin's own message states Natalia's 'curatorial experience and work with large institutions and corporations'; credits audit + CLAUDE.md list her curatorial/coordination role. This paraphrases Pravin's stated rationale."
+  - claim: "There is an upcoming TELUS GPU meeting where Salish Sea Dreaming will be discussed."
+    location: "Item 1 (TELUS)"
+    source:
+      type: quote
+      ref: "Pravin's Signal message, operator-pasted 2026-06-11: 'the team is heading into a GPU meeting with Telus where Salish Sea Dreaming will be discussed.'"
+      evidence: "Direct quote from Pravin's message provided by the operator this session."

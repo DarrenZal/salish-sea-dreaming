@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Salish Sea Dreaming: AGOG Open Call 2026</title>
+<style>
+  @page { size: 13.333in 7.5in; margin: 0; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root{
+    --navy:#08111c; --navy2:#0d1b2a; --ink:#dce9ef; --dim:#8fb0bd;
+    --cyan:#69d2e0; --amber:#f1ab3e; --salmon:#e98c86; --green:#5fd6a6;
+    --line:rgba(105,210,224,.22);
+  }
+  html,body{ background:#000; color:var(--ink);
+    font-family:-apple-system,"Helvetica Neue","Segoe UI",Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  .slide{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  .slide{
+    position:relative; width:13.333in; height:7.5in; overflow:hidden;
+    page-break-after:always; background:var(--navy);
+    padding:0.78in 0.92in; display:flex; flex-direction:column;
+    background-image:radial-gradient(120% 90% at 80% 0%, #12283b 0%, var(--navy) 55%, #050b13 100%);
+  }
+  .slide:last-child{ page-break-after:auto; }
+  .kicker{ font-size:11pt; letter-spacing:.28em; text-transform:uppercase; color:var(--cyan); opacity:.8; }
+  h1{ font-size:46pt; font-weight:700; letter-spacing:.06em; line-height:1.04; }
+  h2{ font-size:30pt; font-weight:650; letter-spacing:.01em; line-height:1.1; color:#eaf4f8; }
+  h3{ font-size:15pt; font-weight:650; color:var(--cyan); letter-spacing:.02em; }
+  p,li{ font-size:13.2pt; line-height:1.5; color:var(--ink); }
+  .dim{ color:var(--dim); }
+  .lead{ font-size:19pt; line-height:1.42; color:#eaf4f8; font-weight:450; }
+  .italic{ font-style:italic; }
+  .foot{ position:absolute; left:.92in; right:.92in; bottom:.5in;
+    font-size:9.5pt; letter-spacing:.04em; color:var(--dim);
+    display:flex; justify-content:space-between; border-top:1px solid var(--line); padding-top:9px; }
+  .row{ display:flex; gap:.5in; flex:1; align-items:center; }
+  .col{ flex:1; }
+  .pillars{ display:flex; gap:.42in; margin-top:.28in; }
+  .pill{ flex:1; border:1px solid var(--line); border-radius:12px; padding:18px 18px 20px;
+    background:linear-gradient(180deg, rgba(105,210,224,.06), rgba(105,210,224,0)); }
+  .pill .n{ font-size:12pt; color:var(--amber); letter-spacing:.12em; text-transform:uppercase; }
+  .pill p{ font-size:12pt; margin-top:8px; color:var(--ink); }
+  ul{ list-style:none; }
+  ul li{ position:relative; padding-left:20px; margin:10px 0; }
+  ul li::before{ content:""; position:absolute; left:0; top:.62em; width:7px; height:7px;
+    border-radius:50%; background:var(--cyan); box-shadow:0 0 10px var(--cyan); }
+  .img{ flex:1; height:100%; border-radius:14px; border:1px solid var(--line);
+    background-size:cover; background-position:center; box-shadow:0 8px 40px rgba(0,0,0,.5); }
+  .imgwrap{ flex:1.05; height:4.6in; border-radius:14px; overflow:hidden; border:1px solid var(--line);
+    box-shadow:0 8px 40px rgba(0,0,0,.55); }
+  .imgwrap img{ width:100%; height:100%; object-fit:cover; object-position:center; }
+  .titleSlide{ justify-content:flex-end; align-items:center; text-align:center; }
+  .titleSlide .bgblur{ position:absolute; inset:0; background:url('assets/ssd_theatre.jpg') center/cover;
+    filter:blur(30px) brightness(.5); transform:scale(1.12); }
+  .titleSlide .bg{ position:absolute; inset:0; background:url('assets/ssd_theatre.jpg') center/contain no-repeat;
+    opacity:.97; }
+  .titleSlide .scrim{ position:absolute; inset:0;
+    background:radial-gradient(95% 62% at 50% 50%, rgba(5,11,19,.46) 0%, rgba(5,11,19,.30) 70%, rgba(5,11,19,.5) 100%); }
+  .titleSlide .content{ position:relative; max-width:11in; margin-bottom:0.5in; }
+  .titleSlide .content h1{ margin-left:auto; margin-right:auto; }
+  .titleSlide .content .kicker, .titleSlide .content h1,
+  .titleSlide .content p{ text-shadow:0 2px 26px rgba(0,0,0,.95), 0 1px 6px rgba(0,0,0,.9); }
+  .stat{ display:flex; gap:.5in; margin-top:.3in; }
+  .stat .s{ flex:1; }
+  .stat .big{ font-size:30pt; font-weight:700; color:var(--amber); }
+  .stat .lbl{ font-size:11pt; color:var(--dim); margin-top:4px; }
+  .two{ display:flex; gap:.42in; margin-top:.18in; }
+  .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:14px 36px; margin-top:.18in; }
+  .person b{ color:#eaf4f8; font-weight:650; font-size:12.5pt; }
+  .person span{ color:var(--dim); font-size:11.5pt; }
+  .askbig{ font-size:74pt; font-weight:800; color:var(--amber); letter-spacing:.01em; line-height:1; }
+  .tag{ display:inline-block; border:1px solid var(--line); border-radius:999px; padding:5px 14px;
+    font-size:10.5pt; color:var(--cyan); margin-right:8px; letter-spacing:.03em; }
+  .glow{ color:var(--cyan); }
+  .amber{ color:var(--amber); } .salmon{ color:var(--salmon); } .green{ color:var(--green); }
+</style>
+</head>
+<body>
+
+<!-- 1 TITLE -->
+<section class="slide titleSlide">
+  <div class="bgblur"></div><div class="bg"></div><div class="scrim"></div>
+  <div class="content">
+    <div class="kicker">Climate Futures &nbsp;·&nbsp; Immersive Media</div>
+    <h1 style="margin-top:14px">SALISH SEA<br>DREAMING</h1>
+    <p class="lead italic" style="margin-top:18px; color:#dff0f5">We are the Salish Sea, dreaming itself awake.</p>
+    <p class="dim" style="margin-top:10px; font-size:14pt">An immersive climate installation, and a process of listening to a living sea.</p>
+  </div>
+  <div class="foot"><span>AGOG Open Call 2026</span><span>A project of the Department of Bioregion (US 501c3) · salishseadreaming.art</span></div>
+</section>
+
+<!-- 2 ONE BREATH -->
+<section class="slide">
+  <div class="kicker">The work in one breath</div>
+  <h2 style="margin-top:22px; max-width:10.5in">A living bioregion uses technology to perceive itself. Visitors enter a field of relations, not a message, and many leave moved, and with a local way to stay in relationship with their own watershed.</h2>
+  <div class="pillars">
+    <div class="pill"><div class="n">Generated live</div><p>Species-specific AI models and real-time diffusion, driven by live ecological data. The sea is never the same twice.</p></div>
+    <div class="pill"><div class="n">Co-dreaming</div><p>The work holds aspiration and ecological grief together, and invites visitors to add their own dream to a living archive.</p></div>
+    <div class="pill"><div class="n">Proven in 2026</div><p>Shown publicly twice this year and built to travel: re-deployed to a new venue in under four weeks.</p></div>
+  </div>
+  <div class="foot"><span>Salish Sea Dreaming</span><span>02</span></div>
+</section>
+
+<!-- 3 EXPERIENCE -->
+<section class="slide">
+  <div class="kicker">The experience</div>
+  <div class="row" style="margin-top:16px">
+    <div class="col">
+      <h2>Witnessing is rewarded.</h2>
+      <p style="margin-top:16px">A visitor steps into a darkened, ceremonial space, closer to a meditation room than a screen. Marine life moves across a large projection in a living watercolor language, grounded in live ecological data: tide, lunar phase, and river discharge.</p>
+      <p style="margin-top:12px">The work rewards witnessing rather than input: a visitor becomes a witness to the sea, not a consumer of it, a counter to the attention economy. Where the venue allows, visitors <span class="glow">co-dream</span>, offering a few words for the sea that join a live, semantically clustered, consent-governed archive of everyone's dreams.</p>
+    </div>
+    <div class="imgwrap"><img src="assets/ssd_children.jpg" alt="visitors inside the installation"></div>
+  </div>
+  <div class="foot"><span>Inside the installation, HR MacMillan Space Centre, May 2026</span><span>03</span></div>
+</section>
+
+<!-- 4 CLIMATE STORY -->
+<section class="slide">
+  <div class="kicker">The climate story</div>
+  <h2 style="margin-top:18px">The herring, rendered as sound</h2>
+  <div class="row" style="margin-top:14px">
+    <div class="col">
+      <p>The story is the Salish Sea, told through its keystone: the Pacific herring. Forage fish are the base of a climate-regulating food web, the cascade that feeds salmon, that feeds orca, that feeds the forest through carcass nutrients, that sequesters carbon.</p>
+      <p style="margin-top:10px">Herring are <span class="amber">worth more swimming than landed</span>. Markets cannot see that value; a quota system sees only the fish in the net.</p>
+      <p style="margin-top:10px">Composer Matt Robertson translated seventy-five years of herring catch and spawn-collapse records into an evolving musical score: the history of the herring, rendered as sound.</p>
+      <p class="glow" style="margin-top:12px; font-size:15.5pt; line-height:1.35">The silence at the end is not the end. It is where the dreaming begins.</p>
+    </div>
+    <div class="imgwrap" style="flex:1.08; height:5in; background:#11202f"><img src="assets/ssd_briony_panorama.jpg" style="object-fit:contain" alt="Salish Sea panorama watercolor by Briony Penn"></div>
+  </div>
+  <div class="foot"><span>Watercolor: Briony Penn &nbsp;·&nbsp; grounded in DFO data since 1888</span><span>04</span></div>
+</section>
+
+<!-- 5 PROVEN -->
+<section class="slide">
+  <div class="kicker">Proven, and built to travel</div>
+  <div class="row" style="margin-top:16px">
+    <div class="col" style="flex:.92">
+      <div class="stat" style="margin-top:0">
+        <div class="s"><div class="big">2</div><div class="lbl">public shows in 2026</div></div>
+        <div class="s"><div class="big">3 wks</div><div class="lbl">unattended April run</div></div>
+        <div class="s"><div class="big">8h+</div><div class="lbl">continuous visitor day</div></div>
+      </div>
+      <ul style="margin-top:22px">
+        <li><b>April 2026, Mahon Hall, Salt Spring Island</b> (Digital Ecologies). A three-week installation that ran largely unattended, with automatic recovery if a component failed.</li>
+        <li><b>May 2026, HR MacMillan Space Centre, Vancouver</b> (Indigenomics IMPACT). A re-deployed installation with live visitor co-dreaming.</li>
+      </ul>
+      <p class="dim" style="margin-top:14px">Re-deployed to a new venue in under four weeks. That is what makes a multi-stop community tour low-risk.</p>
+    </div>
+    <div class="imgwrap" style="flex:.95"><img src="assets/ssd_panel_impact.jpg" alt="installation and panel at the Space Centre"></div>
+  </div>
+  <div class="foot"><span>Indigenomics IMPACT, HR MacMillan Space Centre, May 2026</span><span>05</span></div>
+</section>
+
+<!-- 6 LIVING SYSTEM / CONSENT -->
+<section class="slide">
+  <div class="kicker">A living system, governed with care</div>
+  <div class="row" style="margin-top:14px; align-items:center">
+    <div class="col" style="flex:1">
+      <h2 style="font-size:24pt">Technology as perception, not extraction.</h2>
+      <ul style="margin-top:14px">
+        <li>A bioregional knowledge graph links people, concepts, ecosystems, and the threads between them.</li>
+        <li>Gesture sensing runs <span class="glow">entirely in the browser</span>: no video or biometric data ever leaves the visitor's device. Only the words a visitor chooses to offer are kept, and only with consent.</li>
+        <li>Coast Salish visual grammar is authored by the artist under a per-output consent protocol. It is never AI-generated.</li>
+        <li>Indigenous knowledge stays with the communities who hold it. The open toolkit shares only technical scaffolding.</li>
+      </ul>
+    </div>
+    <div class="imgwrap" style="flex:.95; height:5.3in; background:#05080d; align-self:flex-start"><img src="assets/ssd_dreamworld_raw.png" style="object-fit:contain" alt="the dreamworld: a clicked dream shown beside the collective field"></div>
+  </div>
+  <div class="foot"><span>The dreamworld: visitor dreams clustering into shared themes, live at salishseadreaming.art</span><span>06</span></div>
+</section>
+
+<!-- 7 WHAT THE GRANT FUNDS -->
+<section class="slide">
+  <div class="kicker">What this grant funds</div>
+  <h2 style="margin-top:20px; max-width:11in">Not one show on tour. A method for each place to dream itself awake, co-created with local artists and local data.</h2>
+  <div class="two">
+    <div class="col">
+      <ul style="margin-top:6px">
+        <li>At each stop, co-create a place-specific work with local artists and that watershed's own ecological data.</li>
+        <li>Harden the shared technical scaffolding (engine, data-to-sound, dome and large-format pipeline) so each place comes up quickly.</li>
+        <li>Tour the US Salish Sea landscape groups, extending across the border to BC.</li>
+        <li>An in-kind demonstration at the Turtle Island Bioregional Congress (September 2026).</li>
+        <li>Release an open-source technical toolkit so other bioregions can build their own.</li>
+      </ul>
+    </div>
+    <div class="col">
+      <h3>What we hope for</h3>
+      <ul style="margin-top:8px">
+        <li>8 to 10 community installs; 2,000+ visitors.</li>
+        <li>Paid local-artist and local-data co-creation at every stop.</li>
+        <li>A real, local pathway into restoration offered at each stop, with uptake reported rather than promised.</li>
+        <li>The consent-governed dream archive as the living record of each place.</li>
+        <li>At least one other bioregion takes up the open toolkit.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="foot"><span>From feeling to relationship, inside the bioregion the visitor is standing in</span><span>07</span></div>
+</section>
+
+<!-- 8 NETWORK -->
+<section class="slide">
+  <div class="kicker">The network that delivers</div>
+  <h2 style="margin-top:20px">This is a standing bioregional network, not a cold launch.</h2>
+  <div class="row" style="flex:none; margin-top:16px">
+    <div class="col">
+      <p>Distribution runs through <span class="glow">Regenerate Cascadia and the Department of Bioregion</span>, our US 501(c)(3) fiscal partner, and its Landscape Hub Cultivator network of watershed groups across Cascadia.</p>
+      <p style="margin-top:12px">With the <span class="amber">Indigenomics Institute</span> (curatorial framing and sovereign compute), the <span class="amber">HR MacMillan Space Centre</span>, and <span class="amber">MOVE37XR</span> anchoring production.</p>
+    </div>
+    <div class="col">
+      <div class="pill" style="border-color:rgba(241,171,62,.4)">
+        <div class="n">Proof: it has toured before</div>
+        <p style="font-size:12.5pt">The 2023 Bioregional Activation Tour reached <b class="amber">14 communities in 30 days</b>, organized with 80+ people on both sides of the border, reaching <b class="amber">1,000+ people on under $80,000</b>. Many of those organizers now run the landscape groups that will host this tour.</p>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>Relationships at the speed of trust</span><span>08</span></div>
+</section>
+
+<!-- 9 TEAM -->
+<section class="slide">
+  <div class="kicker">Team</div>
+  <h2 style="margin-top:18px">Artists, technologists, and a bioregional movement.</h2>
+  <div class="grid2">
+    <div class="person"><b>Pravin Pillay</b> <span>· MOVE37XR · Creative Director, immersive production</span></div>
+    <div class="person"><b>Darren Zal</b> <span>· Technical lead, bioregional knowledge graph (KOI)</span></div>
+    <div class="person"><b>Carol Anne Hilton</b> <span>· Indigenomics Institute · framework + sovereign compute</span></div>
+    <div class="person"><b>Coast Salish cultural co-author</b> <span>· per-output consent protocol</span></div>
+    <div class="person"><b>Eve Marenghi</b> <span>· ecological-data sonification</span></div>
+    <div class="person"><b>Natalia Lebedinskaia</b> <span>· curatorial framing, proposal + budget</span></div>
+    <div class="person"><b>Brandon Letsinger</b> <span>· Department of Bioregion · fiscal sponsor + tour</span></div>
+    <div class="person"><b>Matt Robertson · Austin Harry (InDigital)</b> <span>· data-poetic score + interaction design</span></div>
+  </div>
+  <p class="dim" style="margin-top:18px">With contributions from Moonfish Media (underwater cinematography), David Denning (bioregional photography), and SFU's MetaCreation Lab (generative-model guidance).</p>
+  <div class="foot"><span>Salish Sea Dreaming</span><span>09</span></div>
+</section>
+
+<!-- 10 ASK -->
+<section class="slide">
+  <div class="kicker">The ask</div>
+  <div style="flex:1; display:flex; flex-direction:column; justify-content:center">
+    <div class="askbig">$150,000</div>
+    <p class="lead" style="margin-top:18px; max-width:9.5in">To bring Salish Sea Dreaming to Cascadia's communities: a method for each place to dream its own waters awake, and a door from feeling toward the restoration work already underway there.</p>
+    <div style="margin-top:26px">
+      <span class="tag">Applicant: Department of Bioregion (US 501c3)</span>
+      <span class="tag">EIN 85-4402939</span>
+      <span class="tag glow">Experience it live: salishseadreaming.art</span>
+    </div>
+  </div>
+  <div class="foot"><span>We are the Salish Sea, dreaming itself awake.</span><span>10</span></div>
+</section>
+
+</body>
+</html>

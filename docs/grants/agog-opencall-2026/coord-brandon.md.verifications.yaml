@@ -1,0 +1,44 @@
+# Verification sidecar for coord-brandon.md
+verifications:
+  - claim: "AGOG open call is 'Climate Futures + Immersive Media'; grants $25K–$200K; due June 12, 11:59pm PT; applicants apply through an organization, not as individuals; funds must go to a US-registered entity."
+    location: "Body paragraphs 1–2"
+    source:
+      type: url
+      ref: "https://agog.org/opencall2026/"
+      evidence: "AGOG open-call page + FAQ (fetched 2026-06-11): theme, $25K–$200K range, June 12 2026 11:59 PM PT deadline, 'Applicants must apply through an entity', 'the entity receiving funding must be based in the US.'"
+  - claim: "Regenerate Cascadia / Department of Bioregion is a US 501(c)(3) fiscal-sponsorship organization (the eligible entity)."
+    location: "Body paragraph 2 + ask #1"
+    source:
+      type: url
+      ref: "https://regeneratecascadia.org/about/project/sponsorship/ ; https://cascadiabioregion.org/"
+      evidence: "Web search 2026-06-11: 'Regenerate Cascadia and the Department of Bioregion is a fiscal sponsorship 501(c)3 organization.' Brandon is co-founder per TIBC11 organizer listing."
+  - claim: "Brandon emailed Darren about this grant and proposed working together on an exhibit tour with the landscape groups."
+    location: "Greeting / framing"
+    source:
+      type: quote
+      ref: "Brandon Letsinger email to Darren (quoted by the user in-session 2026-06-11): 'have you seen this grant? ... your project is a perfect fit and you should apply. I was curious if you'd like to work together on ... an exhibit tour with our landscape groups ...'"
+      evidence: "Direct quote of Brandon's email provided by the operator in this session."
+  - claim: "~$200K milestoned budget; the framing is a touring climate installation through Cascadia landscape groups + a Bioregional Congress capstone + an open toolkit."
+    location: "Body + ask #5"
+    source:
+      type: file
+      ref: "docs/grants/agog-opencall-2026/application-draft.md; budget.md; ~/.claude/plans/can-you-help-me-groovy-origami.md"
+      evidence: "Matches the operator-approved plan (locked decisions: SSD installation + Cascadia tour; ~$200K milestoned) and the drafted application/budget."
+  - claim: "Fallback options exist (leaner submit by the org, ask AGOG about a short extension, or aim for the next cycle)."
+    location: "Final substantive paragraph"
+    source:
+      type: file
+      ref: "~/.claude/plans/can-you-help-me-groovy-origami.md (Risks & Mitigations — fallback ladder)"
+      evidence: "Fallback ladder is documented in the approved plan; presented to Brandon as options, not commitments."
+  - claim: "Natalia Lebedinskaia is the project's curatorial and budget lead (cc'd, alongside Pravin)."
+    location: "Body — 'Natalia Lebedinskaia — our curatorial and budget lead'"
+    source:
+      type: file
+      ref: "docs/space-center/credits-and-licenses-2026-05.md (Natalia: SSD-side logistics + coordination); project CLAUDE.md (team table: Natalia, panel moderation / contextual framing); Pravin's reply (operator-quoted 2026-06-11: 'a great proposal writer and very good at developing budgets')."
+      evidence: "Natalia's curatorial/budget-lead role is supported by the credits audit + CLAUDE.md team table and Pravin's in-session recommendation that she lead the budget. Replicated here so the Brandon message is gate-complete."
+  - claim: "The Bioregional Congress capstone + open toolkit are extensions per Pravin's note (not Brandon's suggestion); Brandon's own proposal was the landscape-group exhibit tour."
+    location: "Body paragraph 2 — 'building on your idea ... which we'd extend (per Pravin's note) ...'"
+    source:
+      type: quote
+      ref: "Brandon's email (landscape-group tour) + Pravin's reply (TIBC11 install + replicate in other bioregions), both quoted by the operator in-session 2026-06-11; see also plan Context."
+      evidence: "Attribution corrected after adversarial review: Brandon proposed only the landscape-group exhibit tour; the Congress capstone and cross-bioregion toolkit came from Pravin's reply + the team's locked plan. The message now attributes them accordingly."

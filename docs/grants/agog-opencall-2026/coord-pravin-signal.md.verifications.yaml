@@ -1,0 +1,20 @@
+# Verification sidecar for coord-pravin-signal.md (Signal DM to Pravin)
+verifications:
+  - claim: "Applying for the AGOG immersive-media climate grant tonight, due 11:59 PT."
+    location: "Opening"
+    source:
+      type: url
+      ref: "https://agog.org/opencall2026/ + live Submittable form ('Ends on Fri, Jun 12, 2026 11:59 PM', 'Applications close June 12, 2026 at 11:59 PM PT')"
+      evidence: "Deadline confirmed from the live Submittable form this session; AGOG Open Call 2026 = Climate Futures + Immersive Media."
+  - claim: "Funding a Cascadia touring version of Salish Sea Dreaming through Brandon's Department of Bioregion (US 501c3)."
+    location: "Opening"
+    source:
+      type: file
+      ref: "DOB Form 990 (EIN 85-4402939, 501(c)(3)); docs/grants/agog-opencall-2026/application-form-fields.md"
+      evidence: "DOB is the confirmed US 501(c)(3) fiscal applicant (990 received 2026-06-12); the funded scope is the Cascadia landscape-group tour per the application."
+  - claim: "Asking Pravin for May Space Centre show photos/video; and whether to name specific First Nations (Lummi, Musqueam, Squamish) as invited partners + credit Austin and Matt on the prototype, vs keep general."
+    location: "Asks 1-2"
+    source:
+      type: conversation_ref
+      ref: "Operator decision 2026-06-12 (default general, hold naming for Pravin/Natalia); Brandon's 'BDRAFT: 125k' tab names those Nations + credits Austin Harry (InDigital) + Matt Robertson; May 27-28 2026 IMPACT show at HR MacMillan Space Centre per docs/space-center/debrief-impact-2026.md."
+      evidence: "The naming list + prototype credits come from Brandon's draft; the show is the documented May 2026 IMPACT installation. The message asks Pravin to confirm naming (consent gate) and for owned show media (work sample)."

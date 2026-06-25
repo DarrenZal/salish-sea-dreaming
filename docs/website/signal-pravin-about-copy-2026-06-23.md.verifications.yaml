@@ -1,0 +1,27 @@
+verifications:
+  # The pasted body copy is the verified "about" text; each of its claims is mapped 1:1 in the
+  # companion sidecar. Sourced ultimately to the adversarially-reviewed AGOG form-fields.
+  - claim: "The full 'About Salish Sea Dreaming' body copy (installation description, score from 75 years of herring records, co-dreaming, witnessing-not-performance, phone co-dream + consent-governed archive, restoration door)."
+    location: "pasted copy block"
+    source:
+      type: file
+      ref: "/Users/darrenzal/projects/salish-sea-dreaming/docs/website/about-salish-sea-dreaming.md.verifications.yaml"
+      evidence: "Every claim in the pasted block is itemized and sourced in this companion sidecar (all tracing to the vetted AGOG application-form-fields.md). The block passed an adversarial skeptic pass (SHIP, 8/8 checks) on 2026-06-23."
+  - claim: "Credits: MOVE37XR / Pravin Pillay (Creative Director); score by Matt Robertson; Coast Salish design by Austin Harry (InDigital Design); Carol Anne Hilton / Indigenomics Institute; Darren Zal (technical lead); Moonfish Media, David Denning, SFU MetaCreation Lab."
+    location: "Credits line"
+    source:
+      type: file
+      ref: "/Users/darrenzal/projects/salish-sea-dreaming/docs/grants/agog-opencall-2026/application-form-fields.md"
+      evidence: "Matches the vetted team list + Pravin's locked naming guidance (2026-06-12): credit Austin + Matt; acknowledge Moonfish/Denning/MetaCreation; First Nations general."
+  - claim: "Eve Marenghi is the data/sonification contributor who could be added to the credits."
+    location: "flag #1"
+    source:
+      type: file
+      ref: "/Users/darrenzal/projects/salish-sea-dreaming/docs/grants/agog-opencall-2026/application-form-fields.md"
+      evidence: "AGOG team list line 36: 'Eve Marenghi: ecological-data sonification source (preparing herring, tide, lunar, and river data for sound).'"
+  - claim: "Austin's credit and any Coast Salish description need his sign-off; there is an INDIGITAL vs 'InDigital Design' spelling discrepancy to confirm."
+    location: "flag #2"
+    source:
+      type: conversation_ref
+      ref: "Memory feedback_austin_consent_trust_floor.md (public-framing language is in scope for Austin's per-output consent) + project CLAUDE.md uses 'INDIGITAL' while the AGOG grant uses 'InDigital Design'."
+      evidence: "Per-output consent protocol covers public-facing language about the Coast Salish layer; the two source docs spell the studio differently, so the canonical form must be confirmed with Austin."

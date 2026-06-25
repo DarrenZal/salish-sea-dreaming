@@ -1,0 +1,61 @@
+verifications:
+  - claim: "Tagline: 'We are the Salish Sea, dreaming itself awake.'"
+    location: "epigraph"
+    source:
+      type: file
+      ref: "/Users/darrenzal/projects/salish-sea-dreaming/docs/grants/agog-opencall-2026/application-form-fields.md"
+      evidence: "AGOG overview (vetted): 'As the project's public site puts it: we are the Salish Sea, dreaming itself awake.' Also the epigraph of the project CLAUDE.md."
+  - claim: "Immersive, real-time AI installation in which the Salish Sea bioregion uses technology to perceive itself."
+    location: "¶1"
+    source:
+      type: file
+      ref: "docs/grants/agog-opencall-2026/application-form-fields.md"
+      evidence: "Vetted overview: 'an immersive, real-time generative installation in which a living bioregion, the Salish Sea, uses technology to perceive itself.'"
+  - claim: "Darkened space; herring, salmon, orca in a living watercolor language; generated live and never repeating; grounded in ecological data (tide, lunar phase, river flow)."
+    location: "¶1"
+    source:
+      type: file
+      ref: "docs/grants/agog-opencall-2026/application-form-fields.md"
+      evidence: "Vetted 'participant perspective' + overview: darkened ceremonial space; marine life (herring, salmon, orca) in a living watercolor language; 'generated live and never repeating'; 'grounded in real ecological data: tide, lunar phase, and river discharge.'"
+  - claim: "Musical score composed from seventy-five years of Pacific herring records."
+    location: "¶1"
+    source:
+      type: file
+      ref: "docs/grants/agog-opencall-2026/application-form-fields.md"
+      evidence: "Vetted climate section: 'Composer Matt Robertson translated seventy-five years of herring catch and spawn-collapse records into an evolving ten-minute musical score.' (This is the real score; it replaced the previously-fabricated 'Map of Silence' audio caught in AGOG review.)"
+  - claim: "Co-dreaming holds the sea's beauty and its grief together; the work rewards witnessing rather than performance; nothing to win, no screen to swipe; the longer you stay, the more you settle in."
+    location: "¶2"
+    source:
+      type: file
+      ref: "docs/grants/agog-opencall-2026/application-form-fields.md"
+      evidence: "Vetted: 'built on co-dreaming, holding aspiration and ecological grief together'; 'The work rewards witnessing rather than performance. There is nothing to win and no screen to swipe; the longer a visitor stays, the more they settle into witnessing the sea.' NOTE: this is experiential, NOT a dwell-sensing mechanic (there is no room camera) — the as-built copy was deliberately pulled to 'witnessing is rewarded' away from the unbuilt 'stillness reveals hidden layers' mechanic."
+  - claim: "Visitors co-dream on their own phone (a gesture and a few words) and their dream joins a consent-governed archive."
+    location: "¶2"
+    source:
+      type: file
+      ref: "docs/grants/agog-opencall-2026/application-form-fields.md"
+      evidence: "Vetted immersive-format + perspective: 'visitors shape a shared dream-field through hand gestures sensed entirely on their own phone (no headset, no room camera), and offer a few words that join a live, consent-governed archive.' 'shared only with your consent' = the consent-governed archive."
+  - claim: "Opens a door toward restoration already underway in our own watersheds."
+    location: "¶3"
+    source:
+      type: file
+      ref: "docs/grants/agog-opencall-2026/application-form-fields.md"
+      evidence: "Vetted: 'offers, to those who want it, a door into the restoration work already happening in their own watershed.'"
+  - claim: "Credits: MOVE37XR (Pravin Pillay, Creative Director); score by Matt Robertson; Coast Salish design by Austin Harry (InDigital Design); Carol Anne Hilton (Indigenomics Institute); Darren Zal (technical lead); contributions from Moonfish Media, David Denning, SFU MetaCreation Lab."
+    location: "Credits"
+    source:
+      type: file
+      ref: "docs/grants/agog-opencall-2026/application-form-fields.md"
+      evidence: "Matches the vetted team list + Pravin's locked naming guidance (2026-06-12): credit Austin Harry + Matt Robertson; acknowledge Moonfish/Denning/MetaCreation as contributors; keep First Nations general (no specific Nations named as partners). Credits block is flagged in the draft as DEFAULT pending Pravin confirmation and Austin sign-off on his cultural credit + any Coast Salish description (per the per-output consent protocol)."
+  - claim: "No specific First Nations are named as partners; the Coast Salish layer is attributed to the individual artist (Austin Harry), not to a Nation."
+    location: "whole document"
+    source:
+      type: quote
+      ref: "Pravin Pillay, Signal, 2026-06-12 17:41: 'I would therefore not name the Nations as invited partners without explicit authorization. Keep that language general for now. CA is leading those relationships.'"
+      evidence: "Draft keeps Nation-level language general per Pravin's instruction; credits an individual artist, not a Nation."
+  - claim: "KOI / the knowledge-graph infrastructure is NOT named in this public art copy."
+    location: "whole document"
+    source:
+      type: quote
+      ref: "Operator (Darren Zal), 2026-06-23: 'we dont need to name KOI.'"
+      evidence: "Per operator instruction and [[project_ssd_credit_attribution]], KOI is omitted from SSD artist-credit / public-facing copy."

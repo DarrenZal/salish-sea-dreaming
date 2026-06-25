@@ -1,0 +1,218 @@
+# Verification sidecar for application-draft.md (AGOG Open Call 2026 — Salish Sea Dreaming)
+# Per ~/.claude/CLAUDE.md external-draft gate. Sources: web (verified 2026-06-11), repo files, or [OPERATOR-CONFIRM].
+verifications:
+  # --- AGOG grant facts ---
+  - claim: "AGOG Open Call 2026 theme is 'Climate Futures + Immersive Media'; grants $25K–$200K; AI/generative tools welcome; deadline 2026-06-12 11:59 PM PT; submitted via Submittable."
+    location: "Header + §6"
+    source:
+      type: url
+      ref: "https://agog.org/opencall2026/"
+      evidence: "AGOG Open Call 2026 page + FAQ (fetched 2026-06-11) states the climate-futures/immersive-media theme, the $25K–$200K range, that AI/generative tools are welcome if clearly described, and links the Submittable form. Deadline + PT timezone CONFIRMED from the live Submittable form (operator-pasted 2026-06-11): 'Ends on Fri, Jun 12, 2026 11:59 PM' and eligibility text 'Applications close June 12, 2026 at 11:59 PM PT.'"
+  - claim: "AGOG requires the entity receiving funding to be US-based; individuals cannot apply directly; a fiscal sponsor may be the receiving entity."
+    location: "§1 Organization Information"
+    source:
+      type: url
+      ref: "https://agog.org/opencall2026/"
+      evidence: "AGOG FAQ (fetched 2026-06-11): 'the entity receiving funding must be based in the US'; 'Applicants must apply through an entity—e.g., a nonprofit, company, or fiscal sponsor'; 'a fiscal sponsor (or other eligible entity) will be required to receive grant funding.'"
+  - claim: "AGOG announces decisions in Fall 2026."
+    location: "§6 timing note"
+    source:
+      type: url
+      ref: "https://agog.org/opencall2026/"
+      evidence: "Round-1 research from the AGOG open-call materials states applications open May 12 2026, close June 12 2026, decisions announced Fall 2026."
+  - claim: "Submittable form URL for AGOG Open Call 2026."
+    location: "Header"
+    source:
+      type: url
+      ref: "https://agog.submittable.com/submit/c7c3186b-3e5f-47a6-9cc0-4f4b0fc570ed/agog-open-call-2026-climate-futures-immersive-media"
+      evidence: "Direct Submittable link surfaced from the AGOG open-call page during research 2026-06-11. Confirm live at submission time."
+
+  # --- Fiscal entity ---
+  - claim: "Regenerate Cascadia / Cascadia Department of Bioregion is a US 501(c)(3) fiscal-sponsorship organization; Brandon Letsinger is a co-founder."
+    location: "Header + §1 + §5"
+    source:
+      type: url
+      ref: "https://regeneratecascadia.org/about/project/sponsorship/ ; https://cascadiabioregion.org/"
+      evidence: "Web search (2026-06-11) returned: 'Regenerate Cascadia and the Department of Bioregion is a fiscal sponsorship 501(c)3 organization' and that Regenerate Cascadia is a program of the Department of Bioregion. TIBC11 site lists 'Brandon Letsinger (Department of Bioregion/Regenerate Cascadia).'"
+  - claim: "Applicant legal entity = Department of Bioregion, US 501(c)(3), EIN 85-4402939, 4128 Interlake Ave N, Seattle, WA 98103; principal officer Brandon Letsinger; FY2024-25 operating budget ~$486K expenses / ~$696K revenue. Regenerate Cascadia / Cascadia Department of Bioregion are programs of this entity."
+    location: "§1"
+    source:
+      type: file
+      ref: "DOB Form 990 FY2024-25 (filed), sent by Brandon Letsinger 2026-06-12: ~/Downloads/2024-25 Form990Package Filed.pdf (page 1: name/EIN/address/501(c)(3) box/officer Brandon Letsinger/total revenue $695,862/total expenses $485,678; Part III 4a-4c: Cascadia DOB + Regenerate Cascadia named as programs)"
+      evidence: "RESOLVED 2026-06-12: Brandon emailed EIN 85-4402939 + address + the filed 990. Page-1 header confirms legal name DEPARTMENT OF BIOREGION, EIN 85-4402939, 4128 Interlake Ave N Seattle WA 98103, 501(c)(3) checkbox marked, principal officer Brandon Letsinger; financials give the operating-budget figure. Part III program descriptions confirm Regenerate Cascadia + Cascadia Department of Bioregion are programs of the legal entity (so the receiving entity name is 'Department of Bioregion')."
+
+  # --- TIBC11 ---
+  - claim: "Turtle Island Bioregional Congress 11 (TIBC11) is Sept 15–19, 2026, in Vernonia, Oregon, ~300 attendees; Brandon Letsinger is a co-organizer."
+    location: "§4"
+    source:
+      type: url
+      ref: "https://www.tibc11.earth/"
+      evidence: "tibc11.earth (fetched 2026-06-11): 'September 15-19, 2026', 'Cascadia: Vernonia, Oregon', ~300 place-based allies; organizers list includes 'Brandon Letsinger (Department of Bioregion/Regenerate Cascadia).'"
+  - claim: "TIBC11 appearance is an in-kind demonstration / relationship-accessible, NOT a confirmed program slot."
+    location: "§4, §6"
+    source:
+      type: file
+      ref: "~/.claude/plans/can-you-help-me-groovy-origami.md (Assumption 3, Assumption 8)"
+      evidence: "Plan decision (operator-confirmed): frame TIBC11 as planned/in-coordination; tibc11.earth gives no public art-installation submission process, so we do not claim a secured slot."
+
+  # --- Track record / shows ---
+  - claim: "The Salish Sea Dreaming was shown April 2026 at Mahon Hall, Salt Spring Island, as part of 'Digital Ecologies: Bridging Nature and Technology'; ran ~3 weeks as an autonomous gallery installation."
+    location: "§5"
+    source:
+      type: file
+      ref: "docs/next-iteration/venue-strategy.md; project CLAUDE.md; docs/podcast-source-document.md"
+      evidence: "venue-strategy.md arc lists '2026-04 Mahon Hall (DONE) ... proof of concept'; CLAUDE.md and the one-pager confirm the Mahon Hall / Digital Ecologies April 2026 exhibition."
+  - claim: "Shown May 27–28, 2026 at Indigenomics IMPACT, HR MacMillan Space Centre, Vancouver; show-morning call was GREEN with a 188/196 probe sweep and no visitor-blocking issues; core visitor flow held with 8+ hours uptime."
+    location: "§5"
+    source:
+      type: file
+      ref: "docs/space-center/debrief-impact-2026.md"
+      evidence: "Debrief header: 'Call on show morning: GREEN (188/196 probe sweep; no P0 visitor-blockers).' 'What worked' section: visitor flow held end-to-end, 'serving fresh 540 KB JPEGs on a 4-second cadence with 8h+ server uptime at doors.'"
+
+  # --- Ecological / climate story ---
+  - claim: "Pacific herring are a keystone forage fish; the trophic cascade feeds salmon, orca, the forest (carcass nutrients), and carbon sequestration; the project frames forage fish as 'worth more alive in the water than landed.' The coined term 'Kwaxala' is deliberately NOT used in sponsor-facing copy."
+    location: "Climate story"
+    source:
+      type: file
+      ref: "Standard marine ecology + project framing (docs/salish-sea-dreaming-one-pager.md, project CLAUDE.md). Operator decision 2026-06-12. Memory project_kwaxala_is_ours.md."
+      evidence: "Keystone/trophic-cascade ecology is standard marine science. 'Kwaxala' is the project's OWN coined framing (NOT Indigenous-language terminology, per project_kwaxala_is_ours.md), but a coined word a reviewer cannot look up reads as unverifiable jargon, so it was REMOVED from the grant 2026-06-12 per operator (the 'worth more swimming' concept stays). Stewardship lineage anchors to the Heiltsuk/Wuikinuxv-led herring stock assessment that challenged DFO."
+  - claim: "The installation's audio is a single evolving ~10-minute musical score by composer Matt Robertson, driven by ~75 years of DFO herring catch + spawn-collapse data (rising catch raises pitch; a steady pulse marks each year; spawn-collapse data reshapes the tone toward an underwater darkness)."
+    location: "Climate story (audio)"
+    source:
+      type: quote
+      ref: "Signal 'Salish Sea Dreaming Tactical' chat, Matt Robertson (2026-04-03) + Pravin; surfaced via the agog-copy-truth-review workflow 2026-06-12"
+      evidence: "Matt Robertson (Signal Tactical, 2026-04-03): 'its harmonic language and pulse are driven by the Catch history data (catch amount rising = pitch rising) with a constant pulse to register each year's data, repeating twice in the 10 mins. The tonal elements (in this case wavetable position) are driven by the spawn collapse data.' Pravin: 'this masterful track that Matt Robertson created from the datasets we gathered up.' CORRECTION 2026-06-12: the earlier 'Map of Silence / each section becomes a voice / voices drop out' description was FABRICATED (it exists only in aspirational design docs, never built or shown). Replaced with this as-built description."
+  - claim: "DFO catch data goes back to 1888; hydrophone networks record orca calls; the framework is 'Three-Eyed Seeing' (Western science + Indigenous knowledge + the land itself); the Indigenomics principle is 'life, not GDP, as the primary unit of value.'"
+    location: "§2"
+    source:
+      type: file
+      ref: "docs/podcast-source-document.md (Part I 'Three-Eyed Seeing')"
+      evidence: "podcast-source-document.md Part I lists DFO catch data 'going back to 1888', hydrophone networks, and the three-eyed framing; Carol Anne Hilton's Indigenomics framework: 'life — not GDP — is the primary unit of value.'"
+  - claim: "Indigenous nations challenged federal (DFO) authority and took over their own herring stock assessments (Indigenous data sovereignty)."
+    location: "§2 (referenced as 'data-sovereignty leadership')"
+    source:
+      type: file
+      ref: "docs/podcast-source-document.md (Part I); project CLAUDE.md (Kwaxala Model section)"
+      evidence: "Both sources state Heiltsuk and Wuikinuxv nations challenged DFO and took over their own herring stock assessments. In the application this is phrased generally as 'nations who challenged federal stock assessments' to avoid over-specific attribution in a sponsor-facing doc; specific Nation names can be added if desired and confirmed."
+
+  # --- Experience / tech ---
+  - claim: "Imagery is generated live (real-time generative, not a fixed video loop) and modulated by real-time ecological data (tide, lunar phase, river discharge); stillness deepens the visuals."
+    location: "§2, §3"
+    source:
+      type: file
+      ref: "docs/podcast-source-document.md (Part I, Part IV 'Data Layer'); docs/project-vision.md"
+      evidence: "podcast doc: OSC pulse server feeds /salish/tide/level, /moon/illumination, /fraser/discharge, /herring/spawning live; 'stillness is rewarded ... sustained attention unlocks bioluminescent layers.' Real-time generative stack: Autolume (StyleGAN2) + StreamDiffusion + TouchDesigner."
+  - claim: "Visitor app + gesture (mudra) interaction lets visitors submit a dream that joins a live, semantically clustered, consent-governed archive."
+    location: "§3, §4"
+    source:
+      type: file
+      ref: "docs/space-center/debrief-impact-2026.md; project CLAUDE.md (consent thread); memory project_visitor_webapp.md, feedback_visitor_interactivity_primary.md"
+      evidence: "Debrief 'What worked': submit dream → TD snap-card → dreamworld with semantic clustering + kNN neighbor edges. CLAUDE.md consent thread documents the post-show consent-archival (consented snapshot served at salishseadreaming.art). Visitor app + MediaPipe mudra system confirmed PRIMARY surfaces in memory."
+  - claim: "salishseadreaming.art is the live public visitor-dream cloud (consent-governed snapshot)."
+    location: "§7"
+    source:
+      type: file
+      ref: "project CLAUDE.md (Current Status consent thread); memory reference_ssd_v5_prod_service_restart.md"
+      evidence: "CLAUDE.md documents the live consent-governed dream cloud on salishseadreaming.art (ssd-v5 / poly:9004), default /cloud → ongoing window + impact-2026 consented snapshot."
+
+  # --- Partner network scale ---
+  - claim: "Regenerate Cascadia's Landscape Hub Cultivator network spans multiple eco-regions and ~150 regenerative organizations / ~35 stewards / 9 landscape groups — cited as partnership context, not confirmed tour hosts."
+    location: "§4"
+    source:
+      type: file
+      ref: "docs/podcast-source-document.md (Part V 'Landscape Hub Cultivator')"
+      evidence: "podcast doc: 'Nine groups across three eco-regions (Salish Sea, Columbia River, Willamette Valley). Approximately 35 landscape stewards, drawn from a community of ~600 members and ~150 regenerative organizations.' These are Regenerate Cascadia's own program figures; the draft explicitly labels them as partnership context, not committed hosts."
+  - claim: "Pravin Pillay presented the project to Regenerate Cascadia's Landscape Hub Cultivator program (recorded talk — GATED, not asserted as public)."
+    location: "§7 (demoted to 'pending' after adversarial review — no longer asserted as a settled public work sample)"
+    source:
+      type: file
+      ref: "docs/podcast-source-document.md / project research; candidate URL youtu.be/V00YgxzHiQ4?t=4760"
+      evidence: "Partner-context research surfaced a recorded presentation. NOT yet verified public/shareable, and Pravin has not approved it as a grant work sample. Per gate + Assumption 4, include ONLY after (a) confirming the link is public, (b) confirming it shows Pravin to the landscape-hub audience, and (c) Pravin's OK. Until then it is excluded from the submission."
+
+  # --- Team / capacity / compute ---
+  - claim: "MOVE37XR is a Salt Spring–based immersive-media studio (TouchDesigner, real-time diffusion, projection, live performance) providing creative direction."
+    location: "§1, §5"
+    source:
+      type: file
+      ref: "project CLAUDE.md (Team table); docs/podcast-source-document.md (Part III)"
+      evidence: "CLAUDE.md team table: Pravin Pillay (MOVE37XR), Creative Director, TouchDesigner/AI visualization/immersive media, studio on Salt Spring. Podcast doc Part III corroborates the toolchain."
+  - claim: "Indigenomics Institute (Carol Anne Hilton) provides the curatorial/worldview framework and access to TELUS Sovereign AI Factory GPU compute used for training."
+    location: "§5"
+    source:
+      type: file
+      ref: "project CLAUDE.md; memory reference_telus_access.md; docs/space-center/credits-and-licenses-2026-05.md"
+      evidence: "CLAUDE.md and credits audit list Carol Anne Hilton / Indigenomics + TELUS Sovereign AI Factory GPU access (in-kind via Carol Anne). reference_telus_access.md confirms TELUS H200 access in hand."
+  - claim: "The project works with a Coast Salish artist under an explicit per-output cultural-consent protocol governing visual grammar and cultural content."
+    location: "§5"
+    source:
+      type: file
+      ref: "docs/space-center/credits-and-licenses-2026-05.md; docs/space-center/austin-consent-map.md; memory feedback_austin_consent_trust_floor.md"
+      evidence: "Credits audit: Coast Salish co-leading artist under per-source/per-workflow/per-output/public-language consent map. Memory: per-output sign-off is the floor. Draft keeps the artist UNNAMED pending sponsor-facing sign-off (Assumption 2)."
+
+  # --- Asset clearance posture ---
+  - claim: "Moonfish Media footage and David Denning photography are Phase-1 verbal permission only and are excluded from sponsor-facing samples pending written re-confirmation; iNaturalist imagery is CC0/CC BY/CC BY-SA with per-image attribution."
+    location: "§7"
+    source:
+      type: file
+      ref: "docs/space-center/credits-and-licenses-2026-05.md; docs/space-center/moonfish-denning-reuse-confirmation-2026-05-14.md"
+      evidence: "Credits audit marks Moonfish + Denning 'Phase 1 verbal — re-confirm for sponsor-facing reuse' and iNaturalist 'CC0 / CC BY / CC BY-SA only (CC BY-NC excluded).' Reuse-confirmation doc: do not frame Moonfish/Denning as cleared sponsor-facing materials until written confirmation."
+
+  # --- Budget ---
+  - claim: "Funding request is $175,000 (tour + modest dome capstone), set below AGOG's $200K ceiling; 10% DOB fee = $17,500 within the request; line items sum to $175,000."
+    location: "Support Request + budget.md"
+    source:
+      type: file
+      ref: "docs/grants/agog-opencall-2026/budget.md; operator decision 2026-06-12; Brandon's 'BDRAFT: 125k' tab (prose base) in Google doc 1Rz0HvflIFA6GpdhthGOzJ6HOud4bwWJJB5ZvXt1_7wc"
+      evidence: "Brandon's draft used $125K but he confirmed 2026-06-12 he is NOT mandating it ('how much are you requesting, just curious'). With two completed 2026 shows de-risking the ask, the operator chose $175K to bring a real dome capstone into scope while staying under the $200K ceiling. Budget line items in budget.md sum to exactly $175,000; estimates pending Natalia's sanity-check."
+  - claim: "Pravin approved crediting Austin Harry (InDigital) and Matt Robertson on the prototype, and asked to acknowledge contributors broadly including Moonfish Media; First Nations are kept general (not named as invited partners); Carol Anne Hilton leads Indigenous relationships."
+    location: "Team + Voices/consent"
+    source:
+      type: quote
+      ref: "Pravin's email/message to Darren (operator-pasted, 2026-06-12)"
+      evidence: "Pravin wrote: 'Yes, please credit Matt and Austin. Where space allows, also acknowledge the scientists, artists, media partners, and other contributors, including Moonfish Media...' and 'Regarding First Nations: we reached out to individuals and knowledge holders from particular Nations, not formally to First Nations governments... I would therefore not name the Nations as invited partners without explicit authorization. Keep that language general for now. CA is leading those relationships.' The draft credits Austin + Matt, lists Moonfish/Denning/MetaCreation as contributors (NOT as submitted footage; clearance still pending), and keeps all First Nation references general."
+  - claim: "Regenerate Cascadia launched from a 14-community, 30-day Bioregional Activation Tour in October 2023, organized with 80+ organizers on both sides of the border, reaching 1,000+ people on a budget under $80,000; many of those organizers now run the landscape groups that will host this tour."
+    location: "Channels / partnerships"
+    source:
+      type: quote
+      ref: "Brandon Letsinger's 'BDRAFT: 125k' tab (operator-pasted, 2026-06-12): organizational-history proof point provided by the fiscal sponsor."
+      evidence: "Asserted by Brandon Letsinger as Regenerate Cascadia / Department of Bioregion's own organizational history. He is the co-founder and authoritative source for it, and flagged in his own internal notes: 'keep the backup figure handy if AGOG asks.' Used as partnership/track-record context; verifiable against RC org records if AGOG requests."
+  - claim: "Department of Bioregion operating budget: FY2025-26 projected ~$720K revenue / ~$632K expenses; FY2024-25 990 actuals $695,862 revenue / $485,678 expenses."
+    location: "Applicant & Organization Basics"
+    source:
+      type: quote
+      ref: "FY24-25 actuals: DOB filed FY2024-25 Form 990, page 1 (total revenue $695,862 / total expenses $485,678). FY25-26 projection: Brandon Letsinger's 'BDRAFT: 125k' tab in the shared Google doc, authored by the principal officer, 2026-06-12."
+      evidence: "Brandon's BDRAFT tab states verbatim: 'Organization operating budget: FY2025-26 (November 1, 2025 to October 31, 2026): $720,000 projected revenue and $632,000 projected expenses. FY2024-25 actuals per the filed IRS Form 990: $695,862 revenue and $485,678 expenses.' The projection is the fiscal sponsor's own stated figure (authored by its principal officer); the actuals are read directly off the filed 990 page 1. Org-budget field is gated '(if asked)'."
+  - claim: "Hardware anchor figures: RTX 3090 show machine cost CA$1,950 (owned, in-kind); the render-rig build is ~CA$10,430 hardware / ~CA$11,680 turnkey (≈ US$7.6K–8.5K at a disclosed ~0.73 CAD→USD)."
+    location: "budget.md line 4 (Equipment) + §6 anchor note"
+    source:
+      type: file
+      ref: "docs/podcast-source-document.md (Part IV Hardware, line 220); docs/space-center/5090-build-spec-2026-05-13.md (lines 22/32/34)"
+      evidence: "Podcast doc line 220: 'RTX 3090 Desktop ... Purchased for CA$1,950.' 5090 build spec: 'Subtotal hardware ~$10,430 CAD' (line 32), 'Total turnkey build ~$11,680 CAD' (line 34), GPU $5,499 CAD (line 22). The spec is denominated in CAD; USD is shown as an explicit ~0.73 conversion, NOT a bare unsourced '$8K' (corrected after adversarial review per memory feedback_verify_pricing_before_sponsor_facing). Final numbers pending Natalia."
+
+  # --- Project identity / cross-border framing ---
+  - claim: "The Salish Sea is the inland ocean shared by British Columbia and Washington; Cascadia is an explicitly cross-border bioregion; the creative team is BC-based while the fiscal sponsor is US-based."
+    location: "§1, §2"
+    source:
+      type: file
+      ref: "docs/podcast-source-document.md; project CLAUDE.md; web (Cascadia bioregion)"
+      evidence: "Project docs describe the Salish Sea bioregion and Cascadia cross-border framing; team locations (Salt Spring/BC) per CLAUDE.md; fiscal sponsor US-based per Regenerate Cascadia/Dept of Bioregion. AGOG explicitly allows international collaborators with a US receiving entity."
+
+  # --- Per-place co-creation model (2026-06-12 strategic reframe) ---
+  - claim: "Each installation is custom and contextual to its place, co-created with local artists and local ecological data, not a tour of one finished piece. The April Salt Spring show grew from a local naturalist-illustration lineage + Salish Sea data; the May Vancouver show was co-authored with a Coast Salish artist under a per-output consent protocol. The shared technical scaffolding travels; the artwork is local."
+    location: "Overview, Work-completed, When/where, Channels, Budget"
+    source:
+      type: file
+      ref: "docs/podcast-source-document.md:292 (cosmo-local split: 'the PATTERN can travel ... but the CONTENT stays rooted'); credits-and-licenses-2026-05.md (different local authors at each show); ~/.claude/plans/can-you-help-me-groovy-origami.md (Assumption 5, technical-scaffolding-only); agog-strategic-review workflow 2026-06-12 (operator-directed)."
+      evidence: "The cosmo-local split is documented: the pattern/scaffolding travels, the content (local artist grammar, local data, cultural knowledge) stays rooted. The two completed shows used DIFFERENT local cultural authors and DIFFERENT local data (Salt Spring naturalist-illustration lineage vs Coast Salish co-authorship), establishing the per-place model as as-built, not aspirational. Operator confirmed this is the project's whole point, 2026-06-12."
+  - claim: "The work descends from participatory bioregional mapping in the Salish Sea, including the 2005 Islands in the Salish Sea Community Atlas: thousands of residents across seventeen islands mapped what they cherish and local artists rendered each island in its own hand."
+    location: "Climate expertise (Community mapping lineage)"
+    source:
+      type: file
+      ref: "Obsidian vault: Projects/Islands In The Salish Sea.md (surfaced via agog-strategic-review workflow 2026-06-12)"
+      evidence: "Vault note documents the 2005 Islands in the Salish Sea Community Atlas: '3,000+ people across 17 islands over 3 years ... Each island community decided what to map ... Local artists created distinctive maps.' Briony Penn's naturalist-illustration lineage is the documented through-line into SSD's visual language. Used as authenticity/lineage anchor, not a claim of a delivered citizen-science platform."
+  - claim: "The host landscape groups run community bioregional mapping ('weaving a living picture of relationships and care, not just points on a map'); SSD connects to this as the local-data half of each co-creation, while the visitor co-dreaming archive is a felt record, NOT a citizen-science dataset."
+    location: "Channels + Generative-AI honesty boundary"
+    source:
+      type: quote
+      ref: "Vault: Meetings/2026-03-24 Landscape Hub Cultivator Meeting.md (David Haskell paraphrase); honesty boundary per podcast-source-document.md:308-320 + 2026-05-21 Grant Story meeting (mapping framed as open question)."
+      evidence: "The Landscape Hub Cultivator program runs in-person bioregional mapping (Regenerate Cascadia/Dept of Bioregion program; cf. DOB 990 Part III 'Bioregional Seeds delivers mapping research'). The 'living picture of relationships and care' phrasing paraphrases the network's own language. HONESTY BOUNDARY (verified): the 'bioregional data science / Living Atlas' connecting the felt layer to underlying data is prototype/aspirational; the grant explicitly does NOT claim a delivered citizen-science platform, only the real 2005 Atlas precedent + the real Landscape Hub mapping program."

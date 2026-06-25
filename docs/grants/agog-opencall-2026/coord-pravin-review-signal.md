@@ -1,0 +1,3 @@
+Hey Prav — the AGOG application is in final shape and I submit tonight. The full final version is pinned at the top of our shared Google doc (the FINAL APPLICATION banner): https://docs.google.com/document/d/1Rz0HvflIFA6GpdhthGOzJ6HOud4bwWJJB5ZvXt1_7wc/edit — would love your eyes on the framing and the consent language if you get a few minutes.
+
+One open question in there for you: name Austin as the Coast Salish co-author, or keep it general? I kept it general for now per your guidance. We also centered the whole proposal on the per-place model (local artists + local data at each stop, like we did April and May). Thanks for everything 🙏

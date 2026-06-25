@@ -1,0 +1,26 @@
+# Verification sidecar for coord-natalia.md
+verifications:
+  - claim: "AGOG grant is 'Climate Futures + Immersive Media', $25K–$200K, due June 12 11:59pm PT; Dept of Bioregion (US 501c3) would be the fiscal applicant."
+    location: "Paragraph 1"
+    source:
+      type: url
+      ref: "https://agog.org/opencall2026/ ; https://regeneratecascadia.org/about/project/sponsorship/"
+      evidence: "AGOG page (theme, range, deadline) + web confirmation that Regenerate Cascadia/Dept of Bioregion is a 501(c)3 fiscal sponsor (both fetched 2026-06-11)."
+  - claim: "Brandon Letsinger flagged the grant; Pravin suggested Natalia for budget/proposal work."
+    location: "Paragraphs 1–2"
+    source:
+      type: quote
+      ref: "Brandon's email + Pravin's reply, both quoted by the operator in-session 2026-06-11 ('We should apply and perhaps meet with Natalia as she is a great proposal writer and very good at developing budgets')."
+      evidence: "Direct quotes provided by the operator this session."
+  - claim: "Draft application + ~$200K milestoned budget skeleton exist (proven base → tour → congress capstone → open toolkit)."
+    location: "Paragraph 2"
+    source:
+      type: file
+      ref: "docs/grants/agog-opencall-2026/application-draft.md; budget.md"
+      evidence: "These deliverables were authored this session and match the operator-approved plan."
+  - claim: "Natalia is a collaborator on Salish Sea Dreaming with a curatorial/logistics + budget role."
+    location: "Greeting / framing"
+    source:
+      type: file
+      ref: "project CLAUDE.md (team table); docs/space-center/credits-and-licenses-2026-05.md"
+      evidence: "CLAUDE.md lists Natalia Lebedinskaia (panel moderation / contextual framing); credits audit lists her as 'SSD-side logistics + Vancouver-local backup operator | Coordination + scheduling.'"

@@ -1,0 +1,49 @@
+verifications:
+  - claim: "Salish Sea Dreaming has had two public installations to date — Salt Spring Island (April 2026) and the H.R. MacMillan Space Centre / IMPACT (May 2026)."
+    location: "¶3"
+    source:
+      type: file
+      ref: "/Users/darrenzal/projects/salish-sea-dreaming/CLAUDE.md"
+      evidence: "Project CLAUDE.md records the Salt Spring Spring Art Show 'Digital Ecologies' (April 10–26, 2026) and the Indigenomics IMPACT show at the HR MacMillan Space Centre (May 27–28, 2026) as the two completed 2026 installations."
+  - claim: "Darren built and operated the visitor co-dreaming application that lets audience members shape the dream from their own phones."
+    location: "¶3"
+    source:
+      type: file
+      ref: "~/.claude/projects/-Users-darrenzal-projects-salish-sea-dreaming/memory/project_visitor_webapp.md"
+      evidence: "Memory entry documents the visitor web app built by Darren (QR → browser → prompt → OSC → StreamDiffusion) as a primary visitor-interaction surface."
+  - claim: "Darren built the live 'dream cloud' archive / gallery server that gathers and displays visitor contributions."
+    location: "¶3"
+    source:
+      type: file
+      ref: "~/.claude/projects/-Users-darrenzal-projects-salish-sea-dreaming/memory/reference_ssd_v5_prod_service_restart.md"
+      evidence: "Production gallery server (ssd-v5, poly:9004, salishseadreaming.art) hosting the visitor-dream 'cloud' was built and is operated by Darren; documented restart/ops procedure confirms ownership."
+  - claim: "Darren built/operated the real-time AI generative visual pipeline (Autolume / StreamDiffusion)."
+    location: "¶3"
+    source:
+      type: file
+      ref: "~/.claude/projects/-Users-darrenzal-projects-salish-sea-dreaming/memory/project_streamdiffusion_status.md"
+      evidence: "Memory entry documents Darren's StreamDiffusion + Autolume production pipeline on the 3090 (sd-turbo+TRT, prompt sequencer, visitor OSC queue) for the shows."
+  - claim: "The technical stack ran reliably with resilient, self-healing field operations, largely unattended."
+    location: "¶3"
+    source:
+      type: file
+      ref: "~/.claude/projects/-Users-darrenzal-projects-salish-sea-dreaming/memory/project_fade_in_proven.md"
+      evidence: "Memory entry records the visitor fade-in + full auto-heal chain proven live (~99% self-healing) — the resilient unattended field operations referenced."
+  - claim: "Total compensation of $3,250 for Darren's role in the upcoming phase."
+    location: "¶2"
+    source:
+      type: quote
+      ref: "Pravin Pillay, Signal (Prav Chat), 2026-06-22 18:08:45: 'Your budget allocation is 3250 which is a bump up for Natasha's allocation in her budget to me.'"
+      evidence: "Pravin set Darren's BCAC budget allocation at $3,250; the figure is taken directly from his Signal message."
+  - claim: "The upcoming phase centers on touring and a larger-format dome experience."
+    location: "¶2, ¶4"
+    source:
+      type: file
+      ref: "/Users/darrenzal/projects/salish-sea-dreaming/docs/tour-readiness-plan.md"
+      evidence: "Tour-readiness plan + AGOG packet describe the touring program and the dome / large-format capstone as the project's next phase; Pravin convened 'Dome-tech' meetings (Signal, June 2026)."
+  - claim: "Darren brings data-science and data-engineering capability to support the project's data-driven elements (stated as forward capability, NOT as a claim of prior data work)."
+    location: "¶3"
+    source:
+      type: quote
+      ref: "Operator (Darren Zal), this session 2026-06-23: 'herring data was done by shawn and eve before, although I am capable of doing data science and engineering like that as well.'"
+      evidence: "Operator explicitly confirmed his data-science/engineering capability while clarifying the herring/ecological data work itself was done by Shawn and Eve — so the letter frames this strictly as forward capability."

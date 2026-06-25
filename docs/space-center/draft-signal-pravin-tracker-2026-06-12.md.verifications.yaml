@@ -1,0 +1,44 @@
+# Verification sidecar for draft-signal-pravin-tracker-2026-06-12.md (v2)
+verifications:
+  - claim: "The tracker structure (Pravin's suggested fields) is built and pre-loaded with the two conversations, ready to publish."
+    location: "Status paragraph"
+    source:
+      type: file
+      ref: "docs/space-center/create_ssd_opportunity_tracker.py (creates the DB with all 14 fields + seeds both rows; dry-run validated)"
+      evidence: "The setup script exists and its dry-run renders the schema + both seed rows. 'Ready to publish' = ready to run once a valid token + parent page exist."
+  - claim: "The 'GPU Integration new' Notion token was rotated and the integration is owned by Carol Anne's account, so Darren cannot pull the secret himself; the tracker is dependent on Carol Anne regenerating/sharing that token (or Darren adding a project-owned integration)."
+    location: "Status paragraph (direct ask to Carol Anne)"
+    source:
+      type: conversation_ref
+      ref: "Operator-pasted Notion investigation 2026-06-12: 'GPU Integration new ... Created by Carolina (cahilton@indigenomics.com)'; getBotToken → 'You do not have permission to access this bot's token'. Plus local probe: token returns 401 'API token is invalid'."
+      evidence: "The investigation established Carol Anne owns the integration and Darren's accounts cannot reveal its token; the local probe confirmed the stored token is now invalid (rotated). The message now states this as a real dependency and asks Carol Anne directly — corrected from the earlier over-glib 'nothing is blocked' wording."
+  - claim: "Justin Yang (TELUS Data & Trust Office); met at Indigenomics IMPACT; struck by SSD + the TELUS sovereign AI factory; invited Darren to present in TELUS's bi-weekly AI education series; Marisa offered June 18 or 25, 2pm ET; Darren accepted in principle Jun 5."
+    location: "Item 1 (TELUS)"
+    source:
+      type: quote
+      ref: "Gmail thread quoted by the operator in-session — Justin Yang (Jun 1): 'pleasure meeting you ... at the Indigenomics event ... use of the TELUS sovereign AI factory ... invite you to join the TELUS AI education series ... bi-weekly'; Darren (Jun 5): 'I'd love to participate ... and present'; Marisa: 'Are you available June 18th or 25th 2pm eastern time?'"
+      evidence: "Direct quotes of the thread provided by the operator this session."
+  - claim: "AGOG 'Climate Futures + Immersive Media' open call grants $25K–$200K; Regenerate Cascadia / Cascadia Dept of Bioregion is a US 501(c)(3) fiscal sponsor; Brandon proposed the landscape-group exhibit tour; we'd extend with the TIBC11 (Sept) capstone + open toolkit."
+    location: "Item 2 (AGOG)"
+    source:
+      type: url
+      ref: "https://agog.org/opencall2026/ ; https://regeneratecascadia.org/about/project/sponsorship/ ; https://www.tibc11.earth/ ; Brandon's email (operator-quoted)"
+      evidence: "AGOG range from the open-call page; 501c3 status from the Regenerate Cascadia sponsorship page; TIBC11 Sept 15-19 2026 from tibc11.earth; the landscape-group tour is Brandon's words, the Congress capstone + toolkit are framed as our extension (per Pravin's reply)."
+  - claim: "Darren replied to Brandon (cc Pravin + Natalia) asking for entity details; the AGOG application is due today; Coast Salish co-authorship kept general + consent-governed in the draft."
+    location: "Item 2 (AGOG)"
+    source:
+      type: message_id
+      ref: "Sent Gmail message 19eba52d30c11e9d (to brandon@regeneratecascadia.org, cc Ppillay@indigenomics.com + le.natalia@gmail.com); deadline 2026-06-12 11:59 PM PT per the live Submittable form; docs/grants/agog-opencall-2026/application-form-fields.md"
+      evidence: "Reply sent this session (confirmed by the Gmail tool). Deadline confirmed from the live form. The application keeps the Coast Salish co-author unnamed/unbudgeted per the approved plan (Assumption 2)."
+  - claim: "Natalia Lebedinskaia has curatorial and institutional experience suited to holding artistic integrity, cultural protocol, and compensation; she's already cc'd on the AGOG thread."
+    location: "Natalia paragraph"
+    source:
+      type: file
+      ref: "Pravin's Signal message (operator-pasted) + docs/space-center/credits-and-licenses-2026-05.md + sent email 19eba52d30c11e9d (cc le.natalia@gmail.com)"
+      evidence: "Pravin's own message cites Natalia's 'curatorial experience and work with large institutions and corporations'; she was cc'd on the Brandon reply this session."
+  - claim: "There is an upcoming TELUS GPU meeting where Salish Sea Dreaming will be discussed."
+    location: "Item 1 (TELUS)"
+    source:
+      type: quote
+      ref: "Pravin's Signal message, operator-pasted: 'the team is heading into a GPU meeting with Telus where Salish Sea Dreaming will be discussed.'"
+      evidence: "Direct quote from Pravin's message provided by the operator this session."

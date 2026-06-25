@@ -1,0 +1,1 @@
+Hey Shawn — pulling together the AGOG immersive-media climate grant for Salish Sea Dreaming tonight (due 11:59 PT). Pravin said you've got the informal photos and videos he shared from the May Space Centre show (his iPhone captures). Could you send those my way? Trying to attach the best visual proof we have for the application. Even a few would help a lot. 🙏

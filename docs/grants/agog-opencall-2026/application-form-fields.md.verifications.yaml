@@ -1,0 +1,55 @@
+# Verification sidecar for application-form-fields.md (the paste-ready AGOG submission).
+# Most claims are restatements of application-draft.md; that file's sidecar
+# (application-draft.md.verifications.yaml, 26 entries) is the authoritative ledger
+# for: AGOG facts, 501c3 fiscal-sponsor status, TIBC11 dates, the two completed shows,
+# the herring/Kwaxala climate story, Three-Eyed Seeing, team roles, asset-clearance posture,
+# and hardware/budget anchors. Entries below cover claims specific to the form fields.
+verifications:
+  - claim: "Generative-AI stack: StyleGAN2-ada via Autolume (SFU MetaCreation Lab) for species models; Stable Diffusion + StreamDiffusion in TouchDesigner for real-time rendering; LoRA fine-tunes for a naturalist-watercolor aesthetic; training data restricted to CC0/CC-BY/CC-BY-SA + consented imagery."
+    location: "Generative AI field"
+    source:
+      type: file
+      ref: "docs/podcast-source-document.md (Part IV + Tech Stack Summary); docs/space-center/credits-and-licenses-2026-05.md (iNaturalist CC terms)"
+      evidence: "Podcast doc names Autolume/StyleGAN2-ada, Stable Diffusion + Briony LoRA, TouchDesigner + Resolume. Credits audit: iNaturalist corpus 'CC0 / CC BY / CC BY-SA only (CC BY-NC excluded).' StreamDiffusion is the project's real-time SD path (debrief-impact-2026.md references streamdiffusionTD). Watercolor aesthetic kept artist-neutral in the form text (Briony Phase-2 licensing is open — see clearance checklist)."
+  - claim: "Sovereign TELUS compute served the embeddings and chat visitors touched during the live May 2026 show."
+    location: "Overview + (draft §5)"
+    source:
+      type: file
+      ref: "docs/space-center/debrief-impact-2026.md ('What worked')"
+      evidence: "Debrief: 'TELUS sovereignty port mostly landed. Embeddings (_embed_via_telus) and chat (chat_client) both verified on TELUS NVIDIA endpoints — off OpenAI for the paths visitors actually touch.'"
+  - claim: "Impact figures (~8–12 installs, 2,000+ visitors, ~15% commitment conversion, ≥1 replication) are project TARGETS, not measured outcomes; the consent-governed dream archive is the one already-existing instrument."
+    location: "Overview impact bullets + timeline"
+    source:
+      type: conversation_ref
+      ref: "Project planning targets (this session) + budget.md evaluation line"
+      evidence: "Explicitly framed as targets/goals, not claims about the world. The dream archive's existence is sourced in application-draft.md.verifications.yaml (visitor-dream archive claim). No dwell-time sensor is claimed (the proven stack has none — see debrief)."
+  - claim: "Regenerate Cascadia runs the nine-group Landscape Hub Cultivator community-organizing program; Brandon co-organizes the Bioregional Congress."
+    location: "Project Team + Channels"
+    source:
+      type: file
+      ref: "docs/podcast-source-document.md (Part V); https://www.tibc11.earth/"
+      evidence: "Podcast doc Part V: nine landscape groups in the Landscape Hub Cultivator program run by Regenerate Cascadia. tibc11.earth organizer list includes Brandon Letsinger (Department of Bioregion/Regenerate Cascadia). Network figures cited as partnership context, not confirmed hosts."
+  - claim: "Overall project budget = $200K request plus in-kind support (TELUS compute, owned RTX 3090); precise total left for Natalia to itemize."
+    location: "Support Request — Overall Project Budget"
+    source:
+      type: file
+      ref: "docs/grants/agog-opencall-2026/budget.md (in-kind notes)"
+      evidence: "In-kind components are listed qualitatively in budget.md (TELUS Sovereign AI Factory compute via Indigenomics; RTX 3090 ≈ CA$1,950). No fabricated precise total: the form defaults to $200K and flags the in-kind for Natalia. The earlier '~$255K / ~$55K' figure was removed after adversarial review as non-derivable."
+  - claim: "Brandon Letsinger invited/flagged this project for the grant and co-organizes the Bioregional Congress; 'how did you hear' = friend/colleague (Brandon)."
+    location: "Project Team note + Channels + How-heard field"
+    source:
+      type: quote
+      ref: "Brandon Letsinger's email to Darren, quoted by the operator in-session 2026-06-11 ('have you seen this grant? ... you should apply'); TIBC11 organizer listing https://www.tibc11.earth/ (Brandon = Department of Bioregion/Regenerate Cascadia)."
+      evidence: "Same Brandon-email quote used in coord-brandon.md.verifications.yaml; replicated here because application-form-fields.md is the submitted artifact and asserts 'Brandon invited this project.' Co-organizer status is supported by his presence on the tibc11.earth organizer list."
+  - claim: "Deadline June 12 2026 11:59 PM PT; applicants apply through an org not as individuals; US receiving entity required."
+    location: "Form header + US-based = Yes"
+    source:
+      type: url
+      ref: "https://agog.submittable.com/submit/c7c3186b-3e5f-47a6-9cc0-4f4b0fc570ed/... (live form, operator-pasted 2026-06-11)"
+      evidence: "Live Submittable form text: 'Ends on Fri, Jun 12, 2026 11:59 PM'; 'Individuals are not eligible to apply. Applications must be submitted by a nonprofit, company, academic institution, or fiscal sponsor'; 'All entities receiving funding must be based in the US.'"
+  - claim: "[OPERATOR-CONFIRM] fields (primary contact, legal entity + EIN, org website/socials, other financial support received, pitch deck, 2nd supplemental link) are not yet supplied and are flagged blank in the form text."
+    location: "throughout (bracketed tags)"
+    source:
+      type: conversation_ref
+      ref: "[OPERATOR-CONFIRM] — pending Brandon (org/EIN/contact) + operator (deck, links, other support)"
+      evidence: "Each is explicitly bracketed in the form text and tracked in README submission checklist; none is asserted as fact."

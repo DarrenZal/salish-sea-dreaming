@@ -1,0 +1,13 @@
+verifications:
+  - claim: "The 'about this project' section is now live on salishseadreaming.art (home page) and at salishseadreaming.art/about/project (full page)."
+    location: "whole message"
+    source:
+      type: conversation_ref
+      ref: "This session (2026-06-23/24): deployed to ssd-v5 (poly:9004) and verified — origin curl + public-edge curl + browser screenshots both confirmed the home intro/card and /about/project render 200 with the content."
+      evidence: "Verified end-to-end: file on disk, localhost:9004 origin, and public https://salishseadreaming.art all serve the intro blurb + 'About this project' card; /about/project returns 200 with the full copy."
+  - claim: "The copy used is Pravin's own, from the Canva page (About the Artwork + About the Artist + credits)."
+    location: "para 1 + bullets"
+    source:
+      type: url
+      ref: "https://indigenomicsimpact2026.my.canva.site/immersive-experiences/salish-sea-dreaming"
+      evidence: "The deployed md (docs/about/about-the-artwork.md) reproduces Pravin's About-the-Artwork, About-the-Artist, and the full credits verbatim from his Canva site, rendered live to /about/project."

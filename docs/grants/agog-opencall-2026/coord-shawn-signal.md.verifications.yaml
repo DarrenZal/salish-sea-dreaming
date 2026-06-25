@@ -1,0 +1,14 @@
+# Verification sidecar for coord-shawn-signal.md (Signal DM to Shawn Anderson)
+verifications:
+  - claim: "Applying for the AGOG immersive-media climate grant for Salish Sea Dreaming tonight, due 11:59 PT."
+    location: "Opening"
+    source:
+      type: url
+      ref: "https://agog.org/opencall2026/ + live Submittable form (deadline 2026-06-12 11:59 PM PT)"
+      evidence: "Deadline + theme confirmed from the live Submittable form this session."
+  - claim: "Pravin has informal iPhone photos/videos from the May Space Centre show that he shared with Shawn; asking Shawn to forward them."
+    location: "Body"
+    source:
+      type: quote
+      ref: "Pravin's email/message to Darren (operator-pasted, 2026-06-12): 'ask Shawn to send you what I shared with him; those are informal photos and videos I captured on my iPhone.'"
+      evidence: "Direct instruction from Pravin this session to obtain his informal show captures via Shawn."
